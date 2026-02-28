@@ -21,6 +21,8 @@ import MessagesPage from './pages/MessagesPage';
 import ContactPage from './pages/ContactPage';
 import AdminContactsPage from './pages/AdminContactsPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
+import AdminRevenuePage from './pages/AdminRevenuePage';
+import AdminAdsPage from './pages/AdminAdsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import { trackPageView } from './utils/analytics';
@@ -61,6 +63,8 @@ export default function App() {
           <Route path="/iletisim" element={<ContactPage />} />
           <Route path="/admin/mesajlar" element={<AdminContactsPage />} />
           <Route path="/admin/ayarlar" element={<AdminSettingsPage />} />
+          <Route path="/admin/gelir" element={<AdminRevenuePage />} />
+          <Route path="/admin/reklamlar" element={<AdminAdsPage />} />
           <Route path="/gizlilik" element={<PrivacyPage />} />
           <Route path="/kullanim-sartlari" element={<TermsPage />} />
           <Route path="*" element={<NotFoundPage />} />

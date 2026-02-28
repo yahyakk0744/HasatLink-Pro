@@ -17,10 +17,26 @@ export const getSettings = async (_req: Request, res: Response): Promise<void> =
 // PUT /api/admin/settings — admin only
 export const updateSettings = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { instagramUrl, twitterUrl } = req.body;
+    const {
+      instagramUrl,
+      twitterUrl,
+      featuredListing,
+      premiumMembership,
+      commission,
+      aiUsageLimit,
+    } = req.body;
+
+    const update: Record<string, unknown> = {};
+    if (instagramUrl !== undefined) update.instagramUrl = instagramUrl;
+    if (twitterUrl !== undefined) update.twitterUrl = twitterUrl;
+    if (featuredListing !== undefined) update.featuredListing = featuredListing;
+    if (premiumMembership !== undefined) update.premiumMembership = premiumMembership;
+    if (commission !== undefined) update.commission = commission;
+    if (aiUsageLimit !== undefined) update.aiUsageLimit = aiUsageLimit;
+
     const settings = await SiteSettings.findOneAndUpdate(
       { key: 'main' },
-      { instagramUrl, twitterUrl },
+      update,
       { new: true, upsert: true }
     );
     res.json(settings);

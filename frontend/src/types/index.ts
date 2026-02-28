@@ -207,3 +207,35 @@ export interface HasatlinkHourlyData {
   prices: { name: string; min: number; max: number; avg: number }[];
 }
 
+export interface PremiumPackage {
+  _id?: string;
+  name: string;
+  price: number;
+  durationDays: number;
+  features: string[];
+}
+
+export interface SiteSettings {
+  _id?: string;
+  key: string;
+  instagramUrl: string;
+  twitterUrl: string;
+  featuredListing: { enabled: boolean; pricePerListing: number; durationOptions: number[] };
+  premiumMembership: { enabled: boolean; packages: PremiumPackage[] };
+  commission: { enabled: boolean; percentage: number };
+  aiUsageLimit: { enabled: boolean; dailyFreeCount: number };
+}
+
+export interface Ad {
+  _id: string;
+  slot: 'header' | 'sidebar' | 'footer' | 'between-listings';
+  enabled: boolean;
+  imageUrl: string;
+  clickUrl: string;
+  startDate: string;
+  endDate: string;
+  clickCount: number;
+  impressionCount: number;
+  createdAt: string;
+}
+

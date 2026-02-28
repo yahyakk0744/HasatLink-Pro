@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import AIDiagnosis from '../models/AIDiagnosis';
+import SiteSettings from '../models/SiteSettings';
 
 const DISEASES = [
   { disease: 'Yaprak Yanıklığı (Leaf Blight)', confidence: 92, treatment: 'Bakırlı fungisit uygulayın. Enfekte yaprakları uzaklaştırın. Sulama düzenini kontrol edin.' },
@@ -17,6 +18,26 @@ const DISEASES = [
 
 export const diagnose = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Check daily AI usage limit
+    const userId = req.body.userId || (req as any).userId;
+    const settings = await SiteSettings.findOne({ key: 'main' });
+    if (settings?.aiUsageLimit?.enabled && userId) {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const todayCount = await AIDiagnosis.countDocuments({
+        userId,
+        createdAt: { $gte: startOfDay },
+      });
+      if (todayCount >= settings.aiUsageLimit.dailyFreeCount) {
+        res.status(429).json({
+          message: 'Günlük AI teşhis limitinize ulaştınız',
+          limit: settings.aiUsageLimit.dailyFreeCount,
+          used: todayCount,
+        });
+        return;
+      }
+    }
+
     // Simulate AI processing delay
     await new Promise(resolve => setTimeout(resolve, 1500));
 
@@ -24,7 +45,6 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
     const result = DISEASES[randomIndex];
 
     // Save to history if userId provided
-    const userId = req.body.userId || (req as any).userId;
     if (userId) {
       await AIDiagnosis.create({
         userId,

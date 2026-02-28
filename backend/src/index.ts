@@ -13,6 +13,7 @@ import weatherRoutes from './routes/weatherRoutes';
 import aiRoutes from './routes/aiRoutes';
 import hasatlinkPazarRoutes from './routes/hasatlinkPazarRoutes';
 import contactRoutes from './routes/contactRoutes';
+import adRoutes from './routes/adRoutes';
 
 dotenv.config();
 
@@ -56,6 +57,7 @@ app.use('/api', weatherRoutes);
 app.use('/api', aiRoutes);
 app.use('/api', hasatlinkPazarRoutes);
 app.use('/api', contactRoutes);
+app.use('/api', adRoutes);
 
 // Error handler
 app.use(errorHandler);

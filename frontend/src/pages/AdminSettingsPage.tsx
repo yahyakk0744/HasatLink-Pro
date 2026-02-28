@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate } from 'react-router-dom';
-import { Settings, Save } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { Settings, Save, DollarSign, Megaphone, ChevronRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SEO from '../components/ui/SEO';
 import Input from '../components/ui/Input';
@@ -30,6 +30,7 @@ export default function AdminSettingsPage() {
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ instagramUrl: '', twitterUrl: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -104,6 +105,37 @@ export default function AdminSettingsPage() {
           <Save size={14} className="mr-2" />
           {saving ? (isTr ? 'Kaydediliyor...' : 'Saving...') : (isTr ? 'Kaydet' : 'Save')}
         </Button>
+      </div>
+
+      {/* Navigation Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+        <button
+          onClick={() => navigate('/admin/gelir')}
+          className="flex items-center gap-4 p-5 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl shadow-sm hover:shadow-md transition-all text-left group"
+        >
+          <div className="w-12 h-12 rounded-xl bg-[#2D6A4F]/10 flex items-center justify-center shrink-0">
+            <DollarSign size={22} className="text-[#2D6A4F]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm">{isTr ? 'Gelir Yönetimi' : 'Revenue Management'}</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{isTr ? 'Öne çıkan ilan, premium, komisyon' : 'Featured listing, premium, commission'}</p>
+          </div>
+          <ChevronRight size={18} className="text-[var(--text-secondary)] group-hover:translate-x-1 transition-transform" />
+        </button>
+
+        <button
+          onClick={() => navigate('/admin/reklamlar')}
+          className="flex items-center gap-4 p-5 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl shadow-sm hover:shadow-md transition-all text-left group"
+        >
+          <div className="w-12 h-12 rounded-xl bg-[#2D6A4F]/10 flex items-center justify-center shrink-0">
+            <Megaphone size={22} className="text-[#2D6A4F]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm">{isTr ? 'Reklam Yönetimi' : 'Ad Management'}</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{isTr ? 'Banner reklamlar, istatistikler' : 'Banner ads, statistics'}</p>
+          </div>
+          <ChevronRight size={18} className="text-[var(--text-secondary)] group-hover:translate-x-1 transition-transform" />
+        </button>
       </div>
     </div>
   );
