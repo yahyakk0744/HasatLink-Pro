@@ -23,14 +23,12 @@
     "express": "^5.2.1",
     "firebase-admin": "^13.7.0",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.2.3",
-    "nodemailer": "^8.0.1"
+    "mongoose": "^9.2.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.3.2",
-    "@types/nodemailer": "^7.0.11",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"

@@ -120,14 +120,6 @@ export default function AuthPage() {
             </Button>
           </form>
 
-          {isLogin && (
-            <p className="text-center mt-3">
-              <button type="button" onClick={() => navigate('/sifremi-unuttum')} className="text-xs text-[#2D6A4F] font-semibold hover:underline">
-                {isTr ? 'Şifremi Unuttum' : 'Forgot Password'}
-              </button>
-            </p>
-          )}
-
           <p className="text-center text-xs text-[#6B6560] mt-4">
             {isLogin ? t('noAccount') : t('hasAccount')}{' '}
             <button onClick={() => setIsLogin(!isLogin)} className="text-[#2D6A4F] font-semibold">

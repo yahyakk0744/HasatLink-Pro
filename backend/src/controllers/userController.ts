@@ -1,10 +1,8 @@
 import { Request, Response } from 'express';
-import crypto from 'crypto';
 import User from '../models/User';
 import Listing from '../models/Listing';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
 import admin from '../config/firebase';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -175,78 +173,6 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
     });
   } catch (error) {
     res.status(500).json({ message: 'İstatistik hatası', error });
-  }
-};
-
-// POST /api/auth/forgot-password
-export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) {
-      // Don't reveal whether email exists
-      res.json({ message: 'Şifre sıfırlama bağlantısı gönderildi' });
-      return;
-    }
-
-    const token = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = token;
-    user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hour
-    await user.save();
-
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const resetUrl = `${frontendUrl}/sifre-sifirla/${token}`;
-
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"HasatLink" <${process.env.SMTP_USER}>`,
-      to: user.email,
-      subject: 'HasatLink - Şifre Sıfırlama',
-      html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
-          <h2 style="color:#2D6A4F">HasatLink Şifre Sıfırlama</h2>
-          <p>Merhaba <strong>${user.name}</strong>,</p>
-          <p>Şifrenizi sıfırlamak için aşağıdaki bağlantıya tıklayın:</p>
-          <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#2D6A4F;color:#fff;text-decoration:none;border-radius:8px;margin:16px 0">Şifremi Sıfırla</a>
-          <p style="color:#666;font-size:13px">Bu bağlantı 1 saat geçerlidir. Eğer şifre sıfırlama talebinde bulunmadıysanız bu emaili görmezden gelin.</p>
-        </div>
-      `,
-    });
-
-    res.json({ message: 'Şifre sıfırlama bağlantısı gönderildi' });
-  } catch (error) {
-    res.status(500).json({ message: 'Şifre sıfırlama hatası', error });
-  }
-};
-
-// POST /api/auth/reset-password
-export const resetPassword = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { token, password } = req.body;
-    const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: new Date() },
-    });
-    if (!user) {
-      res.status(400).json({ message: 'Geçersiz veya süresi dolmuş bağlantı' });
-      return;
-    }
-
-    user.password = await bcrypt.hash(password, 10);
-    user.resetPasswordToken = '';
-    user.resetPasswordExpires = null;
-    await user.save();
-
-    res.json({ message: 'Şifreniz başarıyla güncellendi' });
-  } catch (error) {
-    res.status(500).json({ message: 'Şifre güncelleme hatası', error });
   }
 };
 
