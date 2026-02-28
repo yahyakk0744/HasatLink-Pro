@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import Listing from '../models/Listing';
+import User from '../models/User';
+import AIDiagnosis from '../models/AIDiagnosis';
 
 export const getListings = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -105,5 +107,29 @@ export const shareListing = async (req: Request, res: Response): Promise<void> =
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ message: 'Hata', error });
+  }
+};
+
+export const getPlatformStats = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const [activeListings, registeredUsers, aiDiagnoses, citiesResult] = await Promise.all([
+      Listing.countDocuments({ status: 'active' }),
+      User.countDocuments(),
+      AIDiagnosis.countDocuments(),
+      User.distinct('location'),
+    ]);
+    const cities = new Set(
+      citiesResult
+        .map((loc: string) => loc?.split(',').pop()?.trim())
+        .filter(Boolean)
+    );
+    res.json({
+      activeListings,
+      registeredUsers,
+      cities: Math.max(cities.size, 1),
+      aiDiagnoses,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'İstatistik hatası', error });
   }
 };

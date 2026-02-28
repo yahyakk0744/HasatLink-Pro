@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, MapPin, TrendingUp, TrendingDown, Droplets, Wind, Cloud, BarChart3, ShoppingBag } from 'lucide-react';
@@ -13,6 +13,7 @@ import ListingCard from '../components/listings/ListingCard';
 import AIDiagnosisPanel from '../components/ai/AIDiagnosisPanel';
 import ListingMap from '../components/map/ListingMap';
 import { CATEGORY_LABELS } from '../utils/constants';
+import api from '../config/api';
 
 function AnimatedSection({ children, className = '' }: { children: ReactNode; className?: string }) {
   const { ref, inView } = useInView(0.15);
@@ -68,6 +69,7 @@ export default function HomePage() {
   const { weather, fetchWeather } = useWeather();
   const navigate = useNavigate();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
+  const [platformStats, setPlatformStats] = useState({ activeListings: 0, registeredUsers: 0, cities: 0, aiDiagnoses: 0 });
 
   useEffect(() => {
     fetchListings({ limit: '8' });
@@ -75,6 +77,7 @@ export default function HomePage() {
     fetchHasatlinkPrices();
     const city = user?.location?.split(',')[0]?.trim();
     fetchWeather(city || 'Istanbul');
+    api.get('/stats/platform').then(({ data }) => setPlatformStats(data)).catch(() => {});
   }, [fetchListings, fetchAllPrices, fetchHasatlinkPrices, fetchWeather, user]);
 
   // Top pazar products for comparison (pick 6 popular ones)
@@ -357,10 +360,10 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-4 py-12">
           <div className="bg-gradient-to-r from-[#2D6A4F] to-[#1B4332] rounded-[2.5rem] p-8 md:p-12 text-white">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <StatCounter end={150} suffix="+" label={lang === 'tr' ? 'Aktif İlan' : 'Active Listings'} />
-              <StatCounter end={200} suffix="+" label={lang === 'tr' ? 'Kayıtlı Üretici' : 'Registered Farmers'} />
-              <StatCounter end={81} suffix="" label={lang === 'tr' ? 'Şehir' : 'Cities'} />
-              <StatCounter end={50} suffix="+" label={lang === 'tr' ? 'AI Teşhis' : 'AI Diagnoses'} />
+              <StatCounter end={platformStats.activeListings} suffix="" label={lang === 'tr' ? 'Aktif İlan' : 'Active Listings'} />
+              <StatCounter end={platformStats.registeredUsers} suffix="" label={lang === 'tr' ? 'Kayıtlı Üretici' : 'Registered Farmers'} />
+              <StatCounter end={platformStats.cities} suffix="" label={lang === 'tr' ? 'Şehir' : 'Cities'} />
+              <StatCounter end={platformStats.aiDiagnoses} suffix="" label={lang === 'tr' ? 'AI Teşhis' : 'AI Diagnoses'} />
             </div>
           </div>
         </section>
