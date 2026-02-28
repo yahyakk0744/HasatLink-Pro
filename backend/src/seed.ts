@@ -4,6 +4,11 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import MarketPrice from './models/MarketPrice';
+import User from './models/User';
+import Listing from './models/Listing';
+import Rating from './models/Rating';
+import Notification from './models/Notification';
+import AIDiagnosis from './models/AIDiagnosis';
 
 dotenv.config();
 
@@ -31,13 +36,24 @@ const seed = async () => {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hasatlink');
     console.log('MongoDB connected for seeding');
 
-    // Sadece hal fiyatlarını temizle ve yeniden ekle
-    await MarketPrice.deleteMany({});
+    // Tüm collection'ları temizle
+    await Promise.all([
+      User.deleteMany({}),
+      Listing.deleteMany({}),
+      Rating.deleteMany({}),
+      Notification.deleteMany({}),
+      AIDiagnosis.deleteMany({}),
+      MarketPrice.deleteMany({}),
+    ]);
+    console.log('✓ Tüm collection\'lar temizlendi');
+
+    // Sadece hal fiyatlarını ekle
     await MarketPrice.insertMany(marketPrices);
     console.log(`✓ ${marketPrices.length} hal fiyatı oluşturuldu`);
 
     console.log('\n═══════════════════════════════════════');
     console.log('  SEED TAMAMLANDI!');
+    console.log('  Veritabanı temizlendi.');
     console.log('  Sadece başlangıç hal fiyatları eklendi.');
     console.log('═══════════════════════════════════════\n');
 
