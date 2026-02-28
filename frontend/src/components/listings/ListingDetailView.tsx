@@ -20,11 +20,11 @@ interface ListingDetailViewProps {
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
   if (!value) return null;
   return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-[#F5F3EF] last:border-0">
-      <div className="w-8 h-8 rounded-xl bg-[#F5F3EF] flex items-center justify-center shrink-0">{icon}</div>
+    <div className="flex items-center gap-3 py-2.5 border-b border-[var(--bg-input)] last:border-0">
+      <div className="w-8 h-8 rounded-xl bg-[var(--bg-input)] flex items-center justify-center shrink-0">{icon}</div>
       <div className="flex-1">
-        <p className="text-[10px] font-medium uppercase text-[#6B6560] tracking-wide">{label}</p>
-        <p className="text-sm font-semibold text-[#1A1A1A]">{value}</p>
+        <p className="text-[10px] font-medium uppercase text-[var(--text-secondary)] tracking-wide">{label}</p>
+        <p className="text-sm font-semibold text-[var(--text-primary)]">{value}</p>
       </div>
     </div>
   );
@@ -32,8 +32,8 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
 
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-2xl p-4">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-[#6B6560] mb-3">{title}</h3>
+    <div className="bg-[var(--bg-surface)] rounded-2xl p-4">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] mb-3">{title}</h3>
       {children}
     </div>
   );
@@ -54,7 +54,7 @@ export default function ListingDetailView({ listing, onWaClick, onShare, isOwner
       <ImageGallery images={listing.images || []} title={listing.title} />
 
       {/* Header */}
-      <div className="bg-white rounded-2xl p-4 space-y-3">
+      <div className="bg-[var(--bg-surface)] rounded-2xl p-4 space-y-3">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -95,7 +95,7 @@ export default function ListingDetailView({ listing, onWaClick, onShare, isOwner
             </div>
           )}
           <InfoRow icon={<Star size={14} className="text-[#A47148]" />} label={t('listing.quality')} value={listing.qualityGrade} />
-          <InfoRow icon={<Box size={14} className="text-[#6B6560]" />} label={t('listing.storage')} value={listing.storageType} />
+          <InfoRow icon={<Box size={14} className="text-[var(--text-secondary)]" />} label={t('listing.storage')} value={listing.storageType} />
           <InfoRow icon={<Calendar size={14} className="text-[#2D6A4F]" />} label={t('listing.harvestDate')} value={listing.harvestDate} />
           <InfoRow icon={<Weight size={14} className="text-[#0077B6]" />} label={t('listing.minOrder')} value={listing.minOrderAmount > 0 ? `${listing.minOrderAmount} ${listing.unit}` : ''} />
         </DetailSection>
@@ -109,12 +109,12 @@ export default function ListingDetailView({ listing, onWaClick, onShare, isOwner
             {listing.hasInsurance && <Badge color="#2D6A4F"><Shield size={10} className="inline mr-1" />{t('listing.insurance')}</Badge>}
           </div>
           <InfoRow icon={<Truck size={14} className="text-[#0077B6]" />} label={t('listing.vehicleType')} value={listing.vehicleType} />
-          <InfoRow icon={<Weight size={14} className="text-[#6B6560]" />} label={t('listing.capacity')} value={listing.capacity > 0 ? `${listing.capacity} ton` : ''} />
+          <InfoRow icon={<Weight size={14} className="text-[var(--text-secondary)]" />} label={t('listing.capacity')} value={listing.capacity > 0 ? `${listing.capacity} ton` : ''} />
           {(listing.routeFrom || listing.routeTo) && (
             <InfoRow icon={<MapPin size={14} className="text-[#A47148]" />} label={t('listing.route')} value={`${listing.routeFrom} → ${listing.routeTo}`} />
           )}
           <InfoRow icon={<Calendar size={14} className="text-[#2D6A4F]" />} label={t('listing.availableDate')} value={listing.availableDate} />
-          <InfoRow icon={<Truck size={14} className="text-[#6B6560]" />} label={t('listing.plateNumber')} value={listing.plateNumber} />
+          <InfoRow icon={<Truck size={14} className="text-[var(--text-secondary)]" />} label={t('listing.plateNumber')} value={listing.plateNumber} />
         </DetailSection>
       )}
 
@@ -125,11 +125,11 @@ export default function ListingDetailView({ listing, onWaClick, onShare, isOwner
             <div className="mb-3"><Badge color="#A47148">{t('listing.team')}</Badge></div>
           )}
           <InfoRow icon={<Users size={14} className="text-[#0077B6]" />} label={t('listing.workerCount')} value={listing.workerCount > 0 ? `${listing.workerCount} ${t('listing.person')}` : ''} />
-          <InfoRow icon={<Clock size={14} className="text-[#6B6560]" />} label={t('listing.experience')} value={listing.experienceYears > 0 ? `${listing.experienceYears} ${t('listing.years')}` : ''} />
+          <InfoRow icon={<Clock size={14} className="text-[var(--text-secondary)]" />} label={t('listing.experience')} value={listing.experienceYears > 0 ? `${listing.experienceYears} ${t('listing.years')}` : ''} />
           <InfoRow icon={<Star size={14} className="text-[#A47148]" />} label={t('listing.dailyWage')} value={listing.dailyWage > 0 ? formatPrice(listing.dailyWage) + '/gün' : ''} />
           {listing.skills?.length > 0 && (
             <div className="pt-2">
-              <p className="text-[10px] font-medium uppercase text-[#6B6560] tracking-wide mb-2">{t('listing.skills')}</p>
+              <p className="text-[10px] font-medium uppercase text-[var(--text-secondary)] tracking-wide mb-2">{t('listing.skills')}</p>
               <div className="flex gap-1.5 flex-wrap">
                 {listing.skills.map((skill, i) => (
                   <span key={i} className="px-2.5 py-1 text-[10px] font-medium uppercase bg-[#A47148]/10 text-[#A47148] rounded-full">{skill}</span>
@@ -148,8 +148,8 @@ export default function ListingDetailView({ listing, onWaClick, onShare, isOwner
             {listing.rentType && <Badge color="#6B6560">{listing.rentType}</Badge>}
             {listing.condition && <Badge color="#0077B6">{listing.condition}</Badge>}
           </div>
-          <InfoRow icon={<Wrench size={14} className="text-[#1A1A1A]" />} label={t('listing.brand')} value={listing.brand} />
-          <InfoRow icon={<Box size={14} className="text-[#6B6560]" />} label={t('listing.modelName')} value={listing.modelName} />
+          <InfoRow icon={<Wrench size={14} className="text-[var(--text-primary)]" />} label={t('listing.brand')} value={listing.brand} />
+          <InfoRow icon={<Box size={14} className="text-[var(--text-secondary)]" />} label={t('listing.modelName')} value={listing.modelName} />
           <InfoRow icon={<Calendar size={14} className="text-[#2D6A4F]" />} label={t('listing.year')} value={listing.yearOfManufacture > 0 ? listing.yearOfManufacture : ''} />
           <InfoRow icon={<Star size={14} className="text-[#A47148]" />} label={t('listing.horsePower')} value={listing.horsePower > 0 ? `${listing.horsePower} HP` : ''} />
         </DetailSection>
@@ -164,8 +164,8 @@ export default function ListingDetailView({ listing, onWaClick, onShare, isOwner
           </div>
           <InfoRow icon={<Ruler size={14} className="text-[#2D6A4F]" />} label={t('listing.landSize')} value={listing.landSize > 0 ? `${listing.landSize} ${listing.landUnit}` : ''} />
           <InfoRow icon={<Landmark size={14} className="text-[#A47148]" />} label={t('listing.soilType')} value={listing.soilType} />
-          <InfoRow icon={<FileText size={14} className="text-[#1A1A1A]" />} label={t('listing.deedStatus')} value={listing.deedStatus} />
-          <InfoRow icon={<Box size={14} className="text-[#6B6560]" />} label={t('listing.zoningStatus')} value={listing.zoningStatus} />
+          <InfoRow icon={<FileText size={14} className="text-[var(--text-primary)]" />} label={t('listing.deedStatus')} value={listing.deedStatus} />
+          <InfoRow icon={<Box size={14} className="text-[var(--text-secondary)]" />} label={t('listing.zoningStatus')} value={listing.zoningStatus} />
           <InfoRow icon={<Clock size={14} className="text-[#0077B6]" />} label={t('listing.rentDuration')} value={listing.rentDuration} />
         </DetailSection>
       )}
@@ -198,7 +198,7 @@ export default function ListingDetailView({ listing, onWaClick, onShare, isOwner
         ) : (
           <>
             {onMessage && (
-              <Button onClick={onMessage} variant="secondary" className="flex-1 flex items-center justify-center gap-2 bg-[#F5F3EF] text-[#1A1A1A] hover:bg-[#EBE7E0]">
+              <Button onClick={onMessage} variant="secondary" className="flex-1 flex items-center justify-center gap-2 bg-[var(--bg-input)] text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)]">
                 <MessageSquare size={16} />
                 {t('listing.message')}
               </Button>
@@ -208,13 +208,13 @@ export default function ListingDetailView({ listing, onWaClick, onShare, isOwner
               {listing.listingMode === 'buy' ? t('listing.contactBuyer') : t('listing.whatsapp')}
             </Button>
             {listing.phone && (
-              <a href={`tel:${listing.phone}`} className="flex items-center justify-center w-12 h-12 bg-[#F5F3EF] rounded-2xl hover:bg-[#EBE7E0] transition-colors">
+              <a href={`tel:${listing.phone}`} className="flex items-center justify-center w-12 h-12 bg-[var(--bg-input)] rounded-2xl hover:bg-[var(--bg-surface-hover)] transition-colors">
                 <Phone size={18} />
               </a>
             )}
           </>
         )}
-        <button onClick={onShare} className="flex items-center justify-center w-12 h-12 bg-[#F5F3EF] rounded-2xl hover:bg-[#EBE7E0] transition-colors">
+        <button onClick={onShare} className="flex items-center justify-center w-12 h-12 bg-[var(--bg-input)] rounded-2xl hover:bg-[var(--bg-surface-hover)] transition-colors">
           <Share2 size={18} />
         </button>
       </div>

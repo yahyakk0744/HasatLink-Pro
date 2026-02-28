@@ -25,7 +25,7 @@ export default function DiagnosisHistory({ userId }: DiagnosisHistoryProps) {
     <div className="space-y-3">
       <h3 className="text-lg font-semibold tracking-tight">{t('ai.history')}</h3>
       {history.map(item => (
-        <div key={item._id} className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-4">
+        <div key={item._id} className="bg-[var(--bg-surface)] rounded-2xl p-4 shadow-sm flex items-center gap-4">
           <div className="w-10 h-10 bg-[#A47148]/10 rounded-xl flex items-center justify-center shrink-0">
             <AlertTriangle size={18} className="text-[#A47148]" />
           </div>

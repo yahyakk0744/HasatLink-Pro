@@ -31,9 +31,9 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
   return (
     <Link to={`/ilan/${listing._id}`} className="group">
-      <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm card-hover-shadow hover:-translate-y-1 transition-all duration-300">
+      <div className="bg-[var(--bg-surface)] rounded-[2rem] overflow-hidden shadow-sm card-hover-shadow hover:-translate-y-1 transition-all duration-300">
         {/* Image */}
-        <div className="relative aspect-[4/3] bg-[#F5F3EF] overflow-hidden">
+        <div className="relative aspect-[4/3] bg-[var(--bg-input)] overflow-hidden">
           {listing.images?.[0] ? (
             <img
               src={listing.images[0]}
@@ -50,7 +50,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
           {/* Hover gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           {/* Hover arrow */}
-          <div className="absolute bottom-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+          <div className="absolute bottom-3 right-3 w-8 h-8 bg-[var(--glass-surface)] backdrop-blur rounded-full flex items-center justify-center opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
             <ArrowRight size={14} className="text-[#2D6A4F]" />
           </div>
           <div className="absolute top-3 left-3 flex gap-1">
@@ -99,7 +99,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
               <span className="text-[9px] font-medium px-2 py-0.5 bg-[#A47148]/10 text-[#A47148] rounded-full">{listing.qualityGrade}</span>
             )}
             {listing.type === 'pazar' && listing.amount > 0 && (
-              <span className="text-[9px] font-medium px-2 py-0.5 bg-[#F5F3EF] text-[#6B6560] rounded-full">{listing.amount} {listing.unit}</span>
+              <span className="text-[9px] font-medium px-2 py-0.5 bg-[var(--bg-input)] text-[var(--text-secondary)] rounded-full">{listing.amount} {listing.unit}</span>
             )}
             {listing.type === 'lojistik' && listing.vehicleType && (
               <span className="text-[9px] font-medium px-2 py-0.5 bg-[#0077B6]/10 text-[#0077B6] rounded-full flex items-center gap-0.5">
@@ -107,7 +107,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
               </span>
             )}
             {listing.type === 'lojistik' && listing.routeFrom && listing.routeTo && (
-              <span className="text-[9px] font-medium px-2 py-0.5 bg-[#F5F3EF] text-[#6B6560] rounded-full">{listing.routeFrom} → {listing.routeTo}</span>
+              <span className="text-[9px] font-medium px-2 py-0.5 bg-[var(--bg-input)] text-[var(--text-secondary)] rounded-full">{listing.routeFrom} → {listing.routeTo}</span>
             )}
             {listing.type === 'isgucu' && listing.workerCount > 1 && (
               <span className="text-[9px] font-medium px-2 py-0.5 bg-[#A47148]/10 text-[#A47148] rounded-full flex items-center gap-0.5">
@@ -118,7 +118,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
               <span className="text-[9px] font-medium px-2 py-0.5 bg-[#2D6A4F]/10 text-[#2D6A4F] rounded-full">{formatPrice(listing.dailyWage)}/{t('listing.daily')}</span>
             )}
             {listing.type === 'ekipman' && listing.brand && (
-              <span className="text-[9px] font-medium px-2 py-0.5 bg-[#1A1A1A]/10 text-[#1A1A1A] rounded-full flex items-center gap-0.5">
+              <span className="text-[9px] font-medium px-2 py-0.5 bg-[var(--bg-invert)]/10 text-[var(--text-primary)] rounded-full flex items-center gap-0.5">
                 <Wrench size={8} />{listing.brand}
               </span>
             )}

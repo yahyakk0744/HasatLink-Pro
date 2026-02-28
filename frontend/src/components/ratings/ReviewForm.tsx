@@ -36,7 +36,7 @@ export default function ReviewForm({ fromUserId, toUserId, listingId, onSuccess 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
+    <form onSubmit={handleSubmit} className="bg-[var(--bg-surface)] rounded-2xl p-4 shadow-sm space-y-3">
       <h4 className="text-sm font-semibold tracking-tight">{t('rating.writeReview')}</h4>
       <RatingStars score={score} interactive onChange={setScore} size={24} />
       <textarea
@@ -44,7 +44,7 @@ export default function ReviewForm({ fromUserId, toUserId, listingId, onSuccess 
         onChange={e => setComment(e.target.value)}
         placeholder={t('rating.comment')}
         rows={3}
-        className="w-full px-4 py-3 bg-[#F5F3EF] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
+        className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
       />
       <Button type="submit" loading={loading} disabled={score === 0} size="sm">
         {t('rating.submit')}

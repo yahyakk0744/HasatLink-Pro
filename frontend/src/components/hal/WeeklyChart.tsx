@@ -43,14 +43,14 @@ export default function WeeklyChart({ data, product }: Props) {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm text-center text-[#6B6560]">
+      <div className="bg-[var(--bg-surface)] rounded-2xl p-6 shadow-sm text-center text-[#6B6560]">
         Haftalık veri bulunamadı
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
+    <div className="bg-[var(--bg-surface)] rounded-2xl p-6 shadow-sm">
       <ResponsiveContainer width="100%" height={350}>
         <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E1DC" />

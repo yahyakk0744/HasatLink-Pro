@@ -15,9 +15,9 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
   const { t } = useTranslation();
 
   return (
-    <div className="bg-white rounded-[2.5rem] p-6 shadow-sm">
+    <div className="bg-[var(--bg-surface)] rounded-[2.5rem] p-6 shadow-sm">
       <div className="flex items-center gap-4">
-        <div className="w-24 h-24 rounded-full bg-[#F5F3EF] overflow-hidden shrink-0 ring-4 ring-[#2D6A4F]/20">
+        <div className="w-24 h-24 rounded-full bg-[var(--bg-input)] overflow-hidden shrink-0 ring-4 ring-[#2D6A4F]/20">
           {user.profileImage ? (
             <img src={user.profileImage} alt={user.name} className="w-full h-full object-cover" />
           ) : (
@@ -51,7 +51,7 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
         {isOwn && onEdit && (
           <button
             onClick={onEdit}
-            className="px-4 py-2 text-xs font-semibold uppercase bg-[#F5F3EF] rounded-full hover:bg-[#EBE7E0] transition-colors"
+            className="px-4 py-2 text-xs font-semibold uppercase bg-[var(--bg-input)] rounded-full hover:bg-[var(--bg-surface-hover)] transition-colors"
           >
             {t('editProfile')}
           </button>
@@ -67,9 +67,9 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
         )}
       </div>
       {user.bio && (
-        <div className="mt-4 pt-4 border-t border-[#F5F3EF]">
-          <p className="text-xs font-medium uppercase text-[#6B6560] mb-1">{t('profile.bio')}</p>
-          <p className="text-sm text-[#1A1A1A] leading-relaxed">{user.bio}</p>
+        <div className="mt-4 pt-4 border-t border-[var(--bg-input)]">
+          <p className="text-xs font-medium uppercase text-[var(--text-secondary)] mb-1">{t('profile.bio')}</p>
+          <p className="text-sm text-[var(--text-primary)] leading-relaxed">{user.bio}</p>
         </div>
       )}
     </div>

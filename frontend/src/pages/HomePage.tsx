@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, MapPin, TrendingUp, TrendingDown, Droplets, Wind, Cloud, BarChart3, ShoppingBag } from 'lucide-react';
+import { ArrowRight, MapPin, TrendingUp, TrendingDown, Droplets, Wind, Cloud, BarChart3, ShoppingBag, PackageOpen } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useAuth } from '../contexts/AuthContext';
 import { useHalPrices } from '../hooks/useHalPrices';
@@ -13,6 +13,7 @@ import ListingCard from '../components/listings/ListingCard';
 import AIDiagnosisPanel from '../components/ai/AIDiagnosisPanel';
 import ListingMap from '../components/map/ListingMap';
 import { CATEGORY_LABELS } from '../utils/constants';
+import SEO from '../components/ui/SEO';
 import api from '../config/api';
 
 function AnimatedSection({ children, className = '' }: { children: ReactNode; className?: string }) {
@@ -39,7 +40,7 @@ function StatCounter({ end, suffix, label }: { end: number; suffix: string; labe
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm">
+    <div className="bg-[var(--bg-surface)] rounded-[2rem] overflow-hidden shadow-sm">
       <div className="aspect-[4/3] skeleton" />
       <div className="p-4 space-y-3">
         <div className="flex justify-between">
@@ -88,6 +89,13 @@ export default function HomePage() {
 
   return (
     <div className="animate-fade-in">
+      <SEO
+        title={lang === 'tr' ? 'Ana Sayfa' : 'Home'}
+        description={lang === 'tr' ? 'Türkiye\'nin en kapsamlı tarım pazaryeri. Ürün alın, satın, lojistik bulun, ekipman kiralayın.' : 'Turkey\'s most comprehensive agricultural marketplace.'}
+        keywords={lang === 'tr' ? 'tarım, pazar, çiftçi, hasatlink, ürün, lojistik, ekipman, arazi' : 'agriculture, marketplace, farmer, hasatlink, products, logistics, equipment, land'}
+        ogImage="/icons/icon.svg"
+      />
+
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#1A1A1A] via-[#2A2520] to-[#1A1A1A] text-white py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -291,12 +299,12 @@ export default function HomePage() {
               <Link
                 key={key}
                 to={`/${key}`}
-                className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group card-enter"
+                className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group card-enter"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <span className="text-3xl mb-2 block">{cat.icon}</span>
                 <h3 className="text-sm font-semibold tracking-tight">{t(`categories.${key}`)}</h3>
-                <ArrowRight size={14} className="text-[#6B6560] mt-2 group-hover:text-[#2D6A4F] group-hover:translate-x-1 transition-all" />
+                <ArrowRight size={14} className="text-[var(--text-secondary)] mt-2 group-hover:text-[#2D6A4F] group-hover:translate-x-1 transition-all" />
               </Link>
             ))}
           </div>
@@ -317,6 +325,14 @@ export default function HomePage() {
               {Array.from({ length: 4 }).map((_, i) => (
                 <SkeletonCard key={i} />
               ))}
+            </div>
+          ) : listings.length === 0 ? (
+            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-12 text-center">
+              <PackageOpen size={48} className="text-[var(--text-secondary)] mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">{lang === 'tr' ? 'Henüz ilan eklenmedi' : 'No listings yet'}</h3>
+              <p className="text-sm text-[var(--text-secondary)]">
+                {lang === 'tr' ? 'İlk ilanı sen oluştur!' : 'Be the first to create a listing!'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -339,7 +355,7 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AIDiagnosisPanel />
-            <div className="bg-white rounded-[2.5rem] p-4 shadow-sm overflow-hidden">
+            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[2.5rem] p-4 shadow-sm overflow-hidden">
               <div className="flex items-center gap-2 mb-3 px-2">
                 <MapPin size={16} className="text-[#2D6A4F]" />
                 <h3 className="text-lg font-semibold tracking-tight">{t('map.title')}</h3>

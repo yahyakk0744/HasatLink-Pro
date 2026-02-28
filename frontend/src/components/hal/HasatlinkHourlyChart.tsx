@@ -42,14 +42,14 @@ export default function HasatlinkHourlyChart({ data, product }: Props) {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm text-center text-[#6B6560]">
+      <div className="bg-[var(--bg-surface)] rounded-2xl p-6 shadow-sm text-center text-[var(--text-secondary)]">
         Bugün henüz saatlik veri yok. Yeni ilanlar eklendikçe burada görünecek.
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
+    <div className="bg-[var(--bg-surface)] rounded-2xl p-6 shadow-sm">
       <ResponsiveContainer width="100%" height={350}>
         <BarChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E1DC" />

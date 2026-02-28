@@ -18,7 +18,7 @@ export default function MobileBottomNav() {
   const { unreadCount } = useMessageContext();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-lg border-t border-[#D6D0C8]/50 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--glass-surface)] backdrop-blur-lg border-t border-[var(--border-subtle)] md:hidden">
       <div className="flex items-center justify-around py-2">
         {navItems.map(item => {
           if (item.auth && !user) {

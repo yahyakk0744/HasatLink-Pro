@@ -60,7 +60,7 @@ export default function MyListings({ userId, isOwn = true }: MyListingsProps) {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`px-3 py-1 text-[10px] font-medium uppercase rounded-full transition-all ${
-                  filter === f ? 'bg-[#1A1A1A] text-white' : 'bg-[#F5F3EF] text-[#6B6560]'
+                  filter === f ? 'bg-[var(--bg-invert)] text-[var(--text-on-invert)]' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
                 }`}
               >
                 {f === 'all' ? t('all') : f === 'active' ? t('listing.active') : t('listing.sold')}
@@ -111,13 +111,13 @@ export default function MyListings({ userId, isOwn = true }: MyListingsProps) {
       {/* Delete Confirmation */}
       {deletingId && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDeletingId(null)}>
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--bg-surface)] rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-semibold">{t('listing.deleteConfirmTitle')}</h3>
-            <p className="text-sm text-[#6B6560]">{t('listing.deleteConfirmMessage')}</p>
+            <p className="text-sm text-[var(--text-secondary)]">{t('listing.deleteConfirmMessage')}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeletingId(null)}
-                className="flex-1 px-4 py-2.5 text-sm font-medium bg-[#F5F3EF] rounded-xl hover:bg-[#EBE7E0] transition-colors"
+                className="flex-1 px-4 py-2.5 text-sm font-medium bg-[var(--bg-input)] rounded-xl hover:bg-[var(--bg-surface-hover)] transition-colors"
               >
                 {t('cancel')}
               </button>

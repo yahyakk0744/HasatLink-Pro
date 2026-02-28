@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import SEO from '../components/ui/SEO';
 
 export default function TermsPage() {
   const { i18n } = useTranslation();
@@ -6,14 +7,18 @@ export default function TermsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 animate-fade-in">
+      <SEO
+        title={isTr ? 'Kullanım Şartları' : 'Terms of Service'}
+        description={isTr ? 'HasatLink kullanım şartları ve koşulları.' : 'HasatLink terms of service and conditions.'}
+      />
       <h1 className="text-3xl font-semibold tracking-tight mb-8">
         {isTr ? 'Kullanım Şartları' : 'Terms of Service'}
       </h1>
-      <p className="text-sm text-[#6B6560] mb-8">
+      <p className="text-sm text-[var(--text-secondary)] mb-8">
         {isTr ? 'Son güncelleme: 28 Şubat 2026' : 'Last updated: February 28, 2026'}
       </p>
 
-      <div className="prose prose-sm max-w-none space-y-6 text-[#1A1A1A]">
+      <div className="prose prose-sm max-w-none space-y-6 text-[var(--text-primary)]">
         {isTr ? (
           <>
             <section>

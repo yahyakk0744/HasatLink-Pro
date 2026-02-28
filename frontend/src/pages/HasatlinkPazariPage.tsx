@@ -5,6 +5,7 @@ import { useHasatlinkPazar } from '../hooks/useHasatlinkPazar';
 import HasatlinkWeeklyChart from '../components/hal/HasatlinkWeeklyChart';
 import HasatlinkHourlyChart from '../components/hal/HasatlinkHourlyChart';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import SEO from '../components/ui/SEO';
 import type { HasatlinkPazarItem } from '../types';
 
 type SortKey = 'name' | 'price' | 'change' | 'minPrice' | 'maxPrice' | 'listingCount';
@@ -113,11 +114,16 @@ export default function HasatlinkPazariPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in">
+      <SEO
+        title={isTr ? 'HasatLink Pazarı' : 'HasatLink Market'}
+        description={isTr ? 'HasatLink pazar ilanlarından derlenen güncel fiyat verileri ve karşılaştırmalar.' : 'Price data compiled from HasatLink marketplace listings.'}
+        keywords={isTr ? 'hasatlink pazarı, fiyat, tarım, ürün' : 'hasatlink market, price, agriculture'}
+      />
       <div className="flex items-center gap-3 mb-2">
         <ShoppingBag size={28} className="text-[#A47148]" />
         <h1 className="text-3xl font-semibold tracking-tight">{isTr ? 'HasatLink Pazarı' : 'HasatLink Market'}</h1>
       </div>
-      <p className="text-[#6B6560] mb-6">{isTr ? 'Site içi pazar ilanlarından derlenen fiyat verileri' : 'Price data compiled from marketplace listings'}</p>
+      <p className="text-[var(--text-secondary)] mb-6">{isTr ? 'Site içi pazar ilanlarından derlenen fiyat verileri' : 'Price data compiled from marketplace listings'}</p>
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-8">
@@ -128,7 +134,7 @@ export default function HasatlinkPazariPage() {
             className={`px-5 py-2.5 text-sm font-medium rounded-full transition-colors ${
               activeTab === tab.id
                 ? 'bg-[#A47148] text-white'
-                : 'bg-white border border-[#D6D0C8] text-[#6B6560] hover:bg-[#F5F3F0]'
+                : 'bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'
             }`}
           >
             {tab.label}
@@ -154,7 +160,7 @@ export default function HasatlinkPazariPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder={isTr ? 'Ürün ara...' : 'Search product...'}
-                className="w-full pl-11 pr-4 py-3 bg-white border border-[#D6D0C8] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#A47148]/20 focus:border-[#A47148]"
+                className="w-full pl-11 pr-4 py-3 bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#A47148]/20 focus:border-[#A47148]"
               />
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -165,7 +171,7 @@ export default function HasatlinkPazariPage() {
                   className={`px-4 py-3 text-sm rounded-full transition-colors ${
                     categoryFilter === cat.value
                       ? 'bg-[#A47148] text-white'
-                      : 'bg-white border border-[#D6D0C8] text-[#6B6560] hover:bg-[#F5F3F0]'
+                      : 'bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'
                   }`}
                 >
                   {cat.label}
@@ -177,17 +183,17 @@ export default function HasatlinkPazariPage() {
           {loading ? (
             <LoadingSpinner size="lg" className="py-12" />
           ) : prices.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 shadow-sm text-center">
+            <div className="bg-[var(--bg-surface)] rounded-2xl p-12 shadow-sm text-center">
               <ShoppingBag size={48} className="text-[#D6D0C8] mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">{isTr ? 'Henüz pazar verisi yok' : 'No market data yet'}</h3>
-              <p className="text-[#6B6560] text-sm">
+              <p className="text-[var(--text-secondary)] text-sm">
                 {isTr ? 'Pazar kategorisinde ilanlar eklendikçe fiyat karşılaştırma verileri burada görünecek.' : 'Price comparison data will appear here as listings are added to the marketplace.'}
               </p>
             </div>
           ) : (
             <>
               {/* Table */}
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -261,14 +267,14 @@ export default function HasatlinkPazariPage() {
                     <button
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="p-2 rounded-full bg-white border border-[#D6D0C8] disabled:opacity-40 hover:bg-[#F5F3F0]"
+                      className="p-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-default)] disabled:opacity-40 hover:bg-[var(--bg-surface-hover)]"
                     >
                       <ChevronLeft size={16} />
                     </button>
                     <button
                       onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
-                      className="p-2 rounded-full bg-white border border-[#D6D0C8] disabled:opacity-40 hover:bg-[#F5F3F0]"
+                      className="p-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-default)] disabled:opacity-40 hover:bg-[var(--bg-surface-hover)]"
                     >
                       <ChevronRight size={16} />
                     </button>
@@ -288,7 +294,7 @@ export default function HasatlinkPazariPage() {
             <select
               value={selectedProduct}
               onChange={e => setSelectedProduct(e.target.value)}
-              className="px-4 py-3 bg-white border border-[#D6D0C8] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#A47148]/20 focus:border-[#A47148] min-w-[200px]"
+              className="px-4 py-3 bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#A47148]/20 focus:border-[#A47148] min-w-[200px]"
             >
               <option value="">{isTr ? 'Tümü (ortalama)' : 'All (average)'}</option>
               {productNames.map(name => (
@@ -303,7 +309,7 @@ export default function HasatlinkPazariPage() {
             <>
               <HasatlinkWeeklyChart data={weeklyData} product={selectedProduct || undefined} />
               {weeklySummary && (
-                <div className="mt-4 p-4 bg-white rounded-2xl shadow-sm text-sm text-[#6B6560]">
+                <div className="mt-4 p-4 bg-[var(--bg-surface)] rounded-2xl shadow-sm text-sm text-[var(--text-secondary)]">
                   {isTr ? 'Bu hafta en düşük:' : 'This week lowest:'} <span className="font-semibold text-[#2D6A4F]">{weeklySummary.min.toFixed(2)}₺</span>,
                   {isTr ? 'en yüksek:' : 'highest:'} <span className="font-semibold text-[#C1341B]">{weeklySummary.max.toFixed(2)}₺</span>
                 </div>
@@ -321,7 +327,7 @@ export default function HasatlinkPazariPage() {
             <select
               value={selectedProduct}
               onChange={e => setSelectedProduct(e.target.value)}
-              className="px-4 py-3 bg-white border border-[#D6D0C8] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#A47148]/20 focus:border-[#A47148] min-w-[200px]"
+              className="px-4 py-3 bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#A47148]/20 focus:border-[#A47148] min-w-[200px]"
             >
               <option value="">{isTr ? 'Tümü (ortalama)' : 'All (average)'}</option>
               {productNames.map(name => (

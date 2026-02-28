@@ -5,9 +5,11 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import SEO from '../components/ui/SEO';
 
 export default function AuthPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isTr = i18n.language?.startsWith('tr');
   const { login, register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
@@ -48,22 +50,26 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 animate-fade-in">
+      <SEO
+        title={isTr ? 'Giriş Yap' : 'Login'}
+        description={isTr ? 'HasatLink hesabınıza giriş yapın veya yeni hesap oluşturun.' : 'Login to your HasatLink account or create a new one.'}
+      />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-semibold tracking-tight mb-2">
-            <span className="text-[#1A1A1A]">HASAT</span>
+            <span className="text-[var(--text-primary)]">HASAT</span>
             <span className="text-[#2D6A4F]">LiNK</span>
           </h1>
           <p className="text-sm text-[#6B6560]">{t('appSlogan')}</p>
         </div>
 
-        <div className="bg-white rounded-[2.5rem] p-8 shadow-sm">
+        <div className="bg-[var(--bg-surface)] rounded-[2.5rem] p-8 shadow-sm">
           {/* Tab Switch */}
-          <div className="flex bg-[#F5F3EF] rounded-full p-1 mb-6">
+          <div className="flex bg-[var(--bg-input)] rounded-full p-1 mb-6">
             <button
               onClick={() => setIsLogin(true)}
               className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-wide rounded-full transition-all ${
-                isLogin ? 'bg-[#1A1A1A] text-white' : 'text-[#6B6560]'
+                isLogin ? 'bg-[var(--bg-invert)] text-[var(--text-on-invert)]' : 'text-[var(--text-secondary)]'
               }`}
             >
               {t('loginTitle')}
@@ -71,7 +77,7 @@ export default function AuthPage() {
             <button
               onClick={() => setIsLogin(false)}
               className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-wide rounded-full transition-all ${
-                !isLogin ? 'bg-[#1A1A1A] text-white' : 'text-[#6B6560]'
+                !isLogin ? 'bg-[var(--bg-invert)] text-[var(--text-on-invert)]' : 'text-[var(--text-secondary)]'
               }`}
             >
               {t('registerTitle')}
@@ -82,7 +88,7 @@ export default function AuthPage() {
           <button
             onClick={handleGoogleLogin}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-[#D6D0C8] rounded-2xl text-sm font-semibold text-[#1A1A1A] hover:bg-[#F5F3EF] transition-all disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] transition-all disabled:opacity-50"
           >
             <svg width="18" height="18" viewBox="0 0 18 18">
               <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -95,9 +101,9 @@ export default function AuthPage() {
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-2">
-            <div className="flex-1 h-px bg-[#D6D0C8]"></div>
-            <span className="text-xs text-[#6B6560] font-medium">{t('orDivider')}</span>
-            <div className="flex-1 h-px bg-[#D6D0C8]"></div>
+            <div className="flex-1 h-px bg-[var(--border-default)]"></div>
+            <span className="text-xs text-[var(--text-secondary)] font-medium">{t('orDivider')}</span>
+            <div className="flex-1 h-px bg-[var(--border-default)]"></div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

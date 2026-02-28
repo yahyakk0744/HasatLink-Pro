@@ -22,8 +22,8 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
   }, [onClose]);
 
   return (
-    <div ref={ref} className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-[#D6D0C8]/50 overflow-hidden animate-fade-in z-50">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#D6D0C8]/50">
+    <div ref={ref} className="absolute right-0 top-12 w-80 bg-[var(--bg-surface)] rounded-2xl shadow-2xl border border-[var(--border-subtle)] overflow-hidden animate-fade-in z-50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-subtle)]">
         <h3 className="text-sm font-semibold tracking-tight">{t('notifications.title')}</h3>
         <button onClick={() => markAllAsRead()} className="text-[10px] font-medium text-[#2D6A4F] uppercase">
           {t('notifications.markAllRead')}
@@ -41,7 +41,7 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
       <Link
         to="/bildirimler"
         onClick={onClose}
-        className="block text-center text-xs font-medium text-[#2D6A4F] uppercase py-3 border-t border-[#D6D0C8]/50 hover:bg-[#F5F3EF]"
+        className="block text-center text-xs font-medium text-[#2D6A4F] uppercase py-3 border-t border-[var(--border-subtle)] hover:bg-[var(--bg-surface-hover)]"
       >
         {t('notifications.title')} &rarr;
       </Link>

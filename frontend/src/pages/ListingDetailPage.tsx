@@ -11,6 +11,7 @@ import api from '../config/api';
 import ListingDetailView from '../components/listings/ListingDetailView';
 import ListingForm from '../components/listings/ListingForm';
 import ListingMap from '../components/map/ListingMap';
+import SEO from '../components/ui/SEO';
 import ReviewCard from '../components/ratings/ReviewCard';
 import ReviewForm from '../components/ratings/ReviewForm';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
@@ -113,7 +114,13 @@ export default function ListingDetailPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 animate-fade-in">
-      <Link to={`/${listing.type}`} className="flex items-center gap-2 text-sm text-[#6B6560] hover:text-[#1A1A1A] mb-4 transition-colors">
+      <SEO
+        title={listing.title}
+        description={listing.description?.slice(0, 160)}
+        ogImage={listing.images?.[0]}
+        keywords={`${listing.type}, ${listing.subCategory}, tarım, ilan`}
+      />
+      <Link to={`/${listing.type}`} className="flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-4 transition-colors">
         <ArrowLeft size={16} />
         {t('back')}
       </Link>
@@ -133,7 +140,7 @@ export default function ListingDetailPage() {
 
         <div className="space-y-6">
           {/* Mini Map */}
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm h-[200px]">
+          <div className="bg-[var(--bg-surface)] rounded-2xl overflow-hidden shadow-sm h-[200px]">
             <ListingMap
               listings={[listing]}
               center={[listing.coordinates.lat, listing.coordinates.lng]}
@@ -172,13 +179,13 @@ export default function ListingDetailPage() {
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowDeleteConfirm(false)}>
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--bg-surface)] rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-semibold">{t('listing.deleteConfirmTitle')}</h3>
-            <p className="text-sm text-[#6B6560]">{t('listing.deleteConfirmMessage')}</p>
+            <p className="text-sm text-[var(--text-secondary)]">{t('listing.deleteConfirmMessage')}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2.5 text-sm font-medium bg-[#F5F3EF] rounded-xl hover:bg-[#EBE7E0] transition-colors"
+                className="flex-1 px-4 py-2.5 text-sm font-medium bg-[var(--bg-input)] rounded-xl hover:bg-[var(--bg-surface-hover)] transition-colors"
               >
                 {t('cancel')}
               </button>

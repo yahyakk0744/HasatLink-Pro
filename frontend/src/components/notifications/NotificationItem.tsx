@@ -33,8 +33,8 @@ export default function NotificationItem({ notification, onClick }: Notification
     <button
       onClick={onClick}
       className={`w-full text-left flex items-start gap-3 p-3 rounded-2xl transition-colors ${
-        notification.isRead ? 'opacity-60' : 'bg-[#F5F3EF]'
-      } hover:bg-[#EBE7E0]`}
+        notification.isRead ? 'opacity-60' : 'bg-[var(--bg-input)]'
+      } hover:bg-[var(--bg-surface-hover)]`}
     >
       <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}15` }}>
         <Icon size={16} style={{ color }} />

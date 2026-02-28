@@ -15,6 +15,7 @@ import ReviewForm from '../components/ratings/ReviewForm';
 import WeatherWidget from '../components/ui/WeatherWidget';
 import { useRatings } from '../hooks/useRatings';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import SEO from '../components/ui/SEO';
 import type { User } from '../types';
 import toast from 'react-hot-toast';
 
@@ -82,6 +83,10 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 animate-fade-in">
+      <SEO
+        title={displayUser.name || t('profile')}
+        description={`${displayUser.name} - HasatLink profili`}
+      />
       <ProfileCard
         user={displayUser as User}
         isOwn={isOwn}
@@ -110,12 +115,12 @@ export default function ProfilePage() {
 
         {/* Rating Distribution */}
         {ratings.length > 0 && (
-          <div className="bg-white rounded-2xl p-4 shadow-sm space-y-2">
+          <div className="bg-[var(--bg-surface)] rounded-2xl p-4 shadow-sm space-y-2">
             {ratingDistribution.map(({ star, count }) => (
               <div key={star} className="flex items-center gap-2">
                 <span className="text-xs font-semibold w-4 text-right">{star}</span>
                 <Star size={12} className="text-[#A47148] fill-[#A47148]" />
-                <div className="flex-1 h-2 bg-[#F5F3EF] rounded-full overflow-hidden">
+                <div className="flex-1 h-2 bg-[var(--bg-input)] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-[#A47148] rounded-full transition-all"
                     style={{ width: `${(count / maxCount) * 100}%` }}

@@ -32,7 +32,7 @@ function SelectButtons({ options, value, onChange, color = '#2D6A4F' }: { option
           type="button"
           onClick={() => onChange(opt)}
           className="px-3 py-1.5 text-[10px] font-medium uppercase rounded-full transition-all active:scale-95"
-          style={value === opt ? { background: color, color: '#fff' } : { background: '#F5F3EF', color: '#6B6560' }}
+          style={value === opt ? { background: color, color: '#fff' } : { background: 'var(--bg-input)', color: 'var(--text-secondary)' }}
         >
           {opt}
         </button>
@@ -63,7 +63,7 @@ function MultiSelectButtons({ options, values, onChange, color = '#2D6A4F' }: { 
           type="button"
           onClick={() => toggle(opt)}
           className="px-3 py-1.5 text-[10px] font-medium uppercase rounded-full transition-all"
-          style={values.includes(opt) ? { background: color, color: '#fff' } : { background: '#F5F3EF', color: '#6B6560' }}
+          style={values.includes(opt) ? { background: color, color: '#fff' } : { background: 'var(--bg-input)', color: 'var(--text-secondary)' }}
         >
           {opt}
         </button>
@@ -75,9 +75,9 @@ function MultiSelectButtons({ options, values, onChange, color = '#2D6A4F' }: { 
 function SectionTitle({ children }: { children: string }) {
   return (
     <div className="flex items-center gap-2 pt-3 pb-1">
-      <div className="h-px flex-1 bg-[#EBE7E0]" />
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6560]">{children}</span>
-      <div className="h-px flex-1 bg-[#EBE7E0]" />
+      <div className="h-px flex-1 bg-[var(--divider)]" />
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-secondary)]">{children}</span>
+      <div className="h-px flex-1 bg-[var(--divider)]" />
     </div>
   );
 }
@@ -250,7 +250,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                 type="button"
                 onClick={() => { setType(key as typeof type); setSubCategory(''); }}
                 className={`px-4 py-2 text-xs font-semibold uppercase rounded-full transition-all ${
-                  type === key ? 'bg-[#1A1A1A] text-white' : 'bg-[#F5F3EF] text-[#6B6560]'
+                  type === key ? 'bg-[var(--bg-invert)] text-[var(--text-on-invert)]' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
                 }`}
               >
                 {cat.icon} {cat.tr}
@@ -271,7 +271,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                 className={`flex-1 px-4 py-2.5 text-xs font-semibold uppercase rounded-full transition-all ${
                   listingMode === mode
                     ? mode === 'sell' ? 'bg-[#2D6A4F] text-white' : 'bg-[#0077B6] text-white'
-                    : 'bg-[#F5F3EF] text-[#6B6560]'
+                    : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
                 }`}
               >
                 {LISTING_MODE_LABELS[type]?.[mode]?.[lang] || (mode === 'sell' ? t('listing.modeSell') : t('listing.modeBuy'))}
@@ -290,7 +290,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                 type="button"
                 onClick={() => setSubCategory(cat)}
                 className={`px-3 py-1.5 text-[10px] font-medium uppercase rounded-full transition-all ${
-                  subCategory === cat ? 'bg-[#2D6A4F] text-white' : 'bg-[#F5F3EF] text-[#6B6560]'
+                  subCategory === cat ? 'bg-[#2D6A4F] text-white' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
                 }`}
               >
                 {cat}
@@ -307,7 +307,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
             value={description}
             onChange={e => setDescription(e.target.value)}
             rows={3}
-            className="w-full px-4 py-3 bg-[#F5F3EF] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
+            className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
           />
         </div>
 
@@ -565,8 +565,8 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                 </button>
               </div>
             ))}
-            <label className="w-20 h-20 border-2 border-dashed border-[#D6D0C8] rounded-xl flex items-center justify-center cursor-pointer hover:border-[#2D6A4F] transition-colors">
-              <ImagePlus size={20} className="text-[#6B6560]" />
+            <label className="w-20 h-20 border-2 border-dashed border-[var(--border-default)] rounded-xl flex items-center justify-center cursor-pointer hover:border-[#2D6A4F] transition-colors">
+              <ImagePlus size={20} className="text-[var(--text-secondary)]" />
               <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
             </label>
           </div>

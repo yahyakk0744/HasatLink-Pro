@@ -1,0 +1,19 @@
+{
+  "name": "HasatLink - Tarım Pazarı",
+  "short_name": "HasatLink",
+  "description": "Çiftçiler ve alıcılar için tarım pazarı platformu",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAFAF8",
+  "theme_color": "#2D6A4F",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "shopping"]
+}

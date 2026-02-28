@@ -21,10 +21,10 @@ export default function ConversationList({
   if (conversations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-        <div className="w-16 h-16 rounded-full bg-[#F5F3EF] flex items-center justify-center mb-4">
-          <MessageSquare size={24} className="text-[#6B6560]" />
+        <div className="w-16 h-16 rounded-full bg-[var(--bg-input)] flex items-center justify-center mb-4">
+          <MessageSquare size={24} className="text-[var(--text-secondary)]" />
         </div>
-        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">{t('messages.empty')}</h3>
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">{t('messages.empty')}</h3>
         <p className="text-xs text-[#6B6560]">{t('messages.emptyDescription')}</p>
       </div>
     );

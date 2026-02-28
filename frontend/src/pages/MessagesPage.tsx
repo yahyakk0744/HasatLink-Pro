@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MessageSquare } from 'lucide-react';
+import SEO from '../components/ui/SEO';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -54,7 +55,8 @@ export default function MessagesPage() {
 
   return (
     <div className="max-w-5xl mx-auto animate-fade-in">
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm md:my-6" style={{ height: 'calc(100vh - 140px)' }}>
+      <SEO title={t('messages.title')} description="HasatLink mesajlarınız." />
+      <div className="bg-[var(--bg-surface)] rounded-2xl overflow-hidden shadow-sm md:my-6" style={{ height: 'calc(100vh - 140px)' }}>
         <div className="flex h-full">
           {/* Conversation List — hidden on mobile when chat is active */}
           <div
@@ -92,11 +94,11 @@ export default function MessagesPage() {
               />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
-                <div className="w-20 h-20 rounded-full bg-[#F5F3EF] flex items-center justify-center mb-4">
-                  <MessageSquare size={32} className="text-[#6B6560]" />
+                <div className="w-20 h-20 rounded-full bg-[var(--bg-input)] flex items-center justify-center mb-4">
+                  <MessageSquare size={32} className="text-[var(--text-secondary)]" />
                 </div>
-                <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">{t('messages.empty')}</h3>
-                <p className="text-xs text-[#6B6560]">{t('messages.emptyDescription')}</p>
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">{t('messages.empty')}</h3>
+                <p className="text-xs text-[var(--text-secondary)]">{t('messages.emptyDescription')}</p>
               </div>
             )}
           </div>

@@ -18,7 +18,7 @@ export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         className={`max-w-[75%] px-4 py-2.5 ${
           isOwn
             ? 'bg-[#2D6A4F] text-white rounded-2xl rounded-br-md'
-            : 'bg-[#F5F3EF] text-[#1A1A1A] rounded-2xl rounded-bl-md'
+            : 'bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl rounded-bl-md'
         }`}
       >
         <p className="text-sm leading-relaxed break-words">{message.text}</p>

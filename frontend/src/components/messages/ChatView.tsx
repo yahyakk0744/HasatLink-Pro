@@ -47,9 +47,9 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F5F3EF] bg-white">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--bg-input)] bg-[var(--bg-surface)]">
         {onBack && (
-          <button onClick={onBack} className="p-1 hover:bg-[#F5F3EF] rounded-full transition-colors">
+          <button onClick={onBack} className="p-1 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors">
             <ArrowLeft size={20} />
           </button>
         )}
@@ -63,7 +63,7 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-[#1A1A1A] truncate">{otherName}</h3>
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate">{otherName}</h3>
           <Link
             to={`/ilan/${conversation.listingId}`}
             className="text-[10px] text-[#2D6A4F] font-medium hover:underline truncate block"

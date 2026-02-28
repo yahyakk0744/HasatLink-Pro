@@ -13,11 +13,62 @@
   --color-apple-blue: #0077B6;
 }
 
+/* === Semantic Theme Variables === */
+:root {
+  --bg-page: #FAFAF8;
+  --bg-surface: #FFFFFF;
+  --bg-surface-hover: #F5F3EF;
+  --bg-input: #F5F3EF;
+  --bg-invert: #1A1A1A;
+  --text-primary: #1A1A1A;
+  --text-secondary: #6B6560;
+  --text-on-invert: #FFFFFF;
+  --border-default: #D6D0C8;
+  --border-subtle: rgba(214, 208, 200, 0.5);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-surface: rgba(255, 255, 255, 0.9);
+  --skeleton-from: #F5F3EF;
+  --skeleton-via: #EBE7E0;
+  --shadow-card: rgba(45, 106, 79, 0.15);
+  --scrollbar-thumb: #D6D0C8;
+  --divider: #EBE7E0;
+  --focus-bg: #FFFFFF;
+}
+
+html.dark {
+  --bg-page: #0F0F0F;
+  --bg-surface: #1A1A1A;
+  --bg-surface-hover: #252525;
+  --bg-input: #252525;
+  --bg-invert: #F5F3EF;
+  --text-primary: #E8E4DF;
+  --text-secondary: #9B9590;
+  --text-on-invert: #1A1A1A;
+  --border-default: #333330;
+  --border-subtle: rgba(51, 51, 48, 0.5);
+  --glass-bg: rgba(15, 15, 15, 0.8);
+  --glass-surface: rgba(26, 26, 26, 0.9);
+  --skeleton-from: #252525;
+  --skeleton-via: #333330;
+  --shadow-card: rgba(0, 0, 0, 0.3);
+  --scrollbar-thumb: #333330;
+  --divider: #333330;
+  --focus-bg: #252525;
+}
+
+/* Theme transition */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease, box-shadow 300ms ease !important;
+}
+
 /* Custom base styles */
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-  background-color: #FAFAF8;
-  color: #1A1A1A;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -29,7 +80,7 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D6D0C8;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
@@ -37,6 +88,12 @@ body {
 .leaflet-container {
   z-index: 1;
   border-radius: 1.25rem;
+}
+html.dark .leaflet-container {
+  filter: brightness(0.85) contrast(1.1) saturate(0.8);
+}
+html.dark .leaflet-tile {
+  filter: invert(1) hue-rotate(180deg) brightness(1.1) contrast(0.9);
 }
 
 /* Animation utilities */
@@ -66,7 +123,7 @@ body {
 
 /* Glass effect */
 .glass {
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
@@ -90,7 +147,7 @@ html {
   100% { background-position: 200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, #F5F3EF 25%, #EBE7E0 37%, #F5F3EF 63%);
+  background: linear-gradient(90deg, var(--skeleton-from) 25%, var(--skeleton-via) 37%, var(--skeleton-from) 63%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 1rem;
@@ -166,5 +223,5 @@ html {
   transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 .card-hover-shadow:hover {
-  box-shadow: 0 20px 40px -12px rgba(45, 106, 79, 0.15);
+  box-shadow: 0 20px 40px -12px var(--shadow-card);
 }

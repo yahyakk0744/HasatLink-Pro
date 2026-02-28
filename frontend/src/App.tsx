@@ -5,6 +5,7 @@ import CategoryNav from './components/layout/CategoryNav';
 import MobileBottomNav from './components/layout/MobileBottomNav';
 import Footer from './components/layout/Footer';
 import ScrollToTop from './components/ui/ScrollToTop';
+import CookieConsent from './components/ui/CookieConsent';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import ListingsPage from './pages/ListingsPage';
@@ -17,18 +18,23 @@ import NotFoundPage from './pages/NotFoundPage';
 import HalFiyatlariPage from './pages/HalFiyatlariPage';
 import HasatlinkPazariPage from './pages/HasatlinkPazariPage';
 import MessagesPage from './pages/MessagesPage';
+import ContactPage from './pages/ContactPage';
+import AdminContactsPage from './pages/AdminContactsPage';
+import AdminSettingsPage from './pages/AdminSettingsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
+import { trackPageView } from './utils/analytics';
 
 export default function App() {
   const { pathname } = useLocation();
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    trackPageView(pathname);
   }, [pathname]);
 
   return (
-    <div className="min-h-screen" style={{ background: '#FAFAF8' }}>
+    <div className="min-h-screen" style={{ background: 'var(--bg-page)' }}>
       <Header />
       <CategoryNav />
 
@@ -52,6 +58,9 @@ export default function App() {
           <Route path="/hasatlink-pazari" element={<HasatlinkPazariPage />} />
           <Route path="/mesajlar" element={<MessagesPage />} />
           <Route path="/mesajlar/:conversationId" element={<MessagesPage />} />
+          <Route path="/iletisim" element={<ContactPage />} />
+          <Route path="/admin/mesajlar" element={<AdminContactsPage />} />
+          <Route path="/admin/ayarlar" element={<AdminSettingsPage />} />
           <Route path="/gizlilik" element={<PrivacyPage />} />
           <Route path="/kullanim-sartlari" element={<TermsPage />} />
           <Route path="*" element={<NotFoundPage />} />
@@ -61,6 +70,7 @@ export default function App() {
       <Footer />
       <MobileBottomNav />
       <ScrollToTop />
+      <CookieConsent />
     </div>
   );
 }

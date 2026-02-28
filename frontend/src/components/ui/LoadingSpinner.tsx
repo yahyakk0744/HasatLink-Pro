@@ -12,7 +12,7 @@ const sizeClasses = {
 export default function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerProps) {
   return (
     <div className={`flex items-center justify-center ${className}`}>
-      <div className={`${sizeClasses[size]} border-[#D6D0C8] border-t-[#2D6A4F] rounded-full animate-spin`} />
+      <div className={`${sizeClasses[size]} border-[var(--border-default)] border-t-[#2D6A4F] rounded-full animate-spin`} />
     </div>
   );
 }

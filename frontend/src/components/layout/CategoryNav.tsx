@@ -7,7 +7,7 @@ export default function CategoryNav() {
   const categories = Object.entries(CATEGORY_LABELS);
 
   return (
-    <nav className="bg-white border-b border-[#D6D0C8]/50">
+    <nav className="bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide">
           {categories.map(([key, cat]) => (
@@ -17,8 +17,8 @@ export default function CategoryNav() {
               className={({ isActive }) =>
                 `flex items-center gap-1.5 px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-full whitespace-nowrap transition-all ${
                   isActive
-                    ? 'bg-[#1A1A1A] text-white'
-                    : 'text-[#6B6560] hover:bg-[#F5F3EF]'
+                    ? 'bg-[var(--bg-invert)] text-[var(--text-on-invert)]'
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'
                 }`
               }
             >

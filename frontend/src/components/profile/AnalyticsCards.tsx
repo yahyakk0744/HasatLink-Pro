@@ -19,7 +19,7 @@ export default function AnalyticsCards({ stats }: AnalyticsCardsProps) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       {cards.map(card => (
-        <div key={card.label} className="bg-white rounded-2xl p-4 shadow-sm">
+        <div key={card.label} className="bg-[var(--bg-surface)] rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <card.icon size={16} style={{ color: card.color }} />
             <span className="text-[10px] font-medium uppercase tracking-wider text-[#6B6560]">{card.label}</span>

@@ -10,6 +10,7 @@ export interface IUser extends Document {
   phone: string;
   isVerified: boolean;
   language: string;
+  role: string;
   averageRating: number;
   totalRatings: number;
   bio: string;
@@ -28,6 +29,7 @@ const UserSchema = new Schema<IUser>({
   phone: { type: String, default: '' },
   isVerified: { type: Boolean, default: false },
   language: { type: String, default: 'tr', enum: ['tr', 'en'] },
+  role: { type: String, default: 'user', enum: ['user', 'admin'] },
   averageRating: { type: Number, default: 0 },
   totalRatings: { type: Number, default: 0 },
   bio: { type: String, default: '' },

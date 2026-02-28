@@ -6,7 +6,7 @@ import { PackageOpen } from 'lucide-react';
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm">
+    <div className="bg-[var(--bg-surface)] rounded-[2rem] overflow-hidden shadow-sm">
       <div className="aspect-[4/3] skeleton" />
       <div className="p-4 space-y-3">
         <div className="flex justify-between">

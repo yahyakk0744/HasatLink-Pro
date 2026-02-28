@@ -44,7 +44,7 @@ export default function ProfileEditForm({ isOpen, onClose, user, onSubmit }: Pro
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex justify-center">
           <label className="relative cursor-pointer">
-            <div className="w-24 h-24 rounded-full bg-[#F5F3EF] overflow-hidden">
+            <div className="w-24 h-24 rounded-full bg-[var(--bg-input)] overflow-hidden">
               {profileImage ? (
                 <img src={profileImage} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -72,7 +72,7 @@ export default function ProfileEditForm({ isOpen, onClose, user, onSubmit }: Pro
             placeholder={t('profile.bioPlaceholder')}
             rows={3}
             maxLength={300}
-            className="w-full px-4 py-3 bg-[#F5F3EF] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
+            className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
           />
           <p className="text-[10px] text-[#6B6560] text-right mt-1">{bio.length}/300</p>
         </div>

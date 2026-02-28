@@ -3,11 +3,15 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import App from './App.tsx'
+import { ThemeProvider } from './contexts/ThemeContext.tsx'
 import { AuthProvider } from './contexts/AuthContext.tsx'
 import { NotificationProvider } from './contexts/NotificationContext.tsx'
 import { MessageProvider } from './contexts/MessageContext.tsx'
 import './index.css'
 import './i18n/config'
+import { initGA } from './utils/analytics'
+
+initGA();
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   state = { hasError: false };
@@ -28,30 +32,39 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 
+// Service Worker registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <BrowserRouter>
-        <AuthProvider>
-          <NotificationProvider>
-            <MessageProvider>
-              <App />
-            </MessageProvider>
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 3000,
-                style: {
-                  borderRadius: '1rem',
-                  background: '#1A1A1A',
-                  color: '#fff',
-                  fontSize: '14px',
-                },
-              }}
-            />
-          </NotificationProvider>
-        </AuthProvider>
-      </BrowserRouter>
+      <ThemeProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <NotificationProvider>
+              <MessageProvider>
+                <App />
+              </MessageProvider>
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 3000,
+                  style: {
+                    borderRadius: '1rem',
+                    background: 'var(--bg-invert)',
+                    color: 'var(--text-on-invert)',
+                    fontSize: '14px',
+                  },
+                }}
+              />
+            </NotificationProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
     </ErrorBoundary>
   </React.StrictMode>,
 )

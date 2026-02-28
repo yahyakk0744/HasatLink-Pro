@@ -4,6 +4,7 @@ import { Search, TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'luc
 import { useHalPrices } from '../hooks/useHalPrices';
 import WeeklyChart from '../components/hal/WeeklyChart';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import SEO from '../components/ui/SEO';
 import type { HalPrice } from '../types';
 
 type SortKey = 'name' | 'price' | 'change' | 'minPrice' | 'maxPrice';
@@ -109,8 +110,13 @@ export default function HalFiyatlariPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in">
+      <SEO
+        title={isTr ? 'Hal Fiyatları' : 'Market Hall Prices'}
+        description={isTr ? 'İzmir Büyükşehir Belediyesi hal fiyatları. Güncel sebze meyve fiyatlarını takip edin.' : 'Izmir Metropolitan Municipality market hall prices.'}
+        keywords={isTr ? 'hal fiyatları, sebze, meyve, İzmir, piyasa' : 'market prices, vegetables, fruits, Izmir'}
+      />
       <h1 className="text-3xl font-semibold tracking-tight mb-2">{isTr ? 'Hal Fiyatları' : 'Market Hall Prices'}</h1>
-      <p className="text-[#6B6560] mb-6">{isTr ? 'İzmir Büyükşehir Belediyesi hal verileri' : 'Izmir Metropolitan Municipality market data'}</p>
+      <p className="text-[var(--text-secondary)] mb-6">{isTr ? 'İzmir Büyükşehir Belediyesi hal verileri' : 'Izmir Metropolitan Municipality market data'}</p>
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-8">
@@ -121,7 +127,7 @@ export default function HalFiyatlariPage() {
             className={`px-5 py-2.5 text-sm font-medium rounded-full transition-colors ${
               activeTab === tab.id
                 ? 'bg-[#2D6A4F] text-white'
-                : 'bg-white border border-[#D6D0C8] text-[#6B6560] hover:bg-[#F5F3F0]'
+                : 'bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'
             }`}
           >
             {tab.label}
@@ -147,7 +153,7 @@ export default function HalFiyatlariPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder={isTr ? 'Ürün ara...' : 'Search product...'}
-                className="w-full pl-11 pr-4 py-3 bg-white border border-[#D6D0C8] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F]"
+                className="w-full pl-11 pr-4 py-3 bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F]"
               />
             </div>
             <div className="flex gap-2">
@@ -158,7 +164,7 @@ export default function HalFiyatlariPage() {
                   className={`px-4 py-3 text-sm rounded-full transition-colors ${
                     categoryFilter === cat.value
                       ? 'bg-[#2D6A4F] text-white'
-                      : 'bg-white border border-[#D6D0C8] text-[#6B6560] hover:bg-[#F5F3F0]'
+                      : 'bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'
                   }`}
                 >
                   {cat.label}
@@ -172,7 +178,7 @@ export default function HalFiyatlariPage() {
           ) : (
             <>
               {/* Table */}
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -243,14 +249,14 @@ export default function HalFiyatlariPage() {
                     <button
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="p-2 rounded-full bg-white border border-[#D6D0C8] disabled:opacity-40 hover:bg-[#F5F3F0]"
+                      className="p-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-default)] disabled:opacity-40 hover:bg-[var(--bg-surface-hover)]"
                     >
                       <ChevronLeft size={16} />
                     </button>
                     <button
                       onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
-                      className="p-2 rounded-full bg-white border border-[#D6D0C8] disabled:opacity-40 hover:bg-[#F5F3F0]"
+                      className="p-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-default)] disabled:opacity-40 hover:bg-[var(--bg-surface-hover)]"
                     >
                       <ChevronRight size={16} />
                     </button>
@@ -270,7 +276,7 @@ export default function HalFiyatlariPage() {
             <select
               value={weeklyProduct}
               onChange={e => setWeeklyProduct(e.target.value)}
-              className="px-4 py-3 bg-white border border-[#D6D0C8] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] min-w-[200px]"
+              className="px-4 py-3 bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] min-w-[200px]"
             >
               <option value="">{isTr ? 'Tümü (ortalama)' : 'All (average)'}</option>
               {productNames.map(name => (
@@ -285,7 +291,7 @@ export default function HalFiyatlariPage() {
             <>
               <WeeklyChart data={weeklyData} product={weeklyProduct || undefined} />
               {weeklySummary && (
-                <div className="mt-4 p-4 bg-white rounded-2xl shadow-sm text-sm text-[#6B6560]">
+                <div className="mt-4 p-4 bg-[var(--bg-surface)] rounded-2xl shadow-sm text-sm text-[var(--text-secondary)]">
                   {isTr ? 'Bu hafta en düşük:' : 'This week lowest:'} <span className="font-semibold text-[#2D6A4F]">{weeklySummary.min.toFixed(2)}₺</span>,
                   {isTr ? 'en yüksek:' : 'highest:'} <span className="font-semibold text-[#C1341B]">{weeklySummary.max.toFixed(2)}₺</span>
                 </div>

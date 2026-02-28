@@ -9,6 +9,7 @@ import SubCategoryBar from '../components/layout/SubCategoryBar';
 import ListingForm from '../components/listings/ListingForm';
 import FAB from '../components/ui/FAB';
 import { CATEGORIES, CATEGORY_LABELS, LISTING_MODE_LABELS } from '../utils/constants';
+import SEO from '../components/ui/SEO';
 import type { Listing } from '../types';
 import toast from 'react-hot-toast';
 
@@ -54,6 +55,11 @@ export default function ListingsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-4 animate-fade-in">
+      <SEO
+        title={t(`categories.${type}`)}
+        description={`HasatLink ${t(`categories.${type}`)} ilanları. En güncel tarım ilanlarını keşfedin.`}
+        keywords={`${type}, tarım, ilan, hasatlink`}
+      />
       <div className="flex items-center gap-3 mb-2">
         <span className="text-2xl">{catLabel?.icon}</span>
         <h1 className="text-2xl font-semibold tracking-tight">{t(`categories.${type}`)}</h1>
@@ -72,7 +78,7 @@ export default function ListingsPage() {
               className={`px-4 py-1.5 text-[10px] font-medium uppercase tracking-wider rounded-full transition-all ${
                 listingMode === mode
                   ? mode === 'buy' ? 'bg-[#0077B6] text-white' : 'bg-[#2D6A4F] text-white'
-                  : 'bg-[#F5F3EF] text-[#6B6560] hover:bg-[#EBE7E0]'
+                  : 'bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'
               }`}
             >
               {label}

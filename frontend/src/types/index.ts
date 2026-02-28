@@ -8,6 +8,7 @@ export interface User {
   phone: string;
   isVerified: boolean;
   language: string;
+  role: string;
   averageRating: number;
   totalRatings: number;
   bio: string;

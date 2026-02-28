@@ -20,14 +20,14 @@ export default function MessageInput({ onSend, disabled }: MessageInputProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3 border-t border-[#F5F3EF]">
+    <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3 border-t border-[var(--bg-input)]">
       <input
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={t('messages.typeMessage')}
         disabled={disabled}
-        className="flex-1 px-4 py-2.5 bg-[#F5F3EF] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]"
+        className="flex-1 px-4 py-2.5 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]"
       />
       <button
         type="submit"

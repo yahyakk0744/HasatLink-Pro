@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useListings } from '../hooks/useListings';
 import ListingMap from '../components/map/ListingMap';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import SEO from '../components/ui/SEO';
 
 export default function MapPage() {
   const { t } = useTranslation();
@@ -14,6 +15,11 @@ export default function MapPage() {
 
   return (
     <div className="animate-fade-in">
+      <SEO
+        title={t('map.title')}
+        description="HasatLink harita üzerinde tüm tarım ilanlarını görüntüleyin."
+        keywords="harita, tarım, ilan, konum"
+      />
       <div className="max-w-7xl mx-auto px-4 py-4">
         <h1 className="text-2xl font-semibold tracking-tight mb-4">{t('map.allListings')}</h1>
       </div>

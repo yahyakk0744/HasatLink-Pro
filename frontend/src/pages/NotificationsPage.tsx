@@ -5,6 +5,7 @@ import { useNotificationContext } from '../contexts/NotificationContext';
 import NotificationItem from '../components/notifications/NotificationItem';
 import EmptyState from '../components/ui/EmptyState';
 import Button from '../components/ui/Button';
+import SEO from '../components/ui/SEO';
 import { Bell } from 'lucide-react';
 
 export default function NotificationsPage() {
@@ -16,6 +17,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 animate-fade-in">
+      <SEO title={t('notifications.title')} description="Bildirimlerinizi görüntüleyin." />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">{t('notifications.title')}</h1>
         {notifications.length > 0 && (

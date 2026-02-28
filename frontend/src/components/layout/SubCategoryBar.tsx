@@ -18,7 +18,7 @@ export default function SubCategoryBar({ categories, active, onChange }: SubCate
           className={`px-4 py-1.5 text-[10px] font-medium uppercase tracking-wider rounded-full whitespace-nowrap transition-all active:scale-95 ${
             active === cat
               ? 'bg-[#2D6A4F] text-white scale-105'
-              : 'bg-[#F5F3EF] text-[#6B6560] hover:bg-[#EBE7E0]'
+              : 'bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'
           }`}
         >
           {cat === 'HEPSİ' ? t('all') : cat}

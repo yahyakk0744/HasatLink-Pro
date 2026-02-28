@@ -32,8 +32,8 @@ export default function ConversationItem({ conversation, currentUid, isActive, o
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[#F5F3EF] transition-colors text-left ${
-        isActive ? 'bg-[#F5F3EF]' : ''
+      className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-surface-hover)] transition-colors text-left ${
+        isActive ? 'bg-[var(--bg-input)]' : ''
       }`}
     >
       {/* Avatar */}
@@ -50,7 +50,7 @@ export default function ConversationItem({ conversation, currentUid, isActive, o
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-[#1A1A1A] truncate">{name}</h4>
+          <h4 className="text-sm font-semibold text-[var(--text-primary)] truncate">{name}</h4>
           <span className="text-[10px] text-[#6B6560] shrink-0 ml-2">
             {formatRelativeTime(conversation.lastMessageAt, t)}
           </span>
