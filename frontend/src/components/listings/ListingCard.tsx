@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Zap, Shield, Clock3 } from 'lucide-react';
+import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Zap, Shield, Clock3, ArrowRight } from 'lucide-react';
 import type { Listing } from '../../types';
 import { formatPrice, timeAgo } from '../../utils/formatters';
 import Badge from '../ui/Badge';
@@ -14,6 +15,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const statusInfo = STATUS_LABELS[listing.status] || STATUS_LABELS.active;
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const getCategoryIcon = () => {
     switch (listing.type) {
@@ -29,20 +31,28 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
   return (
     <Link to={`/ilan/${listing._id}`} className="group">
-      <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+      <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm card-hover-shadow hover:-translate-y-1 transition-all duration-300">
         {/* Image */}
         <div className="relative aspect-[4/3] bg-[#F5F3EF] overflow-hidden">
           {listing.images?.[0] ? (
             <img
               src={listing.images[0]}
               alt={listing.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+              onLoad={() => setImgLoaded(true)}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${imgLoaded ? '' : 'img-lazy'}`}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-4xl">
               {getCategoryIcon()}
             </div>
           )}
+          {/* Hover gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {/* Hover arrow */}
+          <div className="absolute bottom-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+            <ArrowRight size={14} className="text-[#2D6A4F]" />
+          </div>
           <div className="absolute top-3 left-3 flex gap-1">
             <Badge color={statusInfo.color}>{lang === 'tr' ? statusInfo.tr : statusInfo.en}</Badge>
             {listing.listingMode === 'buy' && (

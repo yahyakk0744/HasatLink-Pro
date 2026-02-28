@@ -31,7 +31,7 @@ function SelectButtons({ options, value, onChange, color = '#2D6A4F' }: { option
           key={opt}
           type="button"
           onClick={() => onChange(opt)}
-          className="px-3 py-1.5 text-[10px] font-medium uppercase rounded-full transition-all"
+          className="px-3 py-1.5 text-[10px] font-medium uppercase rounded-full transition-all active:scale-95"
           style={value === opt ? { background: color, color: '#fff' } : { background: '#F5F3EF', color: '#6B6560' }}
         >
           {opt}

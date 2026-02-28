@@ -1,8 +1,10 @@
-import { Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/layout/Header';
 import CategoryNav from './components/layout/CategoryNav';
 import MobileBottomNav from './components/layout/MobileBottomNav';
 import Footer from './components/layout/Footer';
+import ScrollToTop from './components/ui/ScrollToTop';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import ListingsPage from './pages/ListingsPage';
@@ -17,6 +19,12 @@ import HasatlinkPazariPage from './pages/HasatlinkPazariPage';
 import MessagesPage from './pages/MessagesPage';
 
 export default function App() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
   return (
     <div className="min-h-screen" style={{ background: '#FAFAF8' }}>
       <Header />
@@ -48,6 +56,7 @@ export default function App() {
 
       <Footer />
       <MobileBottomNav />
+      <ScrollToTop />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, MapPin, TrendingUp, TrendingDown, Droplets, Wind, Cloud, BarChart3, ShoppingBag } from 'lucide-react';
@@ -7,11 +7,57 @@ import { useAuth } from '../contexts/AuthContext';
 import { useHalPrices } from '../hooks/useHalPrices';
 import { useHasatlinkPazar } from '../hooks/useHasatlinkPazar';
 import { useWeather } from '../hooks/useWeather';
+import { useInView } from '../hooks/useInView';
+import { useCountUp } from '../hooks/useCountUp';
 import ListingCard from '../components/listings/ListingCard';
 import AIDiagnosisPanel from '../components/ai/AIDiagnosisPanel';
 import ListingMap from '../components/map/ListingMap';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { CATEGORY_LABELS } from '../utils/constants';
+
+function AnimatedSection({ children, className = '' }: { children: ReactNode; className?: string }) {
+  const { ref, inView } = useInView(0.15);
+  return (
+    <div ref={ref} className={`reveal-section ${inView ? 'visible' : ''} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function StatCounter({ end, suffix, label }: { end: number; suffix: string; label: string }) {
+  const { ref, inView } = useInView(0.3);
+  const value = useCountUp(end, 2000, inView);
+  return (
+    <div ref={ref}>
+      <p className="text-3xl md:text-4xl font-semibold tracking-tight">
+        {value.toLocaleString()}{suffix}
+      </p>
+      <p className="text-xs uppercase font-medium tracking-wider text-white/70 mt-1">{label}</p>
+    </div>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm">
+      <div className="aspect-[4/3] skeleton" />
+      <div className="p-4 space-y-3">
+        <div className="flex justify-between">
+          <div className="h-4 w-2/3 skeleton rounded-lg" />
+          <div className="h-4 w-16 skeleton rounded-lg" />
+        </div>
+        <div className="h-3 w-1/3 skeleton rounded-lg" />
+        <div className="flex gap-1.5">
+          <div className="h-5 w-14 skeleton rounded-full" />
+          <div className="h-5 w-16 skeleton rounded-full" />
+        </div>
+        <div className="flex justify-between">
+          <div className="h-3 w-24 skeleton rounded-lg" />
+          <div className="h-3 w-16 skeleton rounded-lg" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   const { t, i18n } = useTranslation();
@@ -42,17 +88,30 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#1A1A1A] via-[#2A2520] to-[#1A1A1A] text-white py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-[#2D6A4F] rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#A47148] rounded-full blur-3xl" />
+          <div className="absolute top-10 left-10 w-72 h-72 bg-[#2D6A4F] rounded-full blur-3xl animate-float-slow" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#A47148] rounded-full blur-3xl animate-float-slow-reverse" />
         </div>
         <div className="max-w-7xl mx-auto px-4 relative">
           <div className="max-w-4xl">
-            <p className="text-xs font-medium uppercase tracking-[0.3em] text-[#2D6A4F] mb-4">{t('appSlogan')}</p>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-semibold tracking-tight leading-[0.9] mb-6">
+            <p
+              className="text-xs font-medium uppercase tracking-[0.3em] text-[#2D6A4F] mb-4 animate-slide-up"
+              style={{ animationDelay: '0ms' }}
+            >
+              {t('appSlogan')}
+            </p>
+            <h1
+              className="text-5xl md:text-7xl lg:text-8xl font-semibold tracking-tight leading-[0.9] mb-6 animate-slide-up"
+              style={{ animationDelay: '100ms', animationFillMode: 'both' }}
+            >
               <span className="text-white">HASAT</span>
               <span className="text-[#2D6A4F]">LiNK</span>
             </h1>
-            <p className="text-lg md:text-xl text-white/60 mb-8 max-w-lg">{t('heroDescription')}</p>
+            <p
+              className="text-lg md:text-xl text-white/60 mb-8 max-w-lg animate-slide-up"
+              style={{ animationDelay: '200ms', animationFillMode: 'both' }}
+            >
+              {t('heroDescription')}
+            </p>
 
             {/* Hava Durumu + Hal Fiyatları + HasatLink Pazarı */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -200,7 +259,10 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div
+              className="flex flex-wrap gap-3 animate-slide-up"
+              style={{ animationDelay: '300ms', animationFillMode: 'both' }}
+            >
               <Link to="/pazar" className="px-8 py-4 bg-[#2D6A4F] text-white font-semibold text-sm rounded-full hover:bg-[#1B4332] transition-colors">
                 {t('getStarted')}
               </Link>
@@ -219,78 +281,90 @@ export default function HomePage() {
       </section>
 
       {/* Categories Quick Links */}
-      <section className="max-w-7xl mx-auto px-4 py-8 relative z-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {Object.entries(CATEGORY_LABELS).map(([key, cat]) => (
-            <Link
-              key={key}
-              to={`/${key}`}
-              className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group"
-            >
-              <span className="text-3xl mb-2 block">{cat.icon}</span>
-              <h3 className="text-sm font-semibold tracking-tight">{t(`categories.${key}`)}</h3>
-              <ArrowRight size={14} className="text-[#6B6560] mt-2 group-hover:text-[#2D6A4F] group-hover:translate-x-1 transition-all" />
-            </Link>
-          ))}
-        </div>
-      </section>
+      <AnimatedSection>
+        <section className="max-w-7xl mx-auto px-4 py-8 relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {Object.entries(CATEGORY_LABELS).map(([key, cat], index) => (
+              <Link
+                key={key}
+                to={`/${key}`}
+                className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group card-enter"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <span className="text-3xl mb-2 block">{cat.icon}</span>
+                <h3 className="text-sm font-semibold tracking-tight">{t(`categories.${key}`)}</h3>
+                <ArrowRight size={14} className="text-[#6B6560] mt-2 group-hover:text-[#2D6A4F] group-hover:translate-x-1 transition-all" />
+              </Link>
+            ))}
+          </div>
+        </section>
+      </AnimatedSection>
 
       {/* Featured Listings */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold tracking-tight">{lang === 'tr' ? 'Öne Çıkan İlanlar' : 'Featured Listings'}</h2>
-          <Link to="/pazar" className="text-xs font-medium uppercase text-[#2D6A4F] flex items-center gap-1 hover:gap-2 transition-all">
-            {t('all')} <ArrowRight size={12} />
-          </Link>
-        </div>
-        {loading ? (
-          <LoadingSpinner size="lg" className="py-12" />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {listings.slice(0, 4).map(listing => (
-              <ListingCard key={listing._id} listing={listing} />
-            ))}
+      <AnimatedSection>
+        <section className="max-w-7xl mx-auto px-4 py-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold tracking-tight">{lang === 'tr' ? 'Öne Çıkan İlanlar' : 'Featured Listings'}</h2>
+            <Link to="/pazar" className="text-xs font-medium uppercase text-[#2D6A4F] flex items-center gap-1 hover:gap-2 transition-all">
+              {t('all')} <ArrowRight size={12} />
+            </Link>
           </div>
-        )}
-      </section>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {listings.slice(0, 4).map((listing, index) => (
+                <div
+                  key={listing._id}
+                  className="card-enter"
+                  style={{ animationDelay: `${index * 80}ms` }}
+                >
+                  <ListingCard listing={listing} />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </AnimatedSection>
 
       {/* AI + Map Section */}
-      <section className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <AIDiagnosisPanel />
-          <div className="bg-white rounded-[2.5rem] p-4 shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2 mb-3 px-2">
-              <MapPin size={16} className="text-[#2D6A4F]" />
-              <h3 className="text-lg font-semibold tracking-tight">{t('map.title')}</h3>
-              <Link to="/harita" className="ml-auto text-[10px] font-medium text-[#2D6A4F] uppercase">
-                {t('all')} &rarr;
-              </Link>
-            </div>
-            <div className="h-[300px] rounded-2xl overflow-hidden">
-              <ListingMap listings={listings} />
+      <AnimatedSection>
+        <section className="max-w-7xl mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AIDiagnosisPanel />
+            <div className="bg-white rounded-[2.5rem] p-4 shadow-sm overflow-hidden">
+              <div className="flex items-center gap-2 mb-3 px-2">
+                <MapPin size={16} className="text-[#2D6A4F]" />
+                <h3 className="text-lg font-semibold tracking-tight">{t('map.title')}</h3>
+                <Link to="/harita" className="ml-auto text-[10px] font-medium text-[#2D6A4F] uppercase">
+                  {t('all')} &rarr;
+                </Link>
+              </div>
+              <div className="h-[300px] rounded-2xl overflow-hidden">
+                <ListingMap listings={listings} />
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </AnimatedSection>
 
       {/* Stats Section */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
-        <div className="bg-gradient-to-r from-[#2D6A4F] to-[#1B4332] rounded-[2.5rem] p-8 md:p-12 text-white">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            {[
-              { label: 'Aktif İlan', value: '1,200+' },
-              { label: 'Kayıtlı Üretici', value: '3,500+' },
-              { label: 'Şehir', value: '81' },
-              { label: 'AI Teşhis', value: '10,000+' },
-            ].map(stat => (
-              <div key={stat.label}>
-                <p className="text-3xl md:text-4xl font-semibold tracking-tight">{stat.value}</p>
-                <p className="text-xs uppercase font-medium tracking-wider text-white/70 mt-1">{stat.label}</p>
-              </div>
-            ))}
+      <AnimatedSection>
+        <section className="max-w-7xl mx-auto px-4 py-12">
+          <div className="bg-gradient-to-r from-[#2D6A4F] to-[#1B4332] rounded-[2.5rem] p-8 md:p-12 text-white">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+              <StatCounter end={1200} suffix="+" label="Aktif İlan" />
+              <StatCounter end={3500} suffix="+" label="Kayıtlı Üretici" />
+              <StatCounter end={81} suffix="" label="Şehir" />
+              <StatCounter end={10000} suffix="+" label="AI Teşhis" />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </AnimatedSection>
     </div>
   );
 }

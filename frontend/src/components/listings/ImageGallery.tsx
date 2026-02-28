@@ -8,6 +8,9 @@ interface ImageGalleryProps {
 
 export default function ImageGallery({ images, title }: ImageGalleryProps) {
   const [current, setCurrent] = useState(0);
+  const [loaded, setLoaded] = useState<Set<number>>(new Set());
+
+  const markLoaded = (i: number) => setLoaded(prev => new Set(prev).add(i));
 
   if (!images.length) {
     return (
@@ -19,7 +22,13 @@ export default function ImageGallery({ images, title }: ImageGalleryProps) {
 
   return (
     <div className="relative aspect-video bg-[#F5F3EF] rounded-[2rem] overflow-hidden">
-      <img src={images[current]} alt={title} className="w-full h-full object-cover" />
+      <img
+        src={images[current]}
+        alt={title}
+        loading="lazy"
+        onLoad={() => markLoaded(current)}
+        className={`w-full h-full object-cover transition-[filter] duration-400 ${loaded.has(current) ? '' : 'img-lazy'}`}
+      />
 
       {images.length > 1 && (
         <>

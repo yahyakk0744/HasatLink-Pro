@@ -41,18 +41,25 @@ export default function MobileBottomNav() {
               to={item.path}
               end={item.path === '/'}
               className={({ isActive }) =>
-                `flex flex-col items-center gap-0.5 px-3 py-1 relative ${isActive ? 'text-[#2D6A4F]' : 'text-[#6B6560]'}`
+                `flex flex-col items-center gap-0.5 px-3 py-1 relative transition-colors ${isActive ? 'text-[#2D6A4F]' : 'text-[#6B6560]'}`
               }
             >
-              <div className="relative">
-                <item.icon size={20} />
-                {item.path === '/mesajlar' && unreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-[#2D6A4F] text-white text-[8px] font-bold rounded-full flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </div>
-              <span className="text-[9px] font-medium uppercase">{t(item.labelKey)}</span>
+              {({ isActive }) => (
+                <>
+                  <div className="relative">
+                    <item.icon size={20} />
+                    {item.path === '/mesajlar' && unreadCount > 0 && (
+                      <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-[#2D6A4F] text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[9px] font-medium uppercase">{t(item.labelKey)}</span>
+                  {isActive && (
+                    <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[#2D6A4F]" />
+                  )}
+                </>
+              )}
             </NavLink>
           );
         })}
