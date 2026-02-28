@@ -38,8 +38,8 @@ export default function Footer() {
         <div className="border-t border-white/10 mt-8 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[#6B6560]">&copy; {year} HasatLink. {t('footer.rights')}</p>
           <div className="flex items-center gap-4 text-xs text-[#6B6560]">
-            <span className="hover:text-white cursor-pointer">{t('footer.privacy')}</span>
-            <span className="hover:text-white cursor-pointer">{t('footer.terms')}</span>
+            <Link to="/gizlilik" className="hover:text-white">{t('footer.privacy')}</Link>
+            <Link to="/kullanim-sartlari" className="hover:text-white">{t('footer.terms')}</Link>
           </div>
         </div>
       </div>

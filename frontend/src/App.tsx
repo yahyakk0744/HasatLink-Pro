@@ -17,6 +17,8 @@ import NotFoundPage from './pages/NotFoundPage';
 import HalFiyatlariPage from './pages/HalFiyatlariPage';
 import HasatlinkPazariPage from './pages/HasatlinkPazariPage';
 import MessagesPage from './pages/MessagesPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 
 export default function App() {
   const { pathname } = useLocation();
@@ -50,6 +52,8 @@ export default function App() {
           <Route path="/hasatlink-pazari" element={<HasatlinkPazariPage />} />
           <Route path="/mesajlar" element={<MessagesPage />} />
           <Route path="/mesajlar/:conversationId" element={<MessagesPage />} />
+          <Route path="/gizlilik" element={<PrivacyPage />} />
+          <Route path="/kullanim-sartlari" element={<TermsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
