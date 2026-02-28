@@ -91,25 +91,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (emailOrUsername: string, password: string) => {
     try {
       // 1. Backend login first (validates credentials)
-      const { data } = await api.post('/auth/login', { email, password });
+      const { data } = await api.post('/auth/login', { email: emailOrUsername, password });
       localStorage.setItem('hasatlink_token', data.token);
       setToken(data.token);
       setUser(data.user);
 
-      // 2. Firebase Auth sign-in (or create if migrating)
+      // 2. Firebase Auth sign-in only if input looks like email
+      const isEmail = emailOrUsername.includes('@');
+      const userEmail = isEmail ? emailOrUsername : data.user.email;
       let fbUid = data.user.firebaseUid || '';
-      try {
-        const fbResult = await signInWithEmailAndPassword(firebaseAuth, email, password);
-        fbUid = fbResult.user.uid;
-      } catch (signInErr: any) {
+
+      if (userEmail) {
         try {
-          const fbResult = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+          const fbResult = await signInWithEmailAndPassword(firebaseAuth, userEmail, password);
           fbUid = fbResult.user.uid;
         } catch {
-          // Firebase auth mismatch — user can still use the app with backend auth
+          // Only try create if logged in with actual email (password matches)
+          if (isEmail) {
+            try {
+              const fbResult = await createUserWithEmailAndPassword(firebaseAuth, userEmail, password);
+              fbUid = fbResult.user.uid;
+            } catch {
+              // Firebase auth mismatch — user can still use the app with backend auth
+            }
+          }
         }
       }
 

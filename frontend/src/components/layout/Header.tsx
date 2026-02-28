@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, Bell, User, LogOut, MessageSquare, Sun, Moon } from 'lucide-react';
+import { Search, Bell, User, LogOut, MessageSquare, Sun, Moon, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotificationContext } from '../../contexts/NotificationContext';
 import { useMessageContext } from '../../contexts/MessageContext';
@@ -93,6 +93,13 @@ export default function Header() {
                 <NotificationDropdown onClose={() => setShowNotifications(false)} />
               )}
             </div>
+          )}
+
+          {/* Admin */}
+          {user?.role === 'admin' && (
+            <Link to="/admin" className="p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors" title="Admin Panel">
+              <Shield size={20} className="text-[#2D6A4F]" />
+            </Link>
           )}
 
           {/* Auth */}
