@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
   userId: string;
+  username: string;
   name: string;
   email: string;
   password: string;
@@ -16,11 +17,14 @@ export interface IUser extends Document {
   bio: string;
   authProvider: string;
   firebaseUid: string;
+  resetPasswordToken: string;
+  resetPasswordExpires: Date | null;
   createdAt: Date;
 }
 
 const UserSchema = new Schema<IUser>({
   userId: { type: String, required: true, unique: true },
+  username: { type: String, default: '', sparse: true },
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, default: '' },
@@ -35,6 +39,8 @@ const UserSchema = new Schema<IUser>({
   bio: { type: String, default: '' },
   authProvider: { type: String, default: 'email', enum: ['email', 'google'] },
   firebaseUid: { type: String, default: '', sparse: true },
+  resetPasswordToken: { type: String, default: '' },
+  resetPasswordExpires: { type: Date, default: null },
   createdAt: { type: Date, default: Date.now },
 });
 

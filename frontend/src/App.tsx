@@ -26,6 +26,9 @@ import AdminAdsPage from './pages/AdminAdsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import CookiePolicyPage from './pages/CookiePolicyPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import AccountSettingsPage from './pages/AccountSettingsPage';
 import { trackPageView } from './utils/analytics';
 
 export default function App() {
@@ -45,6 +48,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/giris" element={<AuthPage />} />
+          <Route path="/sifremi-unuttum" element={<ForgotPasswordPage />} />
+          <Route path="/sifre-sifirla/:token" element={<ResetPasswordPage />} />
+          <Route path="/hesap-ayarlari" element={<AccountSettingsPage />} />
           <Route path="/pazar" element={<ListingsPage />} />
           <Route path="/lojistik" element={<ListingsPage />} />
           <Route path="/isgucu" element={<ListingsPage />} />

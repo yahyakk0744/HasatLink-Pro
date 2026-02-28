@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Settings, Save, DollarSign, Megaphone, ChevronRight } from 'lucide-react';
+import { Settings, Save, DollarSign, Megaphone, UserCog, ChevronRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SEO from '../components/ui/SEO';
 import Input from '../components/ui/Input';
@@ -109,6 +109,22 @@ export default function AdminSettingsPage() {
 
       {/* Navigation Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+        <button
+          onClick={() => navigate('/hesap-ayarlari')}
+          className="flex items-center gap-4 p-5 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl shadow-sm hover:shadow-md transition-all text-left group sm:col-span-2"
+        >
+          <div className="w-12 h-12 rounded-xl bg-[#2D6A4F]/10 flex items-center justify-center shrink-0">
+            <UserCog size={22} className="text-[#2D6A4F]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm">{isTr ? 'Hesap Ayarları' : 'Account Settings'}</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{isTr ? 'Kullanıcı adı, email, şifre değiştir' : 'Username, email, password change'}</p>
+          </div>
+          <ChevronRight size={18} className="text-[var(--text-secondary)] group-hover:translate-x-1 transition-transform" />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         <button
           onClick={() => navigate('/admin/gelir')}
           className="flex items-center gap-4 p-5 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl shadow-sm hover:shadow-md transition-all text-left group"
