@@ -12,9 +12,10 @@ export const getListings = async (req: Request, res: Response): Promise<void> =>
     if (status) filter.status = status;
     else filter.status = 'active';
     if (search) {
+      const escaped = (search as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
+        { title: { $regex: escaped, $options: 'i' } },
+        { description: { $regex: escaped, $options: 'i' } },
       ];
     }
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);

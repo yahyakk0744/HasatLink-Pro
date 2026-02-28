@@ -16,7 +16,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const userId = 'user_' + Date.now();
     const user = await User.create({ userId, name, email, password: hashedPassword, location: location || '', firebaseUid: firebaseUid || '' });
-    const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET || 'hasatlink_secret', { expiresIn: '30d' });
+    const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET!, { expiresIn: '30d' });
     res.status(201).json({ token, user: { userId: user.userId, name: user.name, email: user.email, location: user.location, profileImage: user.profileImage, averageRating: user.averageRating, firebaseUid: user.firebaseUid } });
   } catch (error) {
     res.status(500).json({ message: 'Kayıt hatası', error });
@@ -36,7 +36,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ message: 'Email veya şifre hatalı' });
       return;
     }
-    const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET || 'hasatlink_secret', { expiresIn: '30d' });
+    const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET!, { expiresIn: '30d' });
     res.json({ token, user: { userId: user.userId, name: user.name, email: user.email, location: user.location, profileImage: user.profileImage, averageRating: user.averageRating, firebaseUid: user.firebaseUid } });
   } catch (error) {
     res.status(500).json({ message: 'Giriş hatası', error });
@@ -72,11 +72,25 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
 
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
+    const authUserId = (req as any).userId;
+    if (authUserId !== req.params.userId) {
+      res.status(403).json({ message: 'Bu profili düzenleme yetkiniz yok' });
+      return;
+    }
+    const allowedFields = ['name', 'location', 'profileImage', 'bio', 'phone'];
+    const updates: Record<string, any> = {};
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) updates[key] = req.body[key];
+    }
     const user = await User.findOneAndUpdate(
       { userId: req.params.userId },
-      { $set: req.body },
-      { new: true, upsert: true }
+      { $set: updates },
+      { new: true }
     ).select('-password');
+    if (!user) {
+      res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+      return;
+    }
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: 'Güncelleme hatası', error });
@@ -121,7 +135,7 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
       }
     }
 
-    const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET || 'hasatlink_secret', { expiresIn: '30d' });
+    const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET!, { expiresIn: '30d' });
     res.json({
       token,
       user: {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useHasatlinkPazar } from '../hooks/useHasatlinkPazar';
 import HasatlinkWeeklyChart from '../components/hal/HasatlinkWeeklyChart';
@@ -6,29 +7,30 @@ import HasatlinkHourlyChart from '../components/hal/HasatlinkHourlyChart';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import type { HasatlinkPazarItem } from '../types';
 
-const TABS = [
-  { id: 'all', label: 'Tüm Ürünler' },
-  { id: 'weekly', label: 'Haftalık Grafik' },
-  { id: 'hourly', label: 'Saatlik Grafik' },
-] as const;
-
-type TabId = (typeof TABS)[number]['id'];
-
-const CATEGORIES = [
-  { value: '', label: 'Hepsi' },
-  { value: 'sebze', label: 'Sebze' },
-  { value: 'meyve', label: 'Meyve' },
-  { value: 'tahıl', label: 'Tahıl' },
-  { value: 'bakliyat', label: 'Bakliyat' },
-];
-
 type SortKey = 'name' | 'price' | 'change' | 'minPrice' | 'maxPrice' | 'listingCount';
 type SortDir = 'asc' | 'desc';
 
 const PER_PAGE = 25;
 
 export default function HasatlinkPazariPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('all');
+  const { i18n } = useTranslation();
+  const isTr = i18n.language?.startsWith('tr');
+
+  const TABS = [
+    { id: 'all' as const, label: isTr ? 'Tüm Ürünler' : 'All Products' },
+    { id: 'weekly' as const, label: isTr ? 'Haftalık Grafik' : 'Weekly Chart' },
+    { id: 'hourly' as const, label: isTr ? 'Saatlik Grafik' : 'Hourly Chart' },
+  ];
+
+  const CATEGORIES = [
+    { value: '', label: isTr ? 'Hepsi' : 'All' },
+    { value: 'sebze', label: isTr ? 'Sebze' : 'Vegetable' },
+    { value: 'meyve', label: isTr ? 'Meyve' : 'Fruit' },
+    { value: 'tahıl', label: isTr ? 'Tahıl' : 'Grain' },
+    { value: 'bakliyat', label: isTr ? 'Bakliyat' : 'Legume' },
+  ];
+
+  const [activeTab, setActiveTab] = useState<'all' | 'weekly' | 'hourly'>('all');
   const {
     prices, weeklyData, hourlyData,
     loading, error,
@@ -113,9 +115,9 @@ export default function HasatlinkPazariPage() {
     <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in">
       <div className="flex items-center gap-3 mb-2">
         <ShoppingBag size={28} className="text-[#A47148]" />
-        <h1 className="text-3xl font-semibold tracking-tight">HasatLink Pazarı</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{isTr ? 'HasatLink Pazarı' : 'HasatLink Market'}</h1>
       </div>
-      <p className="text-[#6B6560] mb-6">Site içi pazar ilanlarından derlenen fiyat verileri</p>
+      <p className="text-[#6B6560] mb-6">{isTr ? 'Site içi pazar ilanlarından derlenen fiyat verileri' : 'Price data compiled from marketplace listings'}</p>
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-8">
@@ -151,7 +153,7 @@ export default function HasatlinkPazariPage() {
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Ürün ara..."
+                placeholder={isTr ? 'Ürün ara...' : 'Search product...'}
                 className="w-full pl-11 pr-4 py-3 bg-white border border-[#D6D0C8] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#A47148]/20 focus:border-[#A47148]"
               />
             </div>
@@ -177,9 +179,9 @@ export default function HasatlinkPazariPage() {
           ) : prices.length === 0 ? (
             <div className="bg-white rounded-2xl p-12 shadow-sm text-center">
               <ShoppingBag size={48} className="text-[#D6D0C8] mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Henüz pazar verisi yok</h3>
+              <h3 className="text-lg font-semibold mb-2">{isTr ? 'Henüz pazar verisi yok' : 'No market data yet'}</h3>
               <p className="text-[#6B6560] text-sm">
-                Pazar kategorisinde ilanlar eklendikçe fiyat karşılaştırma verileri burada görünecek.
+                {isTr ? 'Pazar kategorisinde ilanlar eklendikçe fiyat karşılaştırma verileri burada görünecek.' : 'Price comparison data will appear here as listings are added to the marketplace.'}
               </p>
             </div>
           ) : (
@@ -191,9 +193,9 @@ export default function HasatlinkPazariPage() {
                     <thead>
                       <tr className="border-b border-[#E5E1DC]">
                         {([
-                          ['name', 'Ürün'],
+                          ['name', isTr ? 'Ürün' : 'Product'],
                           ['minPrice', 'Min'],
-                          ['price', 'Ort'],
+                          ['price', isTr ? 'Ort' : 'Avg'],
                           ['maxPrice', 'Max'],
                         ] as [SortKey, string][]).map(([key, label]) => (
                           <th
@@ -204,20 +206,20 @@ export default function HasatlinkPazariPage() {
                             {label}<SortArrow field={key} />
                           </th>
                         ))}
-                        <th className="px-4 py-3.5 text-left font-medium text-[#6B6560]">Birim</th>
+                        <th className="px-4 py-3.5 text-left font-medium text-[#6B6560]">{isTr ? 'Birim' : 'Unit'}</th>
                         <th
                           onClick={() => handleSort('change')}
                           className="px-4 py-3.5 text-left font-medium text-[#6B6560] cursor-pointer hover:text-[#A47148] select-none"
                         >
-                          Değişim<SortArrow field="change" />
+                          {isTr ? 'Değişim' : 'Change'}<SortArrow field="change" />
                         </th>
                         <th
                           onClick={() => handleSort('listingCount')}
                           className="px-4 py-3.5 text-left font-medium text-[#6B6560] cursor-pointer hover:text-[#A47148] select-none"
                         >
-                          İlan<SortArrow field="listingCount" />
+                          {isTr ? 'İlan' : 'Listings'}<SortArrow field="listingCount" />
                         </th>
-                        <th className="px-4 py-3.5 text-left font-medium text-[#6B6560]">Kategori</th>
+                        <th className="px-4 py-3.5 text-left font-medium text-[#6B6560]">{isTr ? 'Kategori' : 'Category'}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -253,7 +255,7 @@ export default function HasatlinkPazariPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <span className="text-sm text-[#6B6560]">
-                    {filtered.length} ürün, sayfa {page}/{totalPages}
+                    {filtered.length} {isTr ? 'ürün, sayfa' : 'products, page'} {page}/{totalPages}
                   </span>
                   <div className="flex gap-2">
                     <button
@@ -282,13 +284,13 @@ export default function HasatlinkPazariPage() {
       {activeTab === 'weekly' && (
         <div>
           <div className="mb-6">
-            <label className="block text-sm font-medium text-[#6B6560] mb-2">Ürün Seçin</label>
+            <label className="block text-sm font-medium text-[#6B6560] mb-2">{isTr ? 'Ürün Seçin' : 'Select Product'}</label>
             <select
               value={selectedProduct}
               onChange={e => setSelectedProduct(e.target.value)}
               className="px-4 py-3 bg-white border border-[#D6D0C8] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#A47148]/20 focus:border-[#A47148] min-w-[200px]"
             >
-              <option value="">Tümü (ortalama)</option>
+              <option value="">{isTr ? 'Tümü (ortalama)' : 'All (average)'}</option>
               {productNames.map(name => (
                 <option key={name} value={name}>{name}</option>
               ))}
@@ -302,8 +304,8 @@ export default function HasatlinkPazariPage() {
               <HasatlinkWeeklyChart data={weeklyData} product={selectedProduct || undefined} />
               {weeklySummary && (
                 <div className="mt-4 p-4 bg-white rounded-2xl shadow-sm text-sm text-[#6B6560]">
-                  Bu hafta en düşük: <span className="font-semibold text-[#2D6A4F]">{weeklySummary.min.toFixed(2)}₺</span>,
-                  en yüksek: <span className="font-semibold text-[#C1341B]">{weeklySummary.max.toFixed(2)}₺</span>
+                  {isTr ? 'Bu hafta en düşük:' : 'This week lowest:'} <span className="font-semibold text-[#2D6A4F]">{weeklySummary.min.toFixed(2)}₺</span>,
+                  {isTr ? 'en yüksek:' : 'highest:'} <span className="font-semibold text-[#C1341B]">{weeklySummary.max.toFixed(2)}₺</span>
                 </div>
               )}
             </>
@@ -315,13 +317,13 @@ export default function HasatlinkPazariPage() {
       {activeTab === 'hourly' && (
         <div>
           <div className="mb-6">
-            <label className="block text-sm font-medium text-[#6B6560] mb-2">Ürün Seçin</label>
+            <label className="block text-sm font-medium text-[#6B6560] mb-2">{isTr ? 'Ürün Seçin' : 'Select Product'}</label>
             <select
               value={selectedProduct}
               onChange={e => setSelectedProduct(e.target.value)}
               className="px-4 py-3 bg-white border border-[#D6D0C8] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#A47148]/20 focus:border-[#A47148] min-w-[200px]"
             >
-              <option value="">Tümü (ortalama)</option>
+              <option value="">{isTr ? 'Tümü (ortalama)' : 'All (average)'}</option>
               {productNames.map(name => (
                 <option key={name} value={name}>{name}</option>
               ))}

@@ -104,21 +104,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const fbResult = await signInWithEmailAndPassword(firebaseAuth, email, password);
         fbUid = fbResult.user.uid;
-        console.log('[Auth] Firebase sign-in success:', fbUid);
       } catch (signInErr: any) {
-        console.log('[Auth] Firebase sign-in failed:', signInErr.code, '- trying create...');
         try {
           const fbResult = await createUserWithEmailAndPassword(firebaseAuth, email, password);
           fbUid = fbResult.user.uid;
-          console.log('[Auth] Firebase account created:', fbUid);
-        } catch (createErr: any) {
-          console.warn('[Auth] Firebase create failed:', createErr.code, createErr.message);
-          // If email already in use but sign-in failed, password mismatch between backend and Firebase
-          // This can happen with seed users - Firebase has different password than backend
-          if (createErr.code === 'auth/email-already-in-use') {
-            // Force delete and recreate - skip for now, just log
-            console.warn('[Auth] Email exists in Firebase with different password. User needs Google login or password reset.');
-          }
+        } catch {
+          // Firebase auth mismatch — user can still use the app with backend auth
         }
       }
 
@@ -126,9 +117,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (fbUid && fbUid !== data.user.firebaseUid) {
         try {
           await api.put(`/users/${data.user.userId}`, { firebaseUid: fbUid });
-          console.log('[Auth] Saved firebaseUid to backend');
-        } catch (e) {
-          console.warn('[Auth] Failed to save firebaseUid:', e);
+        } catch {
+          // Non-critical: firebaseUid sync failed
         }
       }
 

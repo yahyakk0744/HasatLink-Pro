@@ -57,7 +57,9 @@ export const MessageProvider = ({ children }: { children: ReactNode }) => {
           );
           const msgSnap = await getDocs(messagesQuery);
           total += msgSnap.size;
-        } catch {}
+        } catch {
+          // Unread count query failed for this conversation
+        }
       }
       setUnreadCount(total);
     });

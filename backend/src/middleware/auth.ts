@@ -12,7 +12,11 @@ const auth = (req: AuthRequest, res: Response, next: NextFunction): void => {
       res.status(401).json({ message: 'Yetkilendirme gerekli' });
       return;
     }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'hasatlink_secret') as { userId: string };
+    if (!process.env.JWT_SECRET) {
+      res.status(500).json({ message: 'Sunucu yapılandırma hatası' });
+      return;
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as { userId: string };
     req.userId = decoded.userId;
     next();
   } catch {

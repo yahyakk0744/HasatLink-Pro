@@ -29,7 +29,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       ]);
       setNotifications(notifsRes.data);
       setUnreadCount(countRes.data.count);
-    } catch {}
+    } catch {
+      // Silently fail — notifications are non-critical
+    }
   }, [user?.userId]);
 
   const checkWeatherAlerts = useCallback(async () => {
@@ -38,7 +40,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       await api.get('/weather/alerts');
       // After alert check, refresh notifications to pick up any new ones
       await fetchNotifications();
-    } catch {}
+    } catch {
+      // Weather alert check failed — non-critical
+    }
   }, [user?.userId, fetchNotifications]);
 
   useEffect(() => {
@@ -70,7 +74,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       await api.put(`/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch {}
+    } catch {
+      // Mark-as-read failed — non-critical
+    }
   }, []);
 
   const markAllAsRead = useCallback(async () => {
@@ -79,7 +85,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       await api.put(`/notifications/${user.userId}/read-all`);
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
-    } catch {}
+    } catch {
+      // Mark-all-as-read failed — non-critical
+    }
   }, [user?.userId]);
 
   return (

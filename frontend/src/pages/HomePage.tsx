@@ -357,10 +357,10 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-4 py-12">
           <div className="bg-gradient-to-r from-[#2D6A4F] to-[#1B4332] rounded-[2.5rem] p-8 md:p-12 text-white">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <StatCounter end={1200} suffix="+" label="Aktif İlan" />
-              <StatCounter end={3500} suffix="+" label="Kayıtlı Üretici" />
-              <StatCounter end={81} suffix="" label="Şehir" />
-              <StatCounter end={10000} suffix="+" label="AI Teşhis" />
+              <StatCounter end={150} suffix="+" label={lang === 'tr' ? 'Aktif İlan' : 'Active Listings'} />
+              <StatCounter end={200} suffix="+" label={lang === 'tr' ? 'Kayıtlı Üretici' : 'Registered Farmers'} />
+              <StatCounter end={81} suffix="" label={lang === 'tr' ? 'Şehir' : 'Cities'} />
+              <StatCounter end={50} suffix="+" label={lang === 'tr' ? 'AI Teşhis' : 'AI Diagnoses'} />
             </div>
           </div>
         </section>

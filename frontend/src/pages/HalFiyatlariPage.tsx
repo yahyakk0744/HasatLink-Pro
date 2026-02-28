@@ -1,22 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useHalPrices } from '../hooks/useHalPrices';
 import WeeklyChart from '../components/hal/WeeklyChart';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import type { HalPrice } from '../types';
-
-const TABS = [
-  { id: 'all', label: 'Tüm Ürünler' },
-  { id: 'weekly', label: 'Haftalık Grafik' },
-] as const;
-
-type TabId = (typeof TABS)[number]['id'];
-
-const CATEGORIES = [
-  { value: '', label: 'Hepsi' },
-  { value: 'sebze', label: 'Sebze' },
-  { value: 'meyve', label: 'Meyve' },
-];
 
 type SortKey = 'name' | 'price' | 'change' | 'minPrice' | 'maxPrice';
 type SortDir = 'asc' | 'desc';
@@ -24,7 +12,21 @@ type SortDir = 'asc' | 'desc';
 const PER_PAGE = 25;
 
 export default function HalFiyatlariPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('all');
+  const { i18n } = useTranslation();
+  const isTr = i18n.language?.startsWith('tr');
+
+  const TABS = [
+    { id: 'all' as const, label: isTr ? 'Tüm Ürünler' : 'All Products' },
+    { id: 'weekly' as const, label: isTr ? 'Haftalık Grafik' : 'Weekly Chart' },
+  ];
+
+  const CATEGORIES = [
+    { value: '', label: isTr ? 'Hepsi' : 'All' },
+    { value: 'sebze', label: isTr ? 'Sebze' : 'Vegetable' },
+    { value: 'meyve', label: isTr ? 'Meyve' : 'Fruit' },
+  ];
+
+  const [activeTab, setActiveTab] = useState<'all' | 'weekly'>('all');
   const {
     allPrices, weeklyData,
     loading, error,
@@ -107,8 +109,8 @@ export default function HalFiyatlariPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in">
-      <h1 className="text-3xl font-semibold tracking-tight mb-2">Hal Fiyatları</h1>
-      <p className="text-[#6B6560] mb-6">İzmir Büyükşehir Belediyesi hal verileri</p>
+      <h1 className="text-3xl font-semibold tracking-tight mb-2">{isTr ? 'Hal Fiyatları' : 'Market Hall Prices'}</h1>
+      <p className="text-[#6B6560] mb-6">{isTr ? 'İzmir Büyükşehir Belediyesi hal verileri' : 'Izmir Metropolitan Municipality market data'}</p>
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-8">
@@ -144,7 +146,7 @@ export default function HalFiyatlariPage() {
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Ürün ara..."
+                placeholder={isTr ? 'Ürün ara...' : 'Search product...'}
                 className="w-full pl-11 pr-4 py-3 bg-white border border-[#D6D0C8] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F]"
               />
             </div>
@@ -176,9 +178,9 @@ export default function HalFiyatlariPage() {
                     <thead>
                       <tr className="border-b border-[#E5E1DC]">
                         {([
-                          ['name', 'Ürün'],
+                          ['name', isTr ? 'Ürün' : 'Product'],
                           ['minPrice', 'Min'],
-                          ['price', 'Ort'],
+                          ['price', isTr ? 'Ort' : 'Avg'],
                           ['maxPrice', 'Max'],
                         ] as [SortKey, string][]).map(([key, label]) => (
                           <th
@@ -189,14 +191,14 @@ export default function HalFiyatlariPage() {
                             {label}<SortArrow field={key} />
                           </th>
                         ))}
-                        <th className="px-4 py-3.5 text-left font-medium text-[#6B6560]">Birim</th>
+                        <th className="px-4 py-3.5 text-left font-medium text-[#6B6560]">{isTr ? 'Birim' : 'Unit'}</th>
                         <th
                           onClick={() => handleSort('change')}
                           className="px-4 py-3.5 text-left font-medium text-[#6B6560] cursor-pointer hover:text-[#2D6A4F] select-none"
                         >
-                          Değişim<SortArrow field="change" />
+                          {isTr ? 'Değişim' : 'Change'}<SortArrow field="change" />
                         </th>
-                        <th className="px-4 py-3.5 text-left font-medium text-[#6B6560]">Tip</th>
+                        <th className="px-4 py-3.5 text-left font-medium text-[#6B6560]">{isTr ? 'Tip' : 'Type'}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -221,7 +223,7 @@ export default function HalFiyatlariPage() {
                                 ? 'bg-orange-50 text-orange-700'
                                 : 'bg-green-50 text-green-700'
                             }`}>
-                              {p.category === 'meyve' ? 'Meyve' : 'Sebze'}
+                              {p.category === 'meyve' ? (isTr ? 'Meyve' : 'Fruit') : (isTr ? 'Sebze' : 'Vegetable')}
                             </span>
                           </td>
                         </tr>
@@ -235,7 +237,7 @@ export default function HalFiyatlariPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <span className="text-sm text-[#6B6560]">
-                    {filtered.length} ürün, sayfa {page}/{totalPages}
+                    {filtered.length} {isTr ? 'ürün, sayfa' : 'products, page'} {page}/{totalPages}
                   </span>
                   <div className="flex gap-2">
                     <button
@@ -264,13 +266,13 @@ export default function HalFiyatlariPage() {
       {activeTab === 'weekly' && (
         <div>
           <div className="mb-6">
-            <label className="block text-sm font-medium text-[#6B6560] mb-2">Ürün Seçin</label>
+            <label className="block text-sm font-medium text-[#6B6560] mb-2">{isTr ? 'Ürün Seçin' : 'Select Product'}</label>
             <select
               value={weeklyProduct}
               onChange={e => setWeeklyProduct(e.target.value)}
               className="px-4 py-3 bg-white border border-[#D6D0C8] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] min-w-[200px]"
             >
-              <option value="">Tümü (ortalama)</option>
+              <option value="">{isTr ? 'Tümü (ortalama)' : 'All (average)'}</option>
               {productNames.map(name => (
                 <option key={name} value={name}>{name}</option>
               ))}
@@ -284,8 +286,8 @@ export default function HalFiyatlariPage() {
               <WeeklyChart data={weeklyData} product={weeklyProduct || undefined} />
               {weeklySummary && (
                 <div className="mt-4 p-4 bg-white rounded-2xl shadow-sm text-sm text-[#6B6560]">
-                  Bu hafta en düşük: <span className="font-semibold text-[#2D6A4F]">{weeklySummary.min.toFixed(2)}₺</span>,
-                  en yüksek: <span className="font-semibold text-[#C1341B]">{weeklySummary.max.toFixed(2)}₺</span>
+                  {isTr ? 'Bu hafta en düşük:' : 'This week lowest:'} <span className="font-semibold text-[#2D6A4F]">{weeklySummary.min.toFixed(2)}₺</span>,
+                  {isTr ? 'en yüksek:' : 'highest:'} <span className="font-semibold text-[#C1341B]">{weeklySummary.max.toFixed(2)}₺</span>
                 </div>
               )}
             </>
