@@ -1,0 +1,18 @@
+interface LoadingSpinnerProps {
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+}
+
+const sizeClasses = {
+  sm: 'w-5 h-5 border-2',
+  md: 'w-8 h-8 border-3',
+  lg: 'w-12 h-12 border-4',
+};
+
+export default function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerProps) {
+  return (
+    <div className={`flex items-center justify-center ${className}`}>
+      <div className={`${sizeClasses[size]} border-[#D6D0C8] border-t-[#2D6A4F] rounded-full animate-spin`} />
+    </div>
+  );
+}
