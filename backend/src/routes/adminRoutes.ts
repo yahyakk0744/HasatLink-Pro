@@ -18,27 +18,24 @@ import {
 
 const router = Router();
 
-// All routes require auth + admin
-router.use(auth, admin);
-
 // Dashboard
-router.get('/admin/stats', getDashboardStats);
+router.get('/admin/stats', auth, admin, getDashboardStats);
 
 // Listings
-router.get('/admin/listings', getAdminListings);
-router.put('/admin/listings/:id/status', updateListingStatus);
-router.delete('/admin/listings/:id', deleteAdminListing);
+router.get('/admin/listings', auth, admin, getAdminListings);
+router.put('/admin/listings/:id/status', auth, admin, updateListingStatus);
+router.delete('/admin/listings/:id', auth, admin, deleteAdminListing);
 
 // Users
-router.get('/admin/users', getAdminUsers);
-router.put('/admin/users/:userId/ban', toggleBanUser);
-router.put('/admin/users/:userId/verify', toggleVerifyUser);
-router.delete('/admin/users/:userId', deleteAdminUser);
+router.get('/admin/users', auth, admin, getAdminUsers);
+router.put('/admin/users/:userId/ban', auth, admin, toggleBanUser);
+router.put('/admin/users/:userId/verify', auth, admin, toggleVerifyUser);
+router.delete('/admin/users/:userId', auth, admin, deleteAdminUser);
 
 // Market Prices (Hal Fiyatları)
-router.get('/admin/market-prices', getAdminMarketPrices);
-router.post('/admin/market-prices', createMarketPrice);
-router.put('/admin/market-prices/:id', updateMarketPrice);
-router.delete('/admin/market-prices/:id', deleteMarketPrice);
+router.get('/admin/market-prices', auth, admin, getAdminMarketPrices);
+router.post('/admin/market-prices', auth, admin, createMarketPrice);
+router.put('/admin/market-prices/:id', auth, admin, updateMarketPrice);
+router.delete('/admin/market-prices/:id', auth, admin, deleteMarketPrice);
 
 export default router;
