@@ -25,6 +25,7 @@ import AdminRevenuePage from './pages/AdminRevenuePage';
 import AdminAdsPage from './pages/AdminAdsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
+import CookiePolicyPage from './pages/CookiePolicyPage';
 import { trackPageView } from './utils/analytics';
 
 export default function App() {
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="/admin/reklamlar" element={<AdminAdsPage />} />
           <Route path="/gizlilik" element={<PrivacyPage />} />
           <Route path="/kullanim-sartlari" element={<TermsPage />} />
+          <Route path="/cerez-politikasi" element={<CookiePolicyPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

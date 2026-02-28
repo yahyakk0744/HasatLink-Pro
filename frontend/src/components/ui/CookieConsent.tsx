@@ -42,8 +42,8 @@ export default function CookieConsent() {
                 ? 'HasatLink, deneyiminizi iyileştirmek için çerezler kullanır. Devam ederek KVKK kapsamındaki çerez politikamızı kabul etmiş olursunuz.'
                 : 'HasatLink uses cookies to improve your experience. By continuing, you accept our cookie policy under GDPR regulations.'}
               {' '}
-              <Link to="/gizlilik" className="text-[#2D6A4F] underline hover:no-underline">
-                {isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}
+              <Link to="/cerez-politikasi" className="text-[#2D6A4F] underline hover:no-underline">
+                {isTr ? 'Çerez Politikası' : 'Cookie Policy'}
               </Link>
             </p>
           </div>

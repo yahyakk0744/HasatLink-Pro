@@ -1,241 +1,167 @@
-import { useTranslation } from 'react-i18next';
 import SEO from '../components/ui/SEO';
 
 export default function TermsPage() {
-  const { i18n } = useTranslation();
-  const isTr = i18n.language?.startsWith('tr');
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 animate-fade-in">
       <SEO
-        title={isTr ? 'Kullanım Şartları' : 'Terms of Service'}
-        description={isTr ? 'HasatLink kullanım şartları ve koşulları.' : 'HasatLink terms of service and conditions.'}
+        title="Kullanım Şartları"
+        description="HasatLink kullanım şartları, koşulları ve sorumluluk sınırları."
       />
-      <h1 className="text-3xl font-semibold tracking-tight mb-8">
-        {isTr ? 'Kullanım Şartları' : 'Terms of Service'}
-      </h1>
-      <p className="text-sm text-[var(--text-secondary)] mb-8">
-        {isTr ? 'Son güncelleme: 28 Şubat 2026' : 'Last updated: February 28, 2026'}
-      </p>
+      <h1 className="text-3xl font-semibold tracking-tight mb-8">Kullanım Şartları</h1>
+      <p className="text-sm text-[var(--text-secondary)] mb-8">Son güncelleme: 28 Şubat 2026</p>
 
-      <div className="prose prose-sm max-w-none space-y-6 text-[var(--text-primary)]">
-        {isTr ? (
-          <>
-            <section>
-              <h2 className="text-xl font-semibold mb-3">1. Genel Hükümler</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                Bu Kullanım Şartları, HasatLink platformunun ("Platform") kullanımına ilişkin koşulları düzenler. Platformu kullanarak bu şartları kabul etmiş sayılırsınız. HasatLink, tarım sektöründe alıcı ve satıcıları buluşturan bir pazar yeri platformudur.
-              </p>
-            </section>
+      <div className="prose prose-sm max-w-none space-y-8 text-[var(--text-primary)]">
+        <section>
+          <h2 className="text-xl font-semibold mb-3">1. Genel Hükümler</h2>
+          <p className="text-sm leading-relaxed text-[var(--text-primary)]">
+            Bu Kullanım Şartları, HasatLink platformunun ("Platform") kullanımına ilişkin koşulları düzenler. Platformu kullanarak bu şartları kabul etmiş sayılırsınız.
+          </p>
+          <div className="mt-3 p-4 rounded-xl bg-[#2D6A4F]/5 border border-[#2D6A4F]/20 text-sm">
+            <p className="font-semibold text-[#2D6A4F] mb-1">Önemli Bilgilendirme</p>
+            <p className="text-[var(--text-primary)]">
+              HasatLink <strong>yalnızca bir ilan platformudur</strong>. Tarım sektöründe alıcı ve satıcıları buluşturmak amacıyla hizmet vermektedir. Platform üzerinden gerçekleşen hiçbir alım-satım işleminde HasatLink taraf değildir.
+            </p>
+          </div>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">2. Hesap Oluşturma</h2>
-              <ul className="list-disc pl-5 space-y-1 text-sm text-[#3D3530]">
-                <li>Platform'u kullanmak için hesap oluşturmanız gerekmektedir.</li>
-                <li>Kayıt sırasında doğru ve güncel bilgiler vermeniz zorunludur.</li>
-                <li>Hesap güvenliğinizden siz sorumlusunuz.</li>
-                <li>Her kullanıcı yalnızca bir hesap oluşturabilir.</li>
-                <li>18 yaşından küçükler platformu kullanamazlar.</li>
-              </ul>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold mb-3">2. Platformun Niteliği ve Sorumluluk Sınırları</h2>
+          <p className="text-sm leading-relaxed text-[var(--text-primary)] mb-2">
+            HasatLink'in hukuki konumu ve sorumluluk sınırları aşağıdaki şekildedir:
+          </p>
+          <ul className="list-disc pl-5 space-y-2 text-sm text-[var(--text-primary)]">
+            <li><strong>HasatLink sadece bir ilan platformudur.</strong> Kullanıcıların ilan yayınlaması için teknik altyapı sağlar; alım-satım işlemlerinin tarafı değildir.</li>
+            <li><strong>Alım-satım işlemlerinden HasatLink sorumlu değildir.</strong> Platform üzerinden başlayan her türlü ticari ilişki, ödeme, teslimat ve anlaşmazlık tamamen alıcı ve satıcı arasındadır.</li>
+            <li><strong>Ödeme ve teslimat taraflar arasında gerçekleşir.</strong> HasatLink herhangi bir ödeme aracılık hizmeti sunmaz. Para transferi, nakliye, kargo ve teslim süreçleri kullanıcıların kendi sorumluluğundadır.</li>
+            <li><strong>Ürün ve hizmet kalitesi garanti edilmez.</strong> İlanlarda yer alan ürünlerin kalitesi, miktarı, durumu veya açıklamayla uyumu konusunda HasatLink herhangi bir garanti vermez.</li>
+            <li><strong>Fiyat bilgileri bağlayıcı değildir.</strong> İlanlardaki fiyatlar satıcılar tarafından belirlenir ve HasatLink tarafından doğrulanmaz.</li>
+          </ul>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">3. İlan Kuralları</h2>
-              <ul className="list-disc pl-5 space-y-1 text-sm text-[#3D3530]">
-                <li>İlanlar yalnızca tarım ile ilgili ürün ve hizmetler için oluşturulabilir.</li>
-                <li>İlan içeriği doğru, güncel ve yanıltıcı olmayan bilgiler içermelidir.</li>
-                <li>Yasadışı ürün ve hizmetlerin ilanı kesinlikle yasaktır.</li>
-                <li>Fiyatlar Türk Lirası (₺) cinsinden belirtilmelidir.</li>
-                <li>İlan görselleri ürünü doğru şekilde yansıtmalıdır.</li>
-                <li>Aynı ürün için mükerrer ilan oluşturmak yasaktır.</li>
-                <li>HasatLink, uygunsuz ilanları önceden bildirim yapmaksızın kaldırma hakkını saklı tutar.</li>
-              </ul>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold mb-3">3. Hesap Oluşturma ve Güvenlik</h2>
+          <ul className="list-disc pl-5 space-y-1 text-sm text-[var(--text-primary)]">
+            <li>Platform'u kullanmak için hesap oluşturmanız gerekmektedir</li>
+            <li>Kayıt sırasında doğru ve güncel bilgiler vermeniz zorunludur</li>
+            <li>Hesap güvenliğinizden ve şifrenizin gizliliğinden siz sorumlusunuz</li>
+            <li>Her kullanıcı yalnızca bir hesap oluşturabilir</li>
+            <li>18 yaşından küçükler platformu kullanamazlar</li>
+            <li>Hesabınızın yetkisiz kullanıldığını fark etmeniz halinde derhal bize bildirmeniz gerekmektedir</li>
+          </ul>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">4. Kullanıcı Sorumlulukları</h2>
-              <ul className="list-disc pl-5 space-y-1 text-sm text-[#3D3530]">
-                <li>Platformu yalnızca yasal amaçlarla kullanacağınızı taahhüt edersiniz.</li>
-                <li>Diğer kullanıcılara saygılı davranmanız gerekmektedir.</li>
-                <li>Spam, dolandırıcılık veya kötü niyetli faaliyetler yasaktır.</li>
-                <li>Platform altyapısına zarar verecek eylemlerden kaçınmalısınız.</li>
-                <li>İlanlarınızdaki bilgilerin doğruluğundan siz sorumlusunuz.</li>
-              </ul>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold mb-3">4. İlan Kuralları</h2>
+          <ul className="list-disc pl-5 space-y-1 text-sm text-[var(--text-primary)]">
+            <li>İlanlar yalnızca tarım ile ilgili ürün ve hizmetler için oluşturulabilir</li>
+            <li>İlan içeriği doğru, güncel ve yanıltıcı olmayan bilgiler içermelidir</li>
+            <li><strong>Yasadışı ürün ve hizmetlerin ilanı kesinlikle yasaktır</strong> ve bu tür ilanlar önceden bildirim yapılmaksızın kaldırılır</li>
+            <li>Fiyatlar Türk Lirası (₺) cinsinden belirtilmelidir</li>
+            <li>İlan görselleri ürünü doğru şekilde yansıtmalıdır</li>
+            <li>Aynı ürün için mükerrer ilan oluşturmak yasaktır</li>
+            <li>Sahte, yanıltıcı veya gerçek dışı ilanlar yasaktır</li>
+            <li>HasatLink, kurallara uymayan ilanları önceden bildirim yapmaksızın kaldırma hakkını saklı tutar</li>
+          </ul>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">5. Alım-Satım İşlemleri</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                HasatLink, alıcı ve satıcıları buluşturan bir aracı platformdur. Taraflar arasındaki alım-satım işlemlerinden doğrudan sorumlu değildir. Ödeme, teslimat ve ürün kalitesi ile ilgili anlaşmazlıklar taraflar arasında çözümlenmelidir. HasatLink, herhangi bir ürün veya hizmetin kalitesini garanti etmez.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold mb-3">5. Kullanıcı Sorumlulukları</h2>
+          <div className="p-4 rounded-xl bg-[#C1341B]/5 border border-[#C1341B]/20 text-sm mb-4">
+            <p className="font-semibold text-[#C1341B] mb-1">Önemli</p>
+            <p className="text-[var(--text-primary)]">
+              Kullanıcılar, yayınladıkları ilanların içeriğinden, doğruluğundan ve yasal uygunluğundan <strong>bizzat kendileri sorumludur</strong>. HasatLink, kullanıcıların ilan içeriklerinden kaynaklanan hukuki sorunlardan sorumlu tutulamaz.
+            </p>
+          </div>
+          <ul className="list-disc pl-5 space-y-1 text-sm text-[var(--text-primary)]">
+            <li>Platformu yalnızca yasal amaçlarla kullanacağınızı taahhüt edersiniz</li>
+            <li>Diğer kullanıcılara saygılı davranmanız gerekmektedir</li>
+            <li>Spam, dolandırıcılık veya kötü niyetli faaliyetler yasaktır</li>
+            <li>Platform altyapısına zarar verecek eylemlerden kaçınmalısınız</li>
+            <li>Başkalarının kişisel bilgilerini izinsiz paylaşmak yasaktır</li>
+            <li>Platformu otomatik araçlar (bot, scraper vb.) ile kullanmak yasaktır</li>
+          </ul>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">6. Fikri Mülkiyet</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                HasatLink platformunun tasarımı, logosu, yazılımı ve içeriği HasatLink'e aittir ve telif hakkı ile korunmaktadır. Kullanıcılar, yükledikleri içeriklerin fikri mülkiyet haklarına sahip olmaya devam eder ancak bu içeriklerin platformda görüntülenmesi için HasatLink'e lisans vermiş sayılır.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold mb-3">6. Yasadışı İçerik Politikası</h2>
+          <p className="text-sm leading-relaxed text-[var(--text-primary)] mb-2">
+            Aşağıdaki içerikleri barındıran ilanlar derhal kaldırılır ve ilgili hesaplar askıya alınır:
+          </p>
+          <ul className="list-disc pl-5 space-y-1 text-sm text-[var(--text-primary)]">
+            <li>Yasadışı ürün veya hizmetler</li>
+            <li>Fikri mülkiyet haklarını ihlal eden içerikler</li>
+            <li>Sahte veya çalıntı ürünler</li>
+            <li>Zararlı kimyasal madde veya yasaklı tarım ilaçları</li>
+            <li>Dolandırıcılık amaçlı ilanlar</li>
+            <li>Nefret söylemi, ayrımcılık veya tehdit içeren içerikler</li>
+          </ul>
+          <p className="text-sm leading-relaxed text-[var(--text-primary)] mt-2">
+            HasatLink, gerekli hallerde ilgili yasal mercilere bildirimde bulunma hakkını saklı tutar.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">7. AI Teşhis Hizmeti</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                HasatLink'in AI bitki teşhis özelliği yalnızca bilgi amaçlıdır ve profesyonel tarım danışmanlığı yerine geçmez. Teşhis sonuçları kesin tanı niteliği taşımaz. Önemli tarımsal kararlar için uzman görüşü almanız tavsiye edilir.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold mb-3">7. AI Teşhis Hizmeti</h2>
+          <p className="text-sm leading-relaxed text-[var(--text-primary)]">
+            HasatLink'in yapay zeka destekli bitki teşhis özelliği <strong>yalnızca bilgilendirme amaçlıdır</strong> ve profesyonel tarım danışmanlığı yerine geçmez. Teşhis sonuçları kesin tanı niteliği taşımaz. Önemli tarımsal kararlar için mutlaka uzman görüşü almanız tavsiye edilir. AI teşhis hizmetinin kullanımından doğabilecek zararlardan HasatLink sorumlu tutulamaz.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">8. Hal Fiyatları ve Pazar Verileri</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                Platformda gösterilen hal fiyatları İzmir Büyükşehir Belediyesi açık veri kaynaklarından alınmaktadır. HasatLink Pazarı fiyatları kullanıcı ilanlarına dayalı olarak hesaplanır. Bu veriler bilgi amaçlı olup, yatırım veya ticari karar için tek başına referans alınmamalıdır.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold mb-3">8. Hal Fiyatları ve Pazar Verileri</h2>
+          <p className="text-sm leading-relaxed text-[var(--text-primary)]">
+            Platformda gösterilen hal fiyatları üçüncü taraf açık veri kaynaklarından alınmaktadır. HasatLink Pazarı fiyatları kullanıcı ilanlarına dayalı olarak hesaplanır. Bu veriler <strong>bilgi amaçlıdır</strong> ve ticari kararlar için tek başına referans alınmamalıdır. Veri doğruluğu konusunda HasatLink garanti vermez.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">9. Hizmet Değişiklikleri</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                HasatLink, platformun özelliklerini, işlevlerini ve bu Kullanım Şartlarını önceden bildirim yaparak değiştirme hakkını saklı tutar. Değişikliklerden sonra platformu kullanmaya devam etmeniz, güncellenmiş şartları kabul ettiğiniz anlamına gelir.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold mb-3">9. Fikri Mülkiyet</h2>
+          <p className="text-sm leading-relaxed text-[var(--text-primary)]">
+            HasatLink platformunun tasarımı, logosu, yazılımı ve özgün içeriği HasatLink'e aittir ve telif hakkı ile korunmaktadır. Kullanıcılar, yükledikleri içeriklerin fikri mülkiyet haklarına sahip olmaya devam eder; ancak bu içeriklerin platformda görüntülenmesi ve tanıtım amacıyla kullanılması için HasatLink'e sınırlı bir lisans vermiş sayılır.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">10. Hesap Askıya Alma ve Kapatma</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                HasatLink, bu kullanım şartlarını ihlal eden hesapları geçici veya kalıcı olarak askıya alma ya da kapatma hakkını saklı tutar. Hesap kapatma durumunda kullanıcıya bildirim yapılır.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold mb-3">10. Hesap Askıya Alma ve Kapatma</h2>
+          <p className="text-sm leading-relaxed text-[var(--text-primary)]">
+            HasatLink, bu kullanım şartlarını ihlal eden hesapları geçici veya kalıcı olarak askıya alma ya da kapatma hakkını saklı tutar. Hesap askıya alınması veya kapatılması durumunda kullanıcıya bildirim yapılır. Tekrarlayan ihlallerde kalıcı hesap kapatma uygulanabilir.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">11. Sorumluluk Sınırları</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                HasatLink, platformun kesintisiz veya hatasız çalışacağını garanti etmez. Kullanıcılar arası işlemlerden, veri kaybından veya platformun kullanımından doğabilecek doğrudan veya dolaylı zararlardan HasatLink sorumlu tutulamaz.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold mb-3">11. Hizmet Değişiklikleri</h2>
+          <p className="text-sm leading-relaxed text-[var(--text-primary)]">
+            HasatLink, platformun özelliklerini, işlevlerini ve bu Kullanım Şartlarını önceden bildirim yaparak değiştirme hakkını saklı tutar. Değişikliklerden sonra platformu kullanmaya devam etmeniz, güncellenmiş şartları kabul ettiğiniz anlamına gelir.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">12. Uygulanacak Hukuk</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                Bu Kullanım Şartları, Türkiye Cumhuriyeti kanunlarına tabidir. Uyuşmazlıklarda Adana Mahkemeleri ve İcra Daireleri yetkilidir.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold mb-3">12. Sorumluluk Reddi</h2>
+          <ul className="list-disc pl-5 space-y-1 text-sm text-[var(--text-primary)]">
+            <li>HasatLink, platformun kesintisiz veya hatasız çalışacağını garanti etmez</li>
+            <li>Kullanıcılar arası işlemlerden doğan zararlardan HasatLink sorumlu tutulamaz</li>
+            <li>Veri kaybından veya platformun kullanımından doğabilecek doğrudan veya dolaylı zararlardan HasatLink sorumlu değildir</li>
+            <li>Üçüncü taraf web sitelerine verilen bağlantıların içeriğinden HasatLink sorumlu değildir</li>
+            <li>Mücbir sebepler (doğal afet, savaş, teknik altyapı sorunları vb.) nedeniyle hizmet kesintilerinden sorumluluk kabul edilmez</li>
+          </ul>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">13. İletişim</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                Kullanım şartları hakkında sorularınız için bizimle iletişime geçebilirsiniz:<br />
-                E-posta: destek@hasatlink.com
-              </p>
-            </section>
-          </>
-        ) : (
-          <>
-            <section>
-              <h2 className="text-xl font-semibold mb-3">1. General Provisions</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                These Terms of Service govern the use of the HasatLink platform ("Platform"). By using the Platform, you accept these terms. HasatLink is a marketplace platform connecting buyers and sellers in the agricultural sector.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold mb-3">13. Uygulanacak Hukuk ve Yetkili Mahkeme</h2>
+          <p className="text-sm leading-relaxed text-[var(--text-primary)]">
+            Bu Kullanım Şartları, Türkiye Cumhuriyeti kanunlarına tabidir. Bu şartlardan doğabilecek uyuşmazlıklarda Adana Mahkemeleri ve İcra Daireleri yetkilidir.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-xl font-semibold mb-3">2. Account Registration</h2>
-              <ul className="list-disc pl-5 space-y-1 text-sm text-[#3D3530]">
-                <li>You must create an account to use the Platform.</li>
-                <li>You must provide accurate and up-to-date information during registration.</li>
-                <li>You are responsible for the security of your account.</li>
-                <li>Each user may only create one account.</li>
-                <li>Users under 18 years of age may not use the platform.</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">3. Listing Rules</h2>
-              <ul className="list-disc pl-5 space-y-1 text-sm text-[#3D3530]">
-                <li>Listings may only be created for agriculture-related products and services.</li>
-                <li>Listing content must be accurate, current, and not misleading.</li>
-                <li>Listing of illegal products and services is strictly prohibited.</li>
-                <li>Prices must be specified in Turkish Lira (₺).</li>
-                <li>Listing images must accurately represent the product.</li>
-                <li>Creating duplicate listings for the same product is prohibited.</li>
-                <li>HasatLink reserves the right to remove inappropriate listings without prior notice.</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">4. User Responsibilities</h2>
-              <ul className="list-disc pl-5 space-y-1 text-sm text-[#3D3530]">
-                <li>You agree to use the Platform only for lawful purposes.</li>
-                <li>You must treat other users with respect.</li>
-                <li>Spam, fraud, or malicious activities are prohibited.</li>
-                <li>You must refrain from actions that could damage the platform infrastructure.</li>
-                <li>You are responsible for the accuracy of information in your listings.</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">5. Transactions</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                HasatLink is an intermediary platform connecting buyers and sellers. It is not directly responsible for transactions between parties. Disputes regarding payment, delivery, and product quality must be resolved between the parties. HasatLink does not guarantee the quality of any product or service.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">6. Intellectual Property</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                The design, logo, software, and content of the HasatLink platform belong to HasatLink and are protected by copyright. Users retain intellectual property rights to their uploaded content but grant HasatLink a license to display such content on the platform.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">7. AI Diagnosis Service</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                HasatLink's AI plant diagnosis feature is for informational purposes only and does not replace professional agricultural advice. Diagnosis results are not definitive. We recommend consulting experts for important agricultural decisions.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">8. Market Prices and Data</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                Market hall prices shown on the platform are sourced from Izmir Metropolitan Municipality open data. HasatLink Market prices are calculated based on user listings. This data is for informational purposes and should not be used as the sole reference for investment or commercial decisions.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">9. Service Changes</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                HasatLink reserves the right to modify the platform's features, functionality, and these Terms of Service with prior notice. Continuing to use the platform after changes means you accept the updated terms.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">10. Account Suspension and Closure</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                HasatLink reserves the right to temporarily or permanently suspend or close accounts that violate these terms of service. Users will be notified in case of account closure.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">11. Limitation of Liability</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                HasatLink does not guarantee that the platform will operate without interruption or error. HasatLink cannot be held liable for direct or indirect damages arising from transactions between users, data loss, or use of the platform.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">12. Governing Law</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                These Terms of Service are subject to the laws of the Republic of Turkey. Adana Courts and Execution Offices have jurisdiction in disputes.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold mb-3">13. Contact</h2>
-              <p className="text-sm leading-relaxed text-[#3D3530]">
-                For questions about the terms of service, you can contact us at:<br />
-                Email: support@hasatlink.com
-              </p>
-            </section>
-          </>
-        )}
+        <section>
+          <h2 className="text-xl font-semibold mb-3">14. İletişim</h2>
+          <p className="text-sm leading-relaxed text-[var(--text-primary)]">
+            Kullanım şartları hakkında sorularınız için bizimle iletişime geçebilirsiniz:
+          </p>
+          <div className="mt-3 p-4 rounded-xl bg-[var(--bg-input)] text-sm space-y-1">
+            <p><strong>E-posta:</strong> destek@hasatlink.com</p>
+          </div>
+        </section>
       </div>
     </div>
   );
