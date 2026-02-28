@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Settings, Save, DollarSign, Megaphone, UserCog, ChevronRight } from 'lucide-react';
+import { Settings, Save, DollarSign, Megaphone, UserCog, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SEO from '../components/ui/SEO';
 import Input from '../components/ui/Input';
@@ -31,13 +31,19 @@ export default function AdminSettingsPage() {
   const isTr = i18n.language?.startsWith('tr');
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ instagramUrl: '', twitterUrl: '' });
+  const [form, setForm] = useState({ siteTitle: '', siteDescription: '', logoUrl: '', instagramUrl: '', twitterUrl: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     api.get('/settings')
-      .then(({ data }) => setForm({ instagramUrl: data.instagramUrl || '', twitterUrl: data.twitterUrl || '' }))
+      .then(({ data }) => setForm({
+        siteTitle: data.siteTitle || '',
+        siteDescription: data.siteDescription || '',
+        logoUrl: data.logoUrl || '',
+        instagramUrl: data.instagramUrl || '',
+        twitterUrl: data.twitterUrl || '',
+      }))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -62,8 +68,48 @@ export default function AdminSettingsPage() {
       <SEO title={isTr ? 'Admin - Ayarlar' : 'Admin - Settings'} />
 
       <div className="flex items-center gap-3 mb-6">
+        <button onClick={() => navigate('/admin')} className="p-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors">
+          <ChevronLeft size={20} />
+        </button>
         <Settings size={24} className="text-[#2D6A4F]" />
         <h1 className="text-2xl font-semibold tracking-tight">{isTr ? 'Site Ayarları' : 'Site Settings'}</h1>
+      </div>
+
+      {/* Site Info */}
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-6 shadow-sm space-y-6 mb-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+          {isTr ? 'Site Bilgileri' : 'Site Information'}
+        </h2>
+        <div className="space-y-4">
+          <Input
+            label={isTr ? 'Site Başlığı' : 'Site Title'}
+            value={form.siteTitle}
+            onChange={e => setForm(f => ({ ...f, siteTitle: e.target.value }))}
+            placeholder="HasatLink"
+          />
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">{isTr ? 'Site Açıklaması' : 'Site Description'}</label>
+            <textarea
+              value={form.siteDescription}
+              onChange={e => setForm(f => ({ ...f, siteDescription: e.target.value }))}
+              placeholder={isTr ? 'HasatLink - Tarım Pazarı' : 'HasatLink - Agriculture Marketplace'}
+              rows={3}
+              className="w-full px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-default)] rounded-2xl text-sm outline-none focus:border-[#2D6A4F] transition-colors resize-none"
+            />
+          </div>
+          <Input
+            label={isTr ? 'Logo URL' : 'Logo URL'}
+            value={form.logoUrl}
+            onChange={e => setForm(f => ({ ...f, logoUrl: e.target.value }))}
+            placeholder="https://example.com/logo.png"
+          />
+          {form.logoUrl && (
+            <div className="flex items-center gap-3 p-3 bg-[var(--bg-input)] rounded-xl">
+              <img src={form.logoUrl} alt="Logo" className="w-12 h-12 object-contain rounded-lg" onError={e => (e.currentTarget.style.display = 'none')} />
+              <span className="text-xs text-[var(--text-secondary)]">{isTr ? 'Logo önizleme' : 'Logo preview'}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-6 shadow-sm space-y-6">

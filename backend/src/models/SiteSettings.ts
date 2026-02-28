@@ -9,6 +9,9 @@ export interface IPremiumPackage {
 
 export interface ISiteSettings extends Document {
   key: string;
+  siteTitle: string;
+  siteDescription: string;
+  logoUrl: string;
   instagramUrl: string;
   twitterUrl: string;
   featuredListing: { enabled: boolean; pricePerListing: number; durationOptions: number[] };
@@ -26,6 +29,9 @@ const PremiumPackageSchema = new Schema<IPremiumPackage>({
 
 const SiteSettingsSchema = new Schema<ISiteSettings>({
   key: { type: String, default: 'main', unique: true },
+  siteTitle: { type: String, default: 'HasatLink' },
+  siteDescription: { type: String, default: '' },
+  logoUrl: { type: String, default: '' },
   instagramUrl: { type: String, default: '' },
   twitterUrl: { type: String, default: '' },
   featuredListing: {

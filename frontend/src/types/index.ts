@@ -13,6 +13,7 @@ export interface User {
   averageRating: number;
   totalRatings: number;
   bio: string;
+  isBanned: boolean;
   firebaseUid?: string;
   createdAt: string;
 }
@@ -219,6 +220,9 @@ export interface PremiumPackage {
 export interface SiteSettings {
   _id?: string;
   key: string;
+  siteTitle: string;
+  siteDescription: string;
+  logoUrl: string;
   instagramUrl: string;
   twitterUrl: string;
   featuredListing: { enabled: boolean; pricePerListing: number; durationOptions: number[] };

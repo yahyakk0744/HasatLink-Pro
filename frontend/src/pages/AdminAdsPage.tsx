@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate } from 'react-router-dom';
-import { Megaphone, Plus, Trash2, Edit3, Eye, MousePointer } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { Megaphone, Plus, Trash2, Edit3, Eye, MousePointer, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SEO from '../components/ui/SEO';
 import Input from '../components/ui/Input';
@@ -35,6 +35,7 @@ export default function AdminAdsPage() {
   const isTr = i18n.language?.startsWith('tr');
   const lang = isTr ? 'tr' : 'en';
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [ads, setAds] = useState<Ad[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterSlot, setFilterSlot] = useState<SlotType | 'all'>('all');
@@ -123,6 +124,9 @@ export default function AdminAdsPage() {
 
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/admin')} className="p-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors">
+            <ChevronLeft size={20} />
+          </button>
           <Megaphone size={24} className="text-[#2D6A4F]" />
           <h1 className="text-2xl font-semibold tracking-tight">{isTr ? 'Reklam Yönetimi' : 'Ad Management'}</h1>
         </div>

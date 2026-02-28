@@ -23,6 +23,11 @@ import AdminContactsPage from './pages/AdminContactsPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
 import AdminRevenuePage from './pages/AdminRevenuePage';
 import AdminAdsPage from './pages/AdminAdsPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminListingsPage from './pages/AdminListingsPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import AdminHalPricesPage from './pages/AdminHalPricesPage';
+import AdminPazarPricesPage from './pages/AdminPazarPricesPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import CookiePolicyPage from './pages/CookiePolicyPage';
@@ -64,6 +69,11 @@ export default function App() {
           <Route path="/mesajlar" element={<MessagesPage />} />
           <Route path="/mesajlar/:conversationId" element={<MessagesPage />} />
           <Route path="/iletisim" element={<ContactPage />} />
+          <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin/ilanlar" element={<AdminListingsPage />} />
+          <Route path="/admin/kullanicilar" element={<AdminUsersPage />} />
+          <Route path="/admin/hal-fiyatlari" element={<AdminHalPricesPage />} />
+          <Route path="/admin/pazar-fiyatlari" element={<AdminPazarPricesPage />} />
           <Route path="/admin/mesajlar" element={<AdminContactsPage />} />
           <Route path="/admin/ayarlar" element={<AdminSettingsPage />} />
           <Route path="/admin/gelir" element={<AdminRevenuePage />} />

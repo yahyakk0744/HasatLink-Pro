@@ -18,6 +18,9 @@ export const getSettings = async (_req: Request, res: Response): Promise<void> =
 export const updateSettings = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
+      siteTitle,
+      siteDescription,
+      logoUrl,
       instagramUrl,
       twitterUrl,
       featuredListing,
@@ -27,6 +30,9 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
     } = req.body;
 
     const update: Record<string, unknown> = {};
+    if (siteTitle !== undefined) update.siteTitle = siteTitle;
+    if (siteDescription !== undefined) update.siteDescription = siteDescription;
+    if (logoUrl !== undefined) update.logoUrl = logoUrl;
     if (instagramUrl !== undefined) update.instagramUrl = instagramUrl;
     if (twitterUrl !== undefined) update.twitterUrl = twitterUrl;
     if (featuredListing !== undefined) update.featuredListing = featuredListing;

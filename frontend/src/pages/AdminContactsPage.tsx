@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate } from 'react-router-dom';
-import { Mail, MailOpen, Trash2, Clock, User, AtSign } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { Mail, MailOpen, Trash2, Clock, User, AtSign, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SEO from '../components/ui/SEO';
 import EmptyState from '../components/ui/EmptyState';
@@ -23,6 +23,7 @@ export default function AdminContactsPage() {
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<ContactMsg[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ContactMsg | null>(null);
@@ -76,6 +77,9 @@ export default function AdminContactsPage() {
       <SEO title={isTr ? 'Admin - Mesajlar' : 'Admin - Messages'} />
 
       <div className="flex items-center gap-3 mb-6">
+        <button onClick={() => navigate('/admin')} className="p-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors">
+          <ChevronLeft size={20} />
+        </button>
         <h1 className="text-2xl font-semibold tracking-tight">{isTr ? 'İletişim Mesajları' : 'Contact Messages'}</h1>
         {unreadCount > 0 && (
           <span className="px-2.5 py-0.5 text-xs font-semibold bg-[#C1341B] text-white rounded-full">

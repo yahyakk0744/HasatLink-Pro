@@ -15,6 +15,7 @@ export interface IUser extends Document {
   averageRating: number;
   totalRatings: number;
   bio: string;
+  isBanned: boolean;
   authProvider: string;
   firebaseUid: string;
   createdAt: Date;
@@ -35,6 +36,7 @@ const UserSchema = new Schema<IUser>({
   averageRating: { type: Number, default: 0 },
   totalRatings: { type: Number, default: 0 },
   bio: { type: String, default: '' },
+  isBanned: { type: Boolean, default: false },
   authProvider: { type: String, default: 'email', enum: ['email', 'google'] },
   firebaseUid: { type: String, default: '', sparse: true },
   createdAt: { type: Date, default: Date.now },

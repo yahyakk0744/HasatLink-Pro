@@ -14,6 +14,7 @@ import aiRoutes from './routes/aiRoutes';
 import hasatlinkPazarRoutes from './routes/hasatlinkPazarRoutes';
 import contactRoutes from './routes/contactRoutes';
 import adRoutes from './routes/adRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 dotenv.config();
 
@@ -58,6 +59,7 @@ app.use('/api', aiRoutes);
 app.use('/api', hasatlinkPazarRoutes);
 app.use('/api', contactRoutes);
 app.use('/api', adRoutes);
+app.use('/api', adminRoutes);
 
 // Error handler
 app.use(errorHandler);

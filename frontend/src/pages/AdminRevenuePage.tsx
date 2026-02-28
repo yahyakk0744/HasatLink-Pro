@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate } from 'react-router-dom';
-import { DollarSign, Save, Plus, X, Trash2 } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { DollarSign, Save, Plus, X, Trash2, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SEO from '../components/ui/SEO';
 import Input from '../components/ui/Input';
@@ -15,6 +15,9 @@ import type { SiteSettings, PremiumPackage } from '../types';
 
 const defaultSettings: SiteSettings = {
   key: 'main',
+  siteTitle: '',
+  siteDescription: '',
+  logoUrl: '',
   instagramUrl: '',
   twitterUrl: '',
   featuredListing: { enabled: false, pricePerListing: 0, durationOptions: [] },
@@ -27,6 +30,7 @@ export default function AdminRevenuePage() {
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState<SiteSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -141,6 +145,9 @@ export default function AdminRevenuePage() {
       <SEO title={isTr ? 'Admin - Gelir Yönetimi' : 'Admin - Revenue'} />
 
       <div className="flex items-center gap-3 mb-6">
+        <button onClick={() => navigate('/admin')} className="p-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors">
+          <ChevronLeft size={20} />
+        </button>
         <DollarSign size={24} className="text-[#2D6A4F]" />
         <h1 className="text-2xl font-semibold tracking-tight">{isTr ? 'Gelir Yönetimi' : 'Revenue Management'}</h1>
       </div>
