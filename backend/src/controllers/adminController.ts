@@ -4,6 +4,8 @@ import Listing from '../models/Listing';
 import ContactMessage from '../models/ContactMessage';
 import MarketPrice from '../models/MarketPrice';
 import Ad from '../models/Ad';
+import Notification from '../models/Notification';
+import { sendPushToUser } from '../utils/pushNotification';
 
 // GET /api/admin/stats — dashboard stats
 export const getDashboardStats = async (_req: Request, res: Response): Promise<void> => {
@@ -288,5 +290,46 @@ export const deleteMarketPrice = async (req: Request, res: Response): Promise<vo
     res.json({ message: 'Fiyat silindi' });
   } catch (error) {
     res.status(500).json({ message: 'Silme başarısız', error });
+  }
+};
+
+// POST /api/admin/notifications/broadcast — send notification to all or selected users
+export const broadcastNotification = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { title, message, type, userIds } = req.body;
+    if (!title || !message) {
+      res.status(400).json({ message: 'Başlık ve mesaj zorunludur' });
+      return;
+    }
+
+    const notifType = type || 'sistem';
+
+    // If userIds provided, send to specific users; otherwise send to all
+    let targetUsers: { userId: string }[];
+    if (userIds && Array.isArray(userIds) && userIds.length > 0) {
+      targetUsers = userIds.map((id: string) => ({ userId: id }));
+    } else {
+      targetUsers = await User.find().select('userId').lean();
+    }
+
+    let sentCount = 0;
+    for (const u of targetUsers) {
+      try {
+        const notif = await Notification.create({
+          userId: u.userId,
+          type: notifType,
+          title,
+          message,
+        });
+        sendPushToUser(u.userId, { title, body: message, url: '/' }, notif);
+        sentCount++;
+      } catch {
+        // Skip failed individual notifications
+      }
+    }
+
+    res.json({ success: true, sentCount, totalTargeted: targetUsers.length });
+  } catch (error) {
+    res.status(500).json({ message: 'Bildirim gönderilemedi', error });
   }
 };

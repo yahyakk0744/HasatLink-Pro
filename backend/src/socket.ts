@@ -1,5 +1,7 @@
 import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
+import Notification from './models/Notification';
+import { sendPushToUser } from './utils/pushNotification';
 
 let io: Server;
 
@@ -55,9 +57,28 @@ export function initSocket(httpServer: HttpServer) {
       socket.leave(`conversation:${conversationId}`);
     });
 
-    // New message — relay to conversation room
-    socket.on('message:new', (data: { conversationId: string; message: any }) => {
+    // New message — relay to conversation room + create notification
+    socket.on('message:new', (data: { conversationId: string; message: any; recipientId?: string; senderName?: string }) => {
       socket.to(`conversation:${data.conversationId}`).emit('message:new', data);
+
+      // Create notification for recipient if they're not in the conversation room
+      if (data.recipientId && data.recipientId !== userId) {
+        const senderName = data.senderName || 'Bir kullanıcı';
+        const msgPreview = data.message?.text?.substring(0, 50) || 'Yeni mesaj';
+        Notification.create({
+          userId: data.recipientId,
+          type: 'mesaj',
+          title: `${senderName} mesaj gönderdi`,
+          message: msgPreview,
+          relatedId: data.conversationId,
+        }).then(notif => {
+          sendPushToUser(data.recipientId!, {
+            title: `${senderName} mesaj gönderdi`,
+            body: msgPreview,
+            url: '/mesajlar',
+          }, notif);
+        }).catch(() => {});
+      }
     });
 
     // Message read

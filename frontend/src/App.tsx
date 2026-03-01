@@ -30,6 +30,7 @@ import AdminListingsPage from './pages/AdminListingsPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminHalPricesPage from './pages/AdminHalPricesPage';
 import AdminPazarPricesPage from './pages/AdminPazarPricesPage';
+import AdminNotificationsPage from './pages/AdminNotificationsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import CookiePolicyPage from './pages/CookiePolicyPage';
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="/admin/ayarlar" element={<AdminSettingsPage />} />
           <Route path="/admin/gelir" element={<AdminRevenuePage />} />
           <Route path="/admin/reklamlar" element={<AdminAdsPage />} />
+          <Route path="/admin/bildirimler" element={<AdminNotificationsPage />} />
           <Route path="/gizlilik" element={<PrivacyPage />} />
           <Route path="/kullanim-sartlari" element={<TermsPage />} />
           <Route path="/cerez-politikasi" element={<CookiePolicyPage />} />

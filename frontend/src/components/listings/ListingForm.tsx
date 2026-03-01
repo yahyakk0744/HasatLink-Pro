@@ -97,7 +97,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const [price, setPrice] = useState(initialData?.price?.toString() || '');
   const [amount, setAmount] = useState(initialData?.amount?.toString() || '');
   const [unit, setUnit] = useState(initialData?.unit || 'kg');
-  const [location, setLocation] = useState(initialData?.location || 'Ceyhan, Adana');
+  const [location, setLocation] = useState(initialData?.location || '');
   const [phone, setPhone] = useState(initialData?.phone || '');
   const [coordLat, setCoordLat] = useState(initialData?.coordinates?.lat || 0);
   const [coordLng, setCoordLng] = useState(initialData?.coordinates?.lng || 0);

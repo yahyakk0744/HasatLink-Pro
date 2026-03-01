@@ -14,6 +14,7 @@ import {
   createMarketPrice,
   updateMarketPrice,
   deleteMarketPrice,
+  broadcastNotification,
 } from '../controllers/adminController';
 
 const router = Router();
@@ -37,5 +38,8 @@ router.get('/admin/market-prices', auth, admin, getAdminMarketPrices);
 router.post('/admin/market-prices', auth, admin, createMarketPrice);
 router.put('/admin/market-prices/:id', auth, admin, updateMarketPrice);
 router.delete('/admin/market-prices/:id', auth, admin, deleteMarketPrice);
+
+// Notifications
+router.post('/admin/notifications/broadcast', auth, admin, broadcastNotification);
 
 export default router;

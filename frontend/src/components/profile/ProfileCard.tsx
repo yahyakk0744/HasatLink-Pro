@@ -16,8 +16,9 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
 
   return (
     <div className="bg-[var(--bg-surface)] rounded-[2.5rem] p-6 shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="w-24 h-24 rounded-full bg-[var(--bg-input)] overflow-hidden shrink-0 ring-4 ring-[#2D6A4F]/20">
+      {/* Mobile: stacked centered layout, Desktop: horizontal */}
+      <div className="flex flex-col items-center text-center md:flex-row md:items-center md:text-left md:gap-4">
+        <div className="w-24 h-24 rounded-full bg-[var(--bg-input)] overflow-hidden shrink-0 ring-4 ring-[#2D6A4F]/20 mb-3 md:mb-0">
           {user.profileImage ? (
             <img src={user.profileImage} alt={user.name} className="w-full h-full object-cover" />
           ) : (
@@ -27,44 +28,50 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
           )}
         </div>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold tracking-tight break-words">{user.name}</h2>
-            {user.isVerified && <CheckCircle size={16} className="text-[#2D6A4F] shrink-0" />}
+          <div className="flex items-center justify-center md:justify-start gap-2">
+            <h2 className="text-xl font-bold tracking-tight break-words">{user.name}</h2>
+            {user.isVerified && <CheckCircle size={18} className="text-[#2D6A4F] shrink-0" />}
           </div>
-          <div className="flex items-center gap-3 text-xs text-[#6B6560] mt-1">
-            <span className="flex items-center gap-1"><MapPin size={12} />{user.location}</span>
-          </div>
+          {user.location && (
+            <div className="flex items-center justify-center md:justify-start gap-1 text-xs text-[#6B6560] mt-1">
+              <MapPin size={12} />
+              <span>{user.location}</span>
+            </div>
+          )}
           {user.averageRating > 0 && (
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center justify-center md:justify-start gap-2 mt-1.5">
               <RatingStars score={Math.round(user.averageRating)} size={14} />
               <span className="text-sm font-semibold">{user.averageRating.toFixed(1)}</span>
               <span className="text-xs text-[#6B6560]">({user.totalRatings})</span>
             </div>
           )}
           {user.createdAt && (
-            <div className="flex items-center gap-1 text-xs text-[#6B6560] mt-1">
+            <div className="flex items-center justify-center md:justify-start gap-1 text-xs text-[#6B6560] mt-1.5">
               <Calendar size={12} />
               <span>{t('profileInfo.memberSince')}: {formatDate(user.createdAt)}</span>
             </div>
           )}
+          {/* Action buttons */}
+          <div className="flex items-center justify-center md:justify-start gap-2 mt-3">
+            {isOwn && onEdit && (
+              <button
+                onClick={onEdit}
+                className="px-4 py-2 text-xs font-semibold uppercase bg-[var(--bg-input)] rounded-full hover:bg-[var(--bg-surface-hover)] transition-colors"
+              >
+                {t('editProfile')}
+              </button>
+            )}
+            {!isOwn && onMessage && (
+              <button
+                onClick={onMessage}
+                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase bg-[#2D6A4F] text-white rounded-full hover:bg-[#1B4332] transition-colors"
+              >
+                <MessageSquare size={14} />
+                {t('listing.message')}
+              </button>
+            )}
+          </div>
         </div>
-        {isOwn && onEdit && (
-          <button
-            onClick={onEdit}
-            className="px-4 py-2 text-xs font-semibold uppercase bg-[var(--bg-input)] rounded-full hover:bg-[var(--bg-surface-hover)] transition-colors"
-          >
-            {t('editProfile')}
-          </button>
-        )}
-        {!isOwn && onMessage && (
-          <button
-            onClick={onMessage}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase bg-[#2D6A4F] text-white rounded-full hover:bg-[#1B4332] transition-colors"
-          >
-            <MessageSquare size={14} />
-            {t('listing.message')}
-          </button>
-        )}
       </div>
       {user.bio && (
         <div className="mt-4 pt-4 border-t border-[var(--bg-input)]">

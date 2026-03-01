@@ -12,7 +12,7 @@ export interface INotification extends Document {
 
 const NotificationSchema = new Schema<INotification>({
   userId: { type: String, required: true },
-  type: { type: String, required: true, enum: ['borsa', 'istatistik', 'sistem', 'ilan', 'rating', 'hava'] },
+  type: { type: String, required: true, enum: ['borsa', 'istatistik', 'sistem', 'ilan', 'rating', 'hava', 'mesaj'] },
   title: { type: String, required: true },
   message: { type: String, required: true },
   relatedId: { type: String, default: '' },

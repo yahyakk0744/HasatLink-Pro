@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /hesap-ayarlari
+Disallow: /mesajlar
+Disallow: /bildirimler
+Disallow: /api/
+
+Sitemap: https://hasatlink.com/sitemap.xml

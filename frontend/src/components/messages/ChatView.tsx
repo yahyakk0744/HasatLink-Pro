@@ -98,11 +98,14 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
 
   const handleSend = (text: string) => {
     sendMessage(conversation.id, currentUid, text);
-    // Relay via socket for instant delivery
+    // Relay via socket for instant delivery + notification
     if (socket) {
+      const currentParticipant = conversation.participants?.[currentUid];
       socket.emit('message:new', {
         conversationId: conversation.id,
         message: { senderId: currentUid, text, createdAt: new Date().toISOString(), read: false },
+        recipientId: otherParticipant?.userId || otherUid,
+        senderName: currentParticipant?.name || 'Kullanıcı',
       });
     }
   };
