@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import connectDB from './config/db';
 import errorHandler from './middleware/errorHandler';
@@ -37,6 +38,7 @@ app.use(cors({
   ],
   credentials: true,
 }));
+app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 
 // Rate limiting (in-memory, endpoint-aware)
@@ -47,12 +49,18 @@ app.use(rateLimit);
 import { sanitize } from './middleware/sanitize';
 app.use(sanitize);
 
-// Security headers
-app.use((_req, res, next) => {
+// Security headers + cache control for public GET endpoints
+app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Cache public GET responses for 5 minutes
+  if (req.method === 'GET' && !req.headers.authorization) {
+    res.setHeader('Cache-Control', 'public, max-age=300');
+  } else {
+    res.setHeader('Cache-Control', 'no-store');
+  }
   next();
 });
 

@@ -74,19 +74,26 @@ export default function HomePage() {
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const [platformStats, setPlatformStats] = useState({ activeListings: 0, registeredUsers: 0, cities: 0, aiDiagnoses: 0 });
 
+  // Critical: listings + weather load immediately
   useEffect(() => {
     fetchListings({ limit: '8' });
-    fetchAllPrices();
-    fetchHasatlinkPrices();
-    // Use geolocation coords if available, else user's profile city (no hardcoded fallback)
     if (geoLocation?.lat && geoLocation?.lng) {
       fetchWeather(geoLocation.lat, geoLocation.lng);
     } else {
       const city = geoLocation?.city || user?.location?.split(',')[0]?.trim();
       if (city) fetchWeather(city);
     }
-    api.get('/stats/platform').then(({ data }) => setPlatformStats(data)).catch(() => {});
-  }, [fetchListings, fetchAllPrices, fetchHasatlinkPrices, fetchWeather, user, geoLocation]);
+  }, [fetchListings, fetchWeather, user, geoLocation]);
+
+  // Non-critical: prices + stats lazy load after 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchAllPrices();
+      fetchHasatlinkPrices();
+      api.get('/stats/platform').then(({ data }) => setPlatformStats(data)).catch(() => {});
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [fetchAllPrices, fetchHasatlinkPrices]);
 
   // Top pazar products for comparison (pick 6 popular ones)
   const popularProducts = ['Domates', 'Biber', 'Patlıcan', 'Salatalık', 'Soğan', 'Patates'];
@@ -133,41 +140,29 @@ export default function HomePage() {
 
             {/* Hava Durumu + Hal Fiyatları + HasatLink Pazarı */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              {/* Hava Durumu */}
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <Cloud size={16} className="text-[#0077B6]" />
-                  <h3 className="text-sm font-semibold tracking-tight">{t('weather.title')}</h3>
+              {/* Hava Durumu — compact */}
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Cloud size={14} className="text-[#0077B6]" />
+                  <h3 className="text-xs font-semibold tracking-tight">{t('weather.title')}</h3>
                 </div>
                 {weather ? (
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-white/70">{weather.city}</p>
-                        <p className="text-4xl font-semibold tracking-tight mt-1">{weather.temp}°C</p>
-                        <p className="text-sm text-white/60 capitalize mt-1">{weather.description}</p>
-                      </div>
-                      {weather.icon && (
-                        <img
-                          src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`}
-                          alt={weather.description}
-                          className="w-20 h-20"
-                        />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-6 mt-3 pt-3 border-t border-white/10">
-                      <div className="flex items-center gap-1.5">
-                        <Droplets size={12} className="text-white/50" />
-                        <span className="text-xs text-white/60">{weather.humidity}%</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Wind size={12} className="text-white/50" />
-                        <span className="text-xs text-white/60">{weather.windSpeed} km/h</span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[11px] text-white/70">{weather.city}</p>
+                      <p className="text-3xl font-semibold tracking-tight">{weather.temp}°C</p>
+                      <p className="text-[11px] text-white/60 capitalize">{weather.description}</p>
+                      <div className="flex items-center gap-4 mt-1.5">
+                        <span className="flex items-center gap-1 text-[10px] text-white/50"><Droplets size={10} />{weather.humidity}%</span>
+                        <span className="flex items-center gap-1 text-[10px] text-white/50"><Wind size={10} />{weather.windSpeed} km/h</span>
                       </div>
                     </div>
+                    {weather.icon && (
+                      <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} alt={weather.description} className="w-16 h-16" />
+                    )}
                   </div>
                 ) : (
-                  <div className="h-28 bg-white/5 rounded-xl animate-pulse" />
+                  <div className="h-20 bg-white/5 rounded-xl animate-pulse" />
                 )}
               </div>
 

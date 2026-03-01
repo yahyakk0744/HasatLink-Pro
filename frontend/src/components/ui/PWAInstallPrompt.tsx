@@ -51,6 +51,11 @@ export default function PWAInstallPrompt() {
   }, []);
 
   const handleInstall = async () => {
+    if (isIOS) {
+      setShow(false);
+      setShowIOSGuide(true);
+      return;
+    }
     if (deferredPrompt) {
       await deferredPrompt.prompt();
       await deferredPrompt.userChoice;
@@ -59,9 +64,7 @@ export default function PWAInstallPrompt() {
     setShow(false);
   };
 
-  const handleDismiss = () => setShow(false);
-
-  const handleNeverShow = () => {
+  const handleDismiss = () => {
     localStorage.setItem(DISMISSED_KEY, 'forever');
     setShow(false);
   };
@@ -70,60 +73,27 @@ export default function PWAInstallPrompt() {
 
   return (
     <>
-      <div className="fixed bottom-20 md:bottom-4 left-4 right-4 z-50 animate-slide-up">
-        <div className="max-w-md mx-auto bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-3xl p-5 shadow-2xl">
-          <button
-            onClick={handleDismiss}
-            className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-[var(--bg-input)] text-[var(--text-secondary)]"
-          >
-            <X size={14} />
-          </button>
-
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 overflow-hidden shadow-lg border border-[#2D6A4F]/20">
-              <img src="/icons/icon.svg" alt="HasatLink" className="w-12 h-12 rounded-xl" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-bold tracking-tight">HasatLink Uygulaması</h3>
-              <p className="text-xs text-[var(--text-secondary)] leading-relaxed mt-0.5">
-                Hızlı erişim için ana ekranına ekle!
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-2">
-            {isIOS ? (
-              <button
-                onClick={() => { setShow(false); setShowIOSGuide(true); }}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#2D6A4F] text-white text-sm font-bold rounded-2xl active:scale-[0.98] transition-transform shadow-lg shadow-[#2D6A4F]/30"
-              >
-                <Download size={18} />
-                Uygulamayı İndir
-              </button>
-            ) : (
-              <button
-                onClick={handleInstall}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#2D6A4F] text-white text-sm font-bold rounded-2xl active:scale-[0.98] transition-transform shadow-lg shadow-[#2D6A4F]/30"
-              >
-                <Download size={18} />
-                Şimdi Yükle
-              </button>
-            )}
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleDismiss}
-                className="flex-1 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-              >
-                Daha Sonra
-              </button>
-              <button
-                onClick={handleNeverShow}
-                className="flex-1 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-              >
-                Bir Daha Gösterme
-              </button>
-            </div>
+      {/* Slim bottom banner — max 80px */}
+      <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-50 animate-slide-up">
+        <div className="bg-[var(--bg-surface)] border-t border-[var(--border-default)] shadow-lg px-4 py-2.5">
+          <div className="max-w-3xl mx-auto flex items-center gap-3">
+            <img src="/icons/icon.svg" alt="HasatLink" className="w-9 h-9 rounded-xl shrink-0" />
+            <p className="flex-1 text-xs font-medium text-[var(--text-primary)] truncate">
+              HasatLink uygulamasını yükle
+            </p>
+            <button
+              onClick={handleInstall}
+              className="px-4 py-1.5 bg-[#2D6A4F] text-white text-xs font-bold rounded-lg hover:bg-[#1B4332] transition-colors shrink-0"
+            >
+              <Download size={12} className="inline mr-1 -mt-0.5" />
+              Yükle
+            </button>
+            <button
+              onClick={handleDismiss}
+              className="w-7 h-7 flex items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--bg-input)] transition-colors shrink-0"
+            >
+              <X size={14} />
+            </button>
           </div>
         </div>
       </div>
