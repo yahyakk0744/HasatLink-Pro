@@ -107,6 +107,10 @@ export interface Listing {
   has24Access: boolean;
   // Stats
   stats: { views: number; whatsappClicks: number; shares: number };
+  // Populated seller info
+  sellerName: string;
+  sellerImage: string;
+  sellerRating: number;
   createdAt: string;
 }
 
@@ -218,6 +222,18 @@ export interface HasatlinkPazarItem {
 export interface HasatlinkHourlyData {
   hour: string;
   prices: { name: string; min: number; max: number; avg: number }[];
+}
+
+export interface Blog {
+  _id: string;
+  title: string;
+  slug: string;
+  content: string;
+  coverImage: string;
+  category: string;
+  author: string;
+  published: boolean;
+  createdAt: string;
 }
 
 export interface PremiumPackage {

@@ -7,13 +7,22 @@ import Comment from '../models/Comment';
 
 export const getListings = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { search, type, subCategory, status, listingMode, page = '1', limit = '20' } = req.query;
+    const { search, type, subCategory, status, listingMode, page = '1', limit = '20', city, minPrice, maxPrice, sort } = req.query;
     const filter: any = {};
     if (type) filter.type = type;
     if (listingMode) filter.listingMode = listingMode;
     if (subCategory) filter.subCategory = subCategory;
     if (status) filter.status = status;
     else filter.status = 'active';
+    if (city) {
+      const escapedCity = (city as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.location = { $regex: escapedCity, $options: 'i' };
+    }
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
     if (search) {
       const escaped = (search as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
@@ -21,12 +30,28 @@ export const getListings = async (req: Request, res: Response): Promise<void> =>
         { description: { $regex: escaped, $options: 'i' } },
       ];
     }
+
+    let sortOption: Record<string, 1 | -1> = { createdAt: -1 };
+    if (sort === 'oldest') sortOption = { createdAt: 1 };
+    else if (sort === 'cheapest') sortOption = { price: 1 };
+    else if (sort === 'expensive') sortOption = { price: -1 };
+
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
     const [listings, total] = await Promise.all([
-      Listing.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit as string)),
+      Listing.find(filter).sort(sortOption).skip(skip).limit(parseInt(limit as string)).lean(),
       Listing.countDocuments(filter),
     ]);
-    res.json({ listings, total, page: parseInt(page as string), totalPages: Math.ceil(total / parseInt(limit as string)) });
+
+    // Populate seller info
+    const userIds = [...new Set(listings.map((l: any) => l.userId))];
+    const users = await User.find({ userId: { $in: userIds } }).select('userId name profileImage averageRating').lean();
+    const userMap = new Map(users.map((u: any) => [u.userId, u]));
+    const enriched = listings.map((l: any) => {
+      const seller = userMap.get(l.userId);
+      return { ...l, sellerName: seller?.name || '', sellerImage: seller?.profileImage || '', sellerRating: seller?.averageRating || 0 };
+    });
+
+    res.json({ listings: enriched, total, page: parseInt(page as string), totalPages: Math.ceil(total / parseInt(limit as string)) });
   } catch (error) {
     res.status(500).json({ message: 'İlan listesi hatası', error });
   }

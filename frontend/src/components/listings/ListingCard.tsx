@@ -1,37 +1,42 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Shield, Clock3, ArrowRight } from 'lucide-react';
+import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Shield, Clock3, ArrowRight, Heart, Star, Sparkles } from 'lucide-react';
 import type { Listing } from '../../types';
 import { formatPrice, timeAgo } from '../../utils/formatters';
 import Badge from '../ui/Badge';
-import { STATUS_LABELS, LISTING_MODE_LABELS, LISTING_MODE_COLORS } from '../../utils/constants';
+import { STATUS_LABELS, CATEGORY_LABELS, LISTING_MODE_LABELS, LISTING_MODE_COLORS } from '../../utils/constants';
 
 interface ListingCardProps {
   listing: Listing;
 }
+
+function isNew(createdAt: string): boolean {
+  return Date.now() - new Date(createdAt).getTime() < 3 * 24 * 60 * 60 * 1000;
+}
+
+const CATEGORY_BADGE_COLORS: Record<string, string> = {
+  pazar: '#2D6A4F',
+  lojistik: '#0077B6',
+  isgucu: '#A47148',
+  ekipman: '#6B4E3D',
+  arazi: '#52796F',
+  depolama: '#5C677D',
+};
 
 export default function ListingCard({ listing }: ListingCardProps) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const statusInfo = STATUS_LABELS[listing.status] || STATUS_LABELS.active;
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [liked, setLiked] = useState(false);
 
-  const getCategoryIcon = () => {
-    switch (listing.type) {
-      case 'pazar': return '🌾';
-      case 'lojistik': return '🚛';
-      case 'isgucu': return '👷';
-      case 'ekipman': return '🚜';
-      case 'arazi': return '🏞️';
-      case 'depolama': return '📦';
-      default: return '📋';
-    }
-  };
+  const catLabel = CATEGORY_LABELS[listing.type];
+  const catColor = CATEGORY_BADGE_COLORS[listing.type] || '#2D6A4F';
 
   return (
     <Link to={`/ilan/${listing._id}`} className="group">
-      <div className="bg-[var(--bg-surface)] rounded-[2rem] overflow-hidden shadow-sm card-hover-shadow hover:-translate-y-1 transition-all duration-300">
+      <div className="bg-[var(--bg-surface)] rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
         {/* Image */}
         <div className="relative aspect-[4/3] bg-[var(--bg-input)] overflow-hidden">
           {listing.images?.[0] ? (
@@ -44,33 +49,51 @@ export default function ListingCard({ listing }: ListingCardProps) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-4xl">
-              {getCategoryIcon()}
+              {catLabel?.icon}
             </div>
           )}
           {/* Hover gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           {/* Hover arrow */}
           <div className="absolute bottom-3 right-3 w-8 h-8 bg-[var(--glass-surface)] backdrop-blur rounded-full flex items-center justify-center opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
             <ArrowRight size={14} className="text-[#2D6A4F]" />
           </div>
+
+          {/* Top-left badges */}
           <div className="absolute top-3 left-3 flex gap-1">
-            <Badge color={statusInfo.color}>{lang === 'tr' ? statusInfo.tr : statusInfo.en}</Badge>
+            {/* Category badge */}
+            <Badge color={catColor}>{catLabel?.[lang] || listing.type}</Badge>
             {listing.listingMode === 'buy' && (
               <Badge color={LISTING_MODE_COLORS.buy}>
                 {LISTING_MODE_LABELS[listing.type]?.buy?.[lang] || 'ALIM'}
               </Badge>
             )}
+            {listing.status !== 'active' && (
+              <Badge color={statusInfo.color}>{lang === 'tr' ? statusInfo.tr : statusInfo.en}</Badge>
+            )}
           </div>
-          {/* Category-specific top-right badges */}
-          <div className="absolute top-3 right-3 flex flex-col gap-1">
+
+          {/* Top-right: YENİ badge + heart */}
+          <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
+            {isNew(listing.createdAt) && (
+              <Badge color="#E76F00" className="!bg-[#E76F00] !text-white">
+                <Sparkles size={8} className="mr-0.5" />{lang === 'tr' ? 'YENİ' : 'NEW'}
+              </Badge>
+            )}
+            <button
+              onClick={e => { e.preventDefault(); e.stopPropagation(); setLiked(!liked); }}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                liked ? 'bg-red-500 text-white' : 'bg-black/30 backdrop-blur text-white hover:bg-red-500'
+              }`}
+            >
+              <Heart size={14} fill={liked ? 'currentColor' : 'none'} />
+            </button>
+            {/* Category-specific badges */}
             {listing.type === 'pazar' && listing.isOrganic && (
               <Badge color="#2D6A4F"><Leaf size={8} className="inline mr-0.5" />ORGANİK</Badge>
             )}
             {listing.type === 'lojistik' && listing.isFrigo && (
               <Badge color="#0077B6">FRİGO</Badge>
-            )}
-            {listing.type === 'ekipman' && listing.saleType && (
-              <Badge color="#A47148">{listing.saleType}</Badge>
             )}
             {listing.type === 'arazi' && listing.waterAvailable && (
               <Badge color="#0077B6"><Droplets size={8} className="inline mr-0.5" />SU</Badge>
@@ -83,15 +106,13 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
         {/* Content */}
         <div className="p-4">
-          <div className="flex items-start justify-between gap-2 mb-1.5">
-            <h3 className="text-sm font-semibold tracking-tight line-clamp-1">{listing.title}</h3>
-            <span className={`text-sm font-semibold shrink-0 ${listing.listingMode === 'buy' ? 'text-[#0077B6]' : 'text-[#2D6A4F]'}`}>
-              {listing.listingMode === 'buy' && <span className="text-[10px] font-medium mr-0.5">{lang === 'tr' ? 'Bütçe:' : 'Budget:'}</span>}
-              {formatPrice(listing.price)}
-            </span>
-          </div>
+          <h3 className="text-sm font-semibold tracking-tight line-clamp-1 mb-1">{listing.title}</h3>
 
-          <p className="text-xs text-[#6B6560] uppercase font-medium tracking-wide mb-2">{listing.subCategory}</p>
+          {/* Price — large and bold */}
+          <p className={`text-lg font-bold tracking-tight mb-2 ${listing.listingMode === 'buy' ? 'text-[#0077B6]' : 'text-[#2D6A4F]'}`}>
+            {listing.listingMode === 'buy' && <span className="text-[10px] font-medium mr-1">{lang === 'tr' ? 'Bütçe:' : 'Budget:'}</span>}
+            {formatPrice(listing.price)}
+          </p>
 
           {/* Category-specific info line */}
           <div className="flex gap-1.5 flex-wrap mb-2">
@@ -141,7 +162,8 @@ export default function ListingCard({ listing }: ListingCardProps) {
             )}
           </div>
 
-          <div className="flex items-center justify-between text-[10px] text-[#6B6560]">
+          {/* Location + date row */}
+          <div className="flex items-center justify-between text-[10px] text-[var(--text-secondary)] mb-2">
             <span className="flex items-center gap-1">
               <MapPin size={10} />
               {listing.location}
@@ -157,6 +179,26 @@ export default function ListingCard({ listing }: ListingCardProps) {
               </span>
             </div>
           </div>
+
+          {/* Seller info */}
+          {listing.sellerName && (
+            <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-default)]">
+              {listing.sellerImage ? (
+                <img src={listing.sellerImage} alt={listing.sellerName} className="w-6 h-6 rounded-full object-cover" />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-[#2D6A4F]/10 flex items-center justify-center text-[10px] font-semibold text-[#2D6A4F]">
+                  {listing.sellerName[0]}
+                </div>
+              )}
+              <span className="text-xs font-medium text-[var(--text-primary)] truncate flex-1">{listing.sellerName}</span>
+              {listing.sellerRating > 0 && (
+                <span className="flex items-center gap-0.5 text-[10px] font-semibold text-[#A47148]">
+                  <Star size={10} fill="#A47148" />
+                  {listing.sellerRating.toFixed(1)}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Link>

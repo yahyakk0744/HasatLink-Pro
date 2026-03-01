@@ -21,6 +21,9 @@ import ListingMap from '../components/map/ListingMap';
 import { CATEGORY_LABELS } from '../utils/constants';
 import SEO from '../components/ui/SEO';
 import api from '../config/api';
+import type { Blog } from '../types';
+import { Calendar, User as UserIcon } from 'lucide-react';
+import { formatDate } from '../utils/formatters';
 
 function AnimatedSection({ children, className = '' }: { children: ReactNode; className?: string }) {
   const { ref, inView } = useInView(0.15);
@@ -99,6 +102,7 @@ export default function HomePage() {
   const [platformStats, setPlatformStats] = useState({ activeListings: 0, registeredUsers: 0, cities: 0, aiDiagnoses: 0, categoryCounts: {} as Record<string, number> });
   const [heroSearch, setHeroSearch] = useState('');
   const [heroCategory, setHeroCategory] = useState('');
+  const [blogPosts, setBlogPosts] = useState<Blog[]>([]);
 
   // Critical: listings + weather load immediately
   useEffect(() => {
@@ -117,6 +121,7 @@ export default function HomePage() {
       fetchAllPrices();
       fetchHasatlinkPrices();
       api.get('/stats/platform').then(({ data }) => setPlatformStats(data)).catch(() => {});
+      api.get('/blog?limit=3').then(({ data }) => setBlogPosts(data.blogs || [])).catch(() => {});
     }, 300);
     return () => clearTimeout(timer);
   }, [fetchAllPrices, fetchHasatlinkPrices]);
@@ -308,7 +313,52 @@ export default function HomePage() {
         </section>
       </AnimatedSection>
 
-      {/* ─── 5. Weather + Hal Fiyatları + HasatLink Pazarı ─── */}
+      {/* ─── 5. Tarım Rehberi (Blog) ─── */}
+      {blogPosts.length > 0 && (
+        <AnimatedSection>
+          <section className="max-w-6xl mx-auto px-4 py-12">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold tracking-tight">
+                {lang === 'tr' ? 'Tarım Rehberi' : 'Agriculture Guide'}
+              </h2>
+              <Link to="/blog" className="text-xs font-medium uppercase text-[#2D6A4F] flex items-center gap-1 hover:gap-2 transition-all">
+                {lang === 'tr' ? 'Tümünü Gör' : 'View All'} <ArrowRight size={12} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {blogPosts.map(blog => (
+                <Link
+                  key={blog._id}
+                  to={`/blog/${blog.slug}`}
+                  className="group bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                >
+                  {blog.coverImage ? (
+                    <img src={blog.coverImage} alt={blog.title} className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  ) : (
+                    <div className="w-full aspect-video bg-gradient-to-br from-[#2D6A4F] to-[#40916C] flex items-center justify-center">
+                      <span className="text-white/60 text-4xl">📝</span>
+                    </div>
+                  )}
+                  <div className="p-4">
+                    {blog.category && (
+                      <span className="inline-block text-[10px] font-medium uppercase tracking-wider text-[#2D6A4F] bg-[#2D6A4F]/10 px-2.5 py-0.5 rounded-full mb-2">
+                        {blog.category}
+                      </span>
+                    )}
+                    <h3 className="text-sm font-semibold tracking-tight line-clamp-2 mb-2 group-hover:text-[#2D6A4F] transition-colors">{blog.title}</h3>
+                    <div className="flex items-center gap-3 text-[10px] text-[var(--text-secondary)]">
+                      <span className="flex items-center gap-1"><UserIcon size={10} />{blog.author}</span>
+                      <span className="flex items-center gap-1"><Calendar size={10} />{formatDate(blog.createdAt)}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </AnimatedSection>
+      )}
+
+      {/* ─── 6. Weather + Hal Fiyatları + HasatLink Pazarı ─── */}
       <AnimatedSection>
         <section className="max-w-7xl mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

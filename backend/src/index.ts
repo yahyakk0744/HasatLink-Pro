@@ -19,6 +19,7 @@ import contactRoutes from './routes/contactRoutes';
 import adRoutes from './routes/adRoutes';
 import adminRoutes from './routes/adminRoutes';
 import commentRoutes from './routes/commentRoutes';
+import blogRoutes from './routes/blogRoutes';
 
 dotenv.config();
 
@@ -81,6 +82,7 @@ app.use('/api', contactRoutes);
 app.use('/api', adRoutes);
 app.use('/api', adminRoutes);
 app.use('/api', commentRoutes);
+app.use('/api', blogRoutes);
 
 // VAPID public key endpoint
 app.get('/api/push/vapid-key', (_req, res) => {
