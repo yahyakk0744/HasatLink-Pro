@@ -9,19 +9,15 @@ interface BeforeInstallPromptEvent extends Event {
 
 const DISMISSED_KEY = 'hasatlink_pwa_dismissed';
 
-function detectPlatform(): 'android' | 'ios' | 'other' {
-  const ua = navigator.userAgent;
-  if (/Android/i.test(ua)) return 'android';
-  if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
-  return 'other';
+function isMobileDevice(): boolean {
+  return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
 export default function PWAInstallPrompt() {
   const [show, setShow] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [platform, setPlatform] = useState<'android' | 'ios' | 'other'>('other');
   const [isStandalone, setIsStandalone] = useState(false);
-  const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
 
   useEffect(() => {
     const standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -31,19 +27,8 @@ export default function PWAInstallPrompt() {
     const dismissed = localStorage.getItem(DISMISSED_KEY);
     if (dismissed === 'forever' || standalone) return;
 
-    const detected = detectPlatform();
-    setPlatform(detected);
+    if (!isMobileDevice()) return;
 
-    const isMobile = detected === 'android' || detected === 'ios';
-    if (!isMobile) return;
-
-    // Android: show APK download immediately
-    if (detected === 'android') {
-      const timer = setTimeout(() => setShow(true), 1500);
-      return () => clearTimeout(timer);
-    }
-
-    // iOS: show install guide
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -51,35 +36,23 @@ export default function PWAInstallPrompt() {
     };
     window.addEventListener('beforeinstallprompt', handler);
 
-    if (detected === 'ios') {
-      const timer = setTimeout(() => setShow(true), 2000);
-      return () => { clearTimeout(timer); window.removeEventListener('beforeinstallprompt', handler); };
-    }
+    // Show banner after delay for all mobile devices
+    const timer = setTimeout(() => setShow(true), 2000);
 
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    return () => { clearTimeout(timer); window.removeEventListener('beforeinstallprompt', handler); };
   }, []);
 
   const handleInstall = async () => {
-    if (platform === 'android') {
-      // Direct APK download
-      const link = document.createElement('a');
-      link.href = '/downloads/HasatLink.apk';
-      link.download = 'HasatLink.apk';
-      link.click();
-      setShow(false);
-      return;
-    }
-    if (platform === 'ios') {
-      setShow(false);
-      setShowIOSGuide(true);
-      return;
-    }
     if (deferredPrompt) {
       await deferredPrompt.prompt();
       await deferredPrompt.userChoice;
       setDeferredPrompt(null);
+      setShow(false);
+      return;
     }
+    // No native prompt available — show "Add to Home Screen" guide
     setShow(false);
+    setShowInstallGuide(true);
   };
 
   const handleDismiss = () => {
@@ -87,10 +60,7 @@ export default function PWAInstallPrompt() {
     setShow(false);
   };
 
-  if (!show || isStandalone) return <IOSInstallGuide isOpen={showIOSGuide} onClose={() => setShowIOSGuide(false)} />;
-
-  const isAndroid = platform === 'android';
-  const isIOS = platform === 'ios';
+  if (!show || isStandalone) return <IOSInstallGuide isOpen={showInstallGuide} onClose={() => setShowInstallGuide(false)} />;
 
   return (
     <>
@@ -100,18 +70,16 @@ export default function PWAInstallPrompt() {
           <div className="max-w-3xl mx-auto flex items-center gap-3">
             <img src="/icons/icon.svg" alt="HasatLink" className="w-9 h-9 rounded-xl shrink-0" />
             <p className="flex-1 text-xs font-medium text-[var(--text-primary)] truncate">
-              {isAndroid ? 'Android uygulamayı indir' : isIOS ? 'Ana ekrana ekle' : 'HasatLink uygulamasını yükle'}
+              Ana ekrana ekle
             </p>
             <button
               onClick={handleInstall}
               className="px-4 py-1.5 bg-[#2D6A4F] text-white text-xs font-bold rounded-lg hover:bg-[#1B4332] transition-colors shrink-0"
             >
-              {isAndroid ? (
-                <><Download size={12} className="inline mr-1 -mt-0.5" />İndir</>
-              ) : isIOS ? (
-                <><Share size={12} className="inline mr-1 -mt-0.5" />Ekle</>
-              ) : (
+              {deferredPrompt ? (
                 <><Download size={12} className="inline mr-1 -mt-0.5" />Yükle</>
+              ) : (
+                <><Share size={12} className="inline mr-1 -mt-0.5" />Nasıl?</>
               )}
             </button>
             <button
@@ -124,7 +92,7 @@ export default function PWAInstallPrompt() {
         </div>
       </div>
 
-      <IOSInstallGuide isOpen={showIOSGuide} onClose={() => setShowIOSGuide(false)} />
+      <IOSInstallGuide isOpen={showInstallGuide} onClose={() => setShowInstallGuide(false)} />
     </>
   );
 }
