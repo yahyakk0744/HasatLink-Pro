@@ -12,7 +12,6 @@ import {
   onSnapshot,
   serverTimestamp,
   writeBatch,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import type { Conversation, Message, FirestoreParticipant } from '../types';

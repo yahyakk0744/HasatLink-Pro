@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Zap, Shield, Clock3, ArrowRight } from 'lucide-react';
+import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Shield, Clock3, ArrowRight } from 'lucide-react';
 import type { Listing } from '../../types';
 import { formatPrice, timeAgo } from '../../utils/formatters';
 import Badge from '../ui/Badge';
