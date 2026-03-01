@@ -56,8 +56,8 @@ export default function HasatlinkWeeklyChart({ data, product }: Props) {
           <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#6B6560' }} />
           <YAxis tick={{ fontSize: 12, fill: '#6B6560' }} tickFormatter={(v) => `${v}₺`} />
           <Tooltip
-            formatter={(value: number | undefined, name: string) => [
-              `${(value as number)?.toFixed(2)}₺`,
+            formatter={(value: any, name: any) => [
+              `${Number(value).toFixed(2)}₺`,
               name === 'min' ? 'En Düşük' : name === 'max' ? 'En Yüksek' : 'Ortalama',
             ]}
             contentStyle={{ borderRadius: '12px', border: '1px solid #E5E1DC' }}
