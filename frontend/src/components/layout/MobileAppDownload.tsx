@@ -42,7 +42,7 @@ export default function MobileAppDownload() {
     }
   };
 
-  // Hide on desktop, if already installed, or if not mobile
+  // Hide on desktop or if already installed
   if (isStandalone) return null;
 
   return (
@@ -53,18 +53,19 @@ export default function MobileAppDownload() {
           {/* Decorative circles */}
           <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/5 rounded-full" />
           <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-white/5 rounded-full" />
+          <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-white/[0.03] rounded-full" />
 
           {/* App icon + Title */}
           <div className="flex items-center gap-4 mb-5 relative">
-            <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center overflow-hidden border-2 border-white/20 shadow-lg flex-shrink-0">
-              <img src="/icons/icon-192x192.png" alt="HasatLink" className="w-14 h-14 rounded-xl" />
+            <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center overflow-hidden border-2 border-white/20 shadow-lg flex-shrink-0">
+              <img src="/icons/icon.svg" alt="HasatLink" className="w-14 h-14 rounded-xl" />
             </div>
             <div>
               <h3 className="text-white text-lg font-bold tracking-tight">
-                HasatLink Uygulamasini Indir
+                HasatLink Uygulamasını İndir
               </h3>
               <p className="text-white/60 text-xs mt-0.5">
-                Tarim pazarinin dijital gücü cebinde
+                Tarım pazarının dijital gücü cebinde
               </p>
             </div>
           </div>
@@ -73,15 +74,15 @@ export default function MobileAppDownload() {
           <div className="flex flex-wrap gap-2 mb-6 relative">
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-full">
               <Zap size={12} className="text-yellow-300" />
-              <span className="text-[10px] text-white/80 font-medium">Hizli Erisim</span>
+              <span className="text-[10px] text-white/80 font-medium">Hızlı Erişim</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-full">
               <Bell size={12} className="text-orange-300" />
-              <span className="text-[10px] text-white/80 font-medium">Anlik Bildirim</span>
+              <span className="text-[10px] text-white/80 font-medium">Anlık Bildirim</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-full">
               <Wifi size={12} className="text-blue-300" />
-              <span className="text-[10px] text-white/80 font-medium">Offline Kullanim</span>
+              <span className="text-[10px] text-white/80 font-medium">Offline Kullanım</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-full">
               <Smartphone size={12} className="text-green-300" />
@@ -95,12 +96,12 @@ export default function MobileAppDownload() {
             className="w-full flex items-center justify-center gap-3 py-4 bg-white text-[#1B4332] text-base font-bold rounded-2xl active:scale-[0.98] transition-transform shadow-xl relative"
           >
             <Download size={20} />
-            Simdi Indir
+            Şimdi İndir
           </button>
 
           {/* Sub text */}
           <p className="text-center text-[10px] text-white/40 mt-3">
-            Ücretsiz &middot; Hizli kurulum &middot; {isIOS ? 'Safari ile yükleyin' : 'Aninda yükleyin'}
+            Ücretsiz &middot; Hızlı kurulum &middot; {isIOS ? 'Safari ile yükleyin' : 'Anında yükleyin'}
           </p>
         </div>
       </section>

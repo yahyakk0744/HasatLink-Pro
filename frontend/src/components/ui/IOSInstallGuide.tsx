@@ -47,12 +47,12 @@ export default function IOSInstallGuide({ isOpen, onClose }: IOSInstallGuideProp
             <X size={16} />
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center overflow-hidden border-2 border-white/20">
-              <img src="/icons/icon-192x192.png" alt="" className="w-12 h-12 rounded-xl" />
+            <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center overflow-hidden border-2 border-white/20 shadow-lg">
+              <img src="/icons/icon.svg" alt="" className="w-12 h-12 rounded-xl" />
             </div>
             <div className="text-white">
               <h3 className="text-lg font-bold tracking-tight">HasatLink'i Yükle</h3>
-              <p className="text-xs text-white/70 mt-0.5">2 adimda ana ekranina ekle</p>
+              <p className="text-xs text-white/70 mt-0.5">2 adımda ana ekranına ekle</p>
             </div>
           </div>
         </div>
@@ -60,20 +60,20 @@ export default function IOSInstallGuide({ isOpen, onClose }: IOSInstallGuideProp
         <div className="p-6 space-y-4">
           {/* Step 1 */}
           <div className="flex items-start gap-4">
-            <div className="w-9 h-9 rounded-full bg-[#2D6A4F] text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#2D6A4F] to-[#40916C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5 shadow-md">
               1
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">
-                Safari'de <span className="text-[#007AFF]">Paylas</span> butonuna dokunun
+                Safari'de <span className="text-[#007AFF]">Paylaş</span> butonuna dokunun
               </p>
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-12 h-12 rounded-xl bg-[#007AFF] flex items-center justify-center shadow-lg shadow-[#007AFF]/30">
                     <SafariShareIcon />
                   </div>
-                  {/* Bouncing finger pointer */}
-                  <div className="absolute -bottom-3 -right-2 text-xl" style={{ animation: 'bounce 1s infinite' }}>
+                  {/* Bouncing arrow pointer */}
+                  <div className="absolute -bottom-3 -right-2 text-xl animate-bounce">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                       <path d="M12 2L8 8h3v6h2V8h3L12 2z" fill="#2D6A4F" />
                     </svg>
@@ -87,7 +87,7 @@ export default function IOSInstallGuide({ isOpen, onClose }: IOSInstallGuideProp
                       <line x1="12" y1="2" x2="12" y2="15" />
                     </svg>
                   </div>
-                  <span className="text-xs text-[var(--text-secondary)]">Ekranin altindaki bu ikona dokunun</span>
+                  <span className="text-xs text-[var(--text-secondary)]">Ekranın altındaki bu ikona dokunun</span>
                 </div>
               </div>
             </div>
@@ -95,40 +95,40 @@ export default function IOSInstallGuide({ isOpen, onClose }: IOSInstallGuideProp
 
           {/* Connector line */}
           <div className="flex items-center pl-4">
-            <div className="w-1 h-4 bg-[#2D6A4F]/20 rounded-full ml-3.5" />
+            <div className="w-1 h-6 bg-gradient-to-b from-[#2D6A4F]/30 to-[#2D6A4F]/10 rounded-full ml-3.5" />
           </div>
 
           {/* Step 2 */}
           <div className="flex items-start gap-4">
-            <div className="w-9 h-9 rounded-full bg-[#2D6A4F] text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#2D6A4F] to-[#40916C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5 shadow-md">
               2
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">
-                <span className="text-[#007AFF]">"Ana Ekrana Ekle"</span> secenegine dokunun
+                <span className="text-[#007AFF]">&quot;Ana Ekrana Ekle&quot;</span> seçeneğine dokunun
               </p>
               {/* Simulated iOS menu item */}
               <div className="bg-[var(--bg-input)] rounded-2xl overflow-hidden border border-[var(--border-subtle)]">
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-subtle)] opacity-50">
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-subtle)] opacity-40">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
                     <line x1="3" y1="6" x2="21" y2="6" />
                     <path d="M16 10a4 4 0 01-8 0" />
                   </svg>
-                  <span className="text-xs text-[var(--text-secondary)]">Yer Isareti Ekle</span>
+                  <span className="text-xs text-[var(--text-secondary)]">Yer İşareti Ekle</span>
                 </div>
                 {/* Highlighted row */}
-                <div className="flex items-center gap-3 px-4 py-3 bg-[#2D6A4F]/10 relative">
+                <div className="flex items-center gap-3 px-4 py-3.5 bg-[#2D6A4F]/10 relative border-l-4 border-l-[#2D6A4F]">
                   <AddToHomeIcon />
                   <span className="text-sm font-semibold text-[#007AFF]">Ana Ekrana Ekle</span>
                   {/* Arrow indicator */}
-                  <div className="absolute right-3 text-[#2D6A4F]" style={{ animation: 'pulse 1.5s infinite' }}>
+                  <div className="absolute right-3 text-[#2D6A4F] animate-pulse">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M8 4l8 8-8 8V4z" />
                     </svg>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 px-4 py-3 opacity-50">
+                <div className="flex items-center gap-3 px-4 py-3 opacity-40">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="15" y1="9" x2="9" y2="15" />
@@ -140,9 +140,32 @@ export default function IOSInstallGuide({ isOpen, onClose }: IOSInstallGuideProp
             </div>
           </div>
 
+          {/* Connector line */}
+          <div className="flex items-center pl-4">
+            <div className="w-1 h-6 bg-gradient-to-b from-[#2D6A4F]/30 to-[#2D6A4F]/10 rounded-full ml-3.5" />
+          </div>
+
+          {/* Step 3 */}
+          <div className="flex items-start gap-4">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#2D6A4F] to-[#40916C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5 shadow-md">
+              3
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">
+                Sağ üstteki <span className="text-[#007AFF]">&quot;Ekle&quot;</span> butonuna dokunun
+              </p>
+              <div className="bg-[var(--bg-input)] rounded-xl p-3 flex items-center gap-3 border border-[var(--border-subtle)]">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 13l4 4L19 7" stroke="#2D6A4F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="text-xs text-[var(--text-secondary)]">HasatLink ana ekranınıza eklenecek!</span>
+              </div>
+            </div>
+          </div>
+
           {/* Bottom arrow pointing to Safari bar */}
-          <div className="flex justify-center pt-2">
-            <div className="flex flex-col items-center gap-1 text-[#2D6A4F]" style={{ animation: 'bounce 1.5s infinite' }}>
+          <div className="flex justify-center pt-3">
+            <div className="flex flex-col items-center gap-1 text-[#2D6A4F] animate-bounce">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 16l-6-6h4V4h4v6h4l-6 6z" />
               </svg>

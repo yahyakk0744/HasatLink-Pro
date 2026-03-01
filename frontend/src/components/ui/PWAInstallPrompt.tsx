@@ -80,13 +80,13 @@ export default function PWAInstallPrompt() {
           </button>
 
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#2D6A4F] flex items-center justify-center flex-shrink-0 overflow-hidden shadow-lg shadow-[#2D6A4F]/30">
-              <img src="/icons/icon-192x192.png" alt="HasatLink" className="w-12 h-12 rounded-xl" />
+            <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 overflow-hidden shadow-lg border border-[#2D6A4F]/20">
+              <img src="/icons/icon.svg" alt="HasatLink" className="w-12 h-12 rounded-xl" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-bold tracking-tight">HasatLink Uygulamasi</h3>
+              <h3 className="text-sm font-bold tracking-tight">HasatLink Uygulaması</h3>
               <p className="text-xs text-[var(--text-secondary)] leading-relaxed mt-0.5">
-                Hizli erisim icin ana ekranina ekle!
+                Hızlı erişim için ana ekranına ekle!
               </p>
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function PWAInstallPrompt() {
                 className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#2D6A4F] text-white text-sm font-bold rounded-2xl active:scale-[0.98] transition-transform shadow-lg shadow-[#2D6A4F]/30"
               >
                 <Download size={18} />
-                Uygulamayi Indir
+                Uygulamayı İndir
               </button>
             ) : (
               <button
@@ -106,7 +106,7 @@ export default function PWAInstallPrompt() {
                 className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#2D6A4F] text-white text-sm font-bold rounded-2xl active:scale-[0.98] transition-transform shadow-lg shadow-[#2D6A4F]/30"
               >
                 <Download size={18} />
-                Simdi Yükle
+                Şimdi Yükle
               </button>
             )}
 
