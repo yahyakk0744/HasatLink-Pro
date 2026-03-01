@@ -74,7 +74,7 @@ export default function ProfilePage() {
   };
 
   const { location: geoLocation } = useLocation();
-  const weatherCity = geoLocation?.city || displayUser.location?.split(',')[0]?.trim() || 'Istanbul';
+  const weatherCity = geoLocation?.city || displayUser.location?.split(',')[0]?.trim();
 
   // Rating distribution (5→1)
   const ratingDistribution = [5, 4, 3, 2, 1].map(star => ({

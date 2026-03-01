@@ -78,12 +78,12 @@ export default function HomePage() {
     fetchListings({ limit: '8' });
     fetchAllPrices();
     fetchHasatlinkPrices();
-    // Use geolocation coords if available, else user's profile city, else Istanbul
+    // Use geolocation coords if available, else user's profile city (no hardcoded fallback)
     if (geoLocation?.lat && geoLocation?.lng) {
       fetchWeather(geoLocation.lat, geoLocation.lng);
     } else {
-      const city = user?.location?.split(',')[0]?.trim();
-      fetchWeather(city || 'Istanbul');
+      const city = geoLocation?.city || user?.location?.split(',')[0]?.trim();
+      if (city) fetchWeather(city);
     }
     api.get('/stats/platform').then(({ data }) => setPlatformStats(data)).catch(() => {});
   }, [fetchListings, fetchAllPrices, fetchHasatlinkPrices, fetchWeather, user, geoLocation]);

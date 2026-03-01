@@ -13,8 +13,11 @@ export const useWeather = () => {
       if (typeof cityOrLat === 'number' && lng !== undefined) {
         params.lat = String(cityOrLat);
         params.lon = String(lng);
+      } else if (cityOrLat) {
+        params.city = cityOrLat as string;
       } else {
-        params.city = (cityOrLat as string) || 'Istanbul';
+        setLoading(false);
+        return;
       }
       const { data } = await api.get<WeatherData>('/weather', { params });
       setWeather(data);

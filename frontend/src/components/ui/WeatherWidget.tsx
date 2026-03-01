@@ -9,7 +9,7 @@ interface WeatherWidgetProps {
   lng?: number;
 }
 
-export default function WeatherWidget({ city = 'Istanbul', lat, lng }: WeatherWidgetProps) {
+export default function WeatherWidget({ city, lat, lng }: WeatherWidgetProps) {
   const { t } = useTranslation();
   const { weather, loading, fetchWeather } = useWeather();
 
