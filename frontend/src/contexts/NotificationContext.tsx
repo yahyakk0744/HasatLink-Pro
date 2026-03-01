@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import type { ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useSocket } from './SocketContext';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import api from '../config/api';
 import type { Notification } from '../types';
 
@@ -18,9 +19,11 @@ const NotificationContext = createContext<NotificationContextType | null>(null);
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const { socket } = useSocket();
+  const { permission, requestPermission } = usePushNotifications();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const weatherCheckedRef = useRef(false);
+  const pushSubscribedRef = useRef(false);
 
   const fetchNotifications = useCallback(async () => {
     if (!user?.userId) return;
@@ -67,6 +70,12 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       if (!weatherCheckedRef.current) {
         weatherCheckedRef.current = true;
         checkWeatherAlerts();
+      }
+
+      // Auto-subscribe to push notifications if not already subscribed
+      if (!pushSubscribedRef.current && permission !== 'denied') {
+        pushSubscribedRef.current = true;
+        requestPermission().catch(() => {});
       }
 
       // Fallback poll every 60 seconds (Socket.IO handles real-time)

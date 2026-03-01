@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Rating from '../models/Rating';
 import User from '../models/User';
 import Notification from '../models/Notification';
+import { sendPushToUser } from '../utils/pushNotification';
 
 export const getUserRatings = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -31,13 +32,20 @@ export const createRating = async (req: Request, res: Response): Promise<void> =
       { userId: toUserId },
       { averageRating: Math.round(avgScore * 10) / 10, totalRatings: allRatings.length }
     );
-    await Notification.create({
+    const notif = await Notification.create({
       userId: toUserId,
       type: 'rating',
       title: 'Yeni Değerlendirme',
       message: `${fromUser?.name || 'Bir kullanıcı'} size ${score} yıldız verdi`,
       relatedId: rating._id?.toString() || '',
     });
+
+    // Send real-time + push notification
+    sendPushToUser(toUserId, {
+      title: 'Yeni Değerlendirme',
+      body: `${fromUser?.name || 'Bir kullanıcı'} size ${score} yıldız verdi`,
+      url: '/profil',
+    }, notif);
 
     res.status(201).json(rating);
   } catch (error) {

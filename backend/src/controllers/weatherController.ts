@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import User from '../models/User';
 import Notification from '../models/Notification';
+import { sendPushToUser } from '../utils/pushNotification';
 
 const weatherCache: Record<string, { data: any; timestamp: number }> = {};
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
@@ -119,6 +120,7 @@ export const checkWeatherAlerts = async (req: AuthRequest, res: Response): Promi
           userId, type: 'hava', title: alert.title, message: alert.message,
         });
         createdAlerts.push(notif);
+        sendPushToUser(userId, { title: alert.title, body: alert.message, url: '/' }, notif);
       }
     }
 
