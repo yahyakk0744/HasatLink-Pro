@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { ChevronDown, Download } from 'lucide-react';
+import { ChevronDown, Download, Share, Smartphone } from 'lucide-react';
 import api from '../../config/api';
 
 /* ---- Social SVG Icons ---- */
@@ -60,6 +60,13 @@ interface Socials {
   youtubeUrl: string;
 }
 
+function detectPlatform(): 'android' | 'ios' | 'other' {
+  const ua = navigator.userAgent;
+  if (/Android/i.test(ua)) return 'android';
+  if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
+  return 'other';
+}
+
 export default function Footer() {
   const { t, i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
@@ -67,6 +74,7 @@ export default function Footer() {
   const [socials, setSocials] = useState<Socials>({ instagramUrl: '', twitterUrl: '', linkedinUrl: '', youtubeUrl: '' });
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [platform] = useState(() => detectPlatform());
 
   useEffect(() => {
     api.get('/settings').then(({ data }) => setSocials({
@@ -86,6 +94,13 @@ export default function Footer() {
   }, []);
 
   const handleInstallPWA = async () => {
+    if (platform === 'android') {
+      const link = document.createElement('a');
+      link.href = '/downloads/HasatLink.apk';
+      link.download = 'HasatLink.apk';
+      link.click();
+      return;
+    }
     if (deferredPrompt) { await deferredPrompt.prompt(); setDeferredPrompt(null); }
   };
 
@@ -155,19 +170,39 @@ export default function Footer() {
             </div>
           </AccordionSection>
 
-          {/* Compact PWA install — single row */}
+          {/* App install — platform-aware */}
           {!isStandalone && (
             <div className="flex items-center gap-3 mt-4 py-3 px-3 bg-white/5 rounded-xl">
-              <Download size={16} className="text-[#2D6A4F] shrink-0" />
+              {platform === 'android' ? (
+                <Smartphone size={16} className="text-[#2D6A4F] shrink-0" />
+              ) : platform === 'ios' ? (
+                <Share size={16} className="text-[#2D6A4F] shrink-0" />
+              ) : (
+                <Download size={16} className="text-[#2D6A4F] shrink-0" />
+              )}
               <p className="flex-1 text-[11px] text-white/60 leading-tight">
-                {isTr ? 'Uygulamayı yükle' : 'Install the app'}
+                {platform === 'android'
+                  ? (isTr ? 'Android uygulamayı indir' : 'Download Android app')
+                  : platform === 'ios'
+                  ? (isTr ? 'Ana ekrana ekle' : 'Add to home screen')
+                  : (isTr ? 'Uygulamayı yükle' : 'Install the app')}
               </p>
-              <button
-                onClick={handleInstallPWA}
-                className="px-3 py-1.5 bg-[#2D6A4F] text-white text-[10px] font-semibold uppercase rounded-lg hover:bg-[#1B4332] transition-colors shrink-0"
-              >
-                {isTr ? 'Yükle' : 'Install'}
-              </button>
+              {platform === 'android' ? (
+                <a
+                  href="/downloads/HasatLink.apk"
+                  download="HasatLink.apk"
+                  className="px-3 py-1.5 bg-[#2D6A4F] text-white text-[10px] font-semibold uppercase rounded-lg hover:bg-[#1B4332] transition-colors shrink-0"
+                >
+                  {isTr ? 'İndir' : 'Download'}
+                </a>
+              ) : (
+                <button
+                  onClick={handleInstallPWA}
+                  className="px-3 py-1.5 bg-[#2D6A4F] text-white text-[10px] font-semibold uppercase rounded-lg hover:bg-[#1B4332] transition-colors shrink-0"
+                >
+                  {platform === 'ios' ? (isTr ? 'Nasıl?' : 'How?') : (isTr ? 'Yükle' : 'Install')}
+                </button>
+              )}
             </div>
           )}
 
@@ -241,28 +276,40 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Desktop PWA download */}
+          {/* Desktop app download */}
           {!isStandalone && (
             <div className="border-t border-white/10 mt-8 pt-8">
               <div className="flex items-center gap-6 bg-gradient-to-r from-[#2D6A4F]/20 to-[#1B4332]/20 border border-[#2D6A4F]/30 rounded-2xl p-6">
                 <div className="w-12 h-12 bg-[#2D6A4F] rounded-xl flex items-center justify-center shrink-0">
-                  <Download size={24} className="text-white" />
+                  <Smartphone size={24} className="text-white" />
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-semibold">
                     {isTr ? 'HasatLink Mobil Uygulamayı İndir' : 'Download HasatLink Mobile App'}
                   </h4>
                   <p className="text-xs text-white/60 mt-0.5">
-                    {isTr ? 'Hızlı erişim ve bildirimler için uygulamayı yükleyin' : 'Install for quick access and notifications'}
+                    {isTr ? 'Android APK ile hemen yükleyin veya PWA olarak ekleyin' : 'Install via Android APK or add as PWA'}
                   </p>
                 </div>
-                <button
-                  onClick={handleInstallPWA}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#1A1A1A] rounded-xl font-semibold text-sm hover:bg-white/90 transition-colors"
-                >
-                  <Download size={16} />
-                  {isTr ? 'Yükle' : 'Install'}
-                </button>
+                <div className="flex items-center gap-3">
+                  <a
+                    href="/downloads/HasatLink.apk"
+                    download="HasatLink.apk"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#1A1A1A] rounded-xl font-semibold text-sm hover:bg-white/90 transition-colors"
+                  >
+                    <Download size={16} />
+                    Android APK
+                  </a>
+                  {deferredPrompt && (
+                    <button
+                      onClick={handleInstallPWA}
+                      className="flex items-center gap-2 px-5 py-2.5 border border-white/20 text-white rounded-xl font-semibold text-sm hover:bg-white/10 transition-colors"
+                    >
+                      <Download size={16} />
+                      PWA
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
