@@ -14,6 +14,8 @@ export interface ISiteSettings extends Document {
   logoUrl: string;
   instagramUrl: string;
   twitterUrl: string;
+  linkedinUrl: string;
+  youtubeUrl: string;
   featuredListing: { enabled: boolean; pricePerListing: number; durationOptions: number[] };
   premiumMembership: { enabled: boolean; packages: IPremiumPackage[] };
   commission: { enabled: boolean; percentage: number };
@@ -34,6 +36,8 @@ const SiteSettingsSchema = new Schema<ISiteSettings>({
   logoUrl: { type: String, default: '' },
   instagramUrl: { type: String, default: '' },
   twitterUrl: { type: String, default: '' },
+  linkedinUrl: { type: String, default: '' },
+  youtubeUrl: { type: String, default: '' },
   featuredListing: {
     enabled: { type: Boolean, default: false },
     pricePerListing: { type: Number, default: 0 },

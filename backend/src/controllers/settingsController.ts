@@ -23,6 +23,8 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
       logoUrl,
       instagramUrl,
       twitterUrl,
+      linkedinUrl,
+      youtubeUrl,
       featuredListing,
       premiumMembership,
       commission,
@@ -35,6 +37,8 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
     if (logoUrl !== undefined) update.logoUrl = logoUrl;
     if (instagramUrl !== undefined) update.instagramUrl = instagramUrl;
     if (twitterUrl !== undefined) update.twitterUrl = twitterUrl;
+    if (linkedinUrl !== undefined) update.linkedinUrl = linkedinUrl;
+    if (youtubeUrl !== undefined) update.youtubeUrl = youtubeUrl;
     if (featuredListing !== undefined) update.featuredListing = featuredListing;
     if (premiumMembership !== undefined) update.premiumMembership = premiumMembership;
     if (commission !== undefined) update.commission = commission;
