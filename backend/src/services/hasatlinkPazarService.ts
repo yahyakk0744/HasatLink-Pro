@@ -138,7 +138,7 @@ export async function fetchHasatlinkPazarPrices(): Promise<HasatlinkPazarItem[]>
         'Vişne': 'meyve', 'Şeftali': 'meyve', 'Üzüm': 'meyve', 'Nar': 'meyve',
         'İncir': 'meyve', 'Karpuz': 'meyve', 'Kavun': 'meyve', 'Muz': 'meyve',
         'Erik': 'meyve', 'Ayva': 'meyve', 'Dut': 'meyve', 'Böğürtlen': 'meyve',
-        'Avokado': 'meyve', 'Hurma': 'meyve', 'Kivi': 'meyve', 'Greyfurt': 'meyve',
+        'Avokado': 'meyve', 'Hurma': 'meyve', 'Kivi': 'meyve', 'Greyfurt': 'meyve', 'Zeytin': 'meyve',
         // SEBZE ürünleri
         'Domates': 'sebze', 'Biber': 'sebze', 'Patlıcan': 'sebze', 'Salatalık': 'sebze',
         'Kabak': 'sebze', 'Soğan': 'sebze', 'Sarımsak': 'sebze', 'Patates': 'sebze',

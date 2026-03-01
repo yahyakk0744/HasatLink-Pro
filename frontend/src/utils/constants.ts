@@ -1,6 +1,6 @@
 export const CATEGORIES = {
   pazar: ['HEPSİ', 'MEYVE', 'SEBZE', 'TAHIL', 'PAMUK', 'GÜBRE', 'FİDE', 'TOHUM', 'BAKLİYAT', 'DİĞER'],
-  lojistik: ['HEPSİ', 'DAMPERLİ', 'TIR', 'SIVI TANKER', 'FRİGO', 'KAMYONET', 'OPEN KASA', 'DİĞER'],
+  lojistik: ['HEPSİ', 'DAMPERLİ', 'TIR', 'SIVI TANKER', 'FRİGO', 'KAMYONET', 'DİĞER'],
   isgucu: ['HEPSİ', 'OPERATÖR', 'İLAÇLAMA EKİBİ', 'İŞÇİ', 'BUDAMACI', 'HASAT EKİBİ', 'OT BİÇME', 'DİĞER'],
   ekipman: ['HEPSİ', 'TRAKTÖR', 'PULLUK', 'DRON', 'İLAÇLAMA MAK.', 'SULAMA SİSTEMİ', 'SERA EKİPMANI', 'BİÇERDÖVER', 'DİĞER'],
   arazi: ['HEPSİ', 'TARLA', 'BAĞ', 'BAHÇE', 'ZEYTİNLİK', 'SERA ALANI', 'MERA', 'DİĞER'],
@@ -9,7 +9,7 @@ export const CATEGORIES = {
 
 // Pazar alt kategorileri — detaylı ürün listesi
 export const PAZAR_SUBCATEGORIES: Record<string, string[]> = {
-  MEYVE: ['Kayısı', 'Portakal', 'Limon', 'Mandalina', 'Elma', 'Armut', 'Çilek', 'Kiraz', 'Vişne', 'Şeftali', 'Üzüm', 'Nar', 'İncir', 'Karpuz', 'Kavun', 'Muz', 'Erik', 'Ayva', 'Dut', 'Böğürtlen', 'Avokado', 'Hurma', 'Kivi', 'Greyfurt'],
+  MEYVE: ['Kayısı', 'Portakal', 'Limon', 'Mandalina', 'Elma', 'Armut', 'Çilek', 'Kiraz', 'Vişne', 'Şeftali', 'Üzüm', 'Nar', 'İncir', 'Karpuz', 'Kavun', 'Muz', 'Erik', 'Ayva', 'Dut', 'Böğürtlen', 'Avokado', 'Hurma', 'Kivi', 'Greyfurt', 'Zeytin'],
   SEBZE: ['Domates', 'Biber', 'Patlıcan', 'Salatalık', 'Kabak', 'Soğan', 'Sarımsak', 'Patates', 'Havuç', 'Ispanak', 'Marul', 'Lahana', 'Brokoli', 'Karnabahar', 'Fasulye', 'Bezelye', 'Bamya', 'Turp', 'Kereviz', 'Pırasa', 'Enginar', 'Semizotu', 'Maydanoz', 'Nane', 'Dereotu', 'Roka'],
   TAHIL: ['Buğday', 'Arpa', 'Mısır', 'Çavdar', 'Yulaf', 'Pirinç', 'Darı', 'Tritikale', 'Sorgum'],
   PAMUK: ['Kütlü Pamuk', 'Lif Pamuk', 'Pamuk Tohumu', 'Çiğit'],

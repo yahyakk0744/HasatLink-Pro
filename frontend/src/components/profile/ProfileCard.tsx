@@ -26,9 +26,9 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
             </div>
           )}
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold tracking-tight truncate">{user.name}</h2>
+            <h2 className="text-lg font-semibold tracking-tight break-words">{user.name}</h2>
             {user.isVerified && <CheckCircle size={16} className="text-[#2D6A4F] shrink-0" />}
           </div>
           <div className="flex items-center gap-3 text-xs text-[#6B6560] mt-1">
