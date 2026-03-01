@@ -4,6 +4,7 @@ import Header from './components/layout/Header';
 import CategoryNav from './components/layout/CategoryNav';
 import MobileBottomNav from './components/layout/MobileBottomNav';
 import Footer from './components/layout/Footer';
+import MobileAppDownload from './components/layout/MobileAppDownload';
 import ScrollToTop from './components/ui/ScrollToTop';
 import CookieConsent from './components/ui/CookieConsent';
 import PWAInstallPrompt from './components/ui/PWAInstallPrompt';
@@ -86,6 +87,7 @@ export default function App() {
         </Routes>
       </main>
 
+      <MobileAppDownload />
       <Footer />
       <MobileBottomNav />
       <ScrollToTop />
