@@ -6,6 +6,7 @@ import { useListings } from '../hooks/useListings';
 import { useRatings } from '../hooks/useRatings';
 import { useMessages } from '../hooks/useMessages';
 import { useAuth } from '../contexts/AuthContext';
+import { auth as firebaseAuth } from '../config/firebase';
 import type { Listing } from '../types';
 import api from '../config/api';
 import ListingDetailView from '../components/listings/ListingDetailView';
@@ -82,7 +83,12 @@ export default function ListingDetailPage() {
       navigate('/giris');
       return;
     }
-    if (!firebaseUid) {
+
+    // Check actual Firebase auth state (not just stored UID)
+    const fbUser = firebaseAuth.currentUser;
+    const currentFbUid = fbUser?.uid || firebaseUid;
+
+    if (!currentFbUid) {
       toast.error('Mesajlaşma için lütfen çıkış yapıp tekrar giriş yapın.');
       return;
     }
@@ -91,21 +97,26 @@ export default function ListingDetailPage() {
       const { data: otherUser } = await api.get(`/users/${listing.userId}`);
 
       if (!otherUser.firebaseUid) {
-        toast.error('Bu kullanıcı henüz giriş yapmamış. Mesaj göndermek için karşı tarafın da giriş yapmış olması gerekiyor.');
+        toast.error('Bu kullanıcıya henüz mesaj gönderilemez.');
         return;
       }
 
       const conversationId = await getOrCreateConversation(
-        firebaseUid,
+        currentFbUid,
         { userId: user.userId, name: user.name, profileImage: user.profileImage || '' },
         otherUser.firebaseUid,
         { userId: otherUser.userId, name: otherUser.name, profileImage: otherUser.profileImage || '' },
         { listingId: listing._id, listingTitle: listing.title, listingImage: listing.images?.[0] || '' }
       );
       navigate(`/mesajlar/${conversationId}`);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Message error:', err);
-      toast.error('Mesaj gönderilemedi');
+      const code = err?.code || '';
+      if (code.includes('permission-denied') || code.includes('unauthenticated')) {
+        toast.error('Oturum süresi dolmuş. Lütfen çıkış yapıp tekrar giriş yapın.');
+      } else {
+        toast.error('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+      }
     }
   };
 

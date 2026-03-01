@@ -65,12 +65,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
   }, []);
 
-  // Keep firebaseUid in sync with auth state
+  // Keep firebaseUid in sync with actual Firebase auth state
   useEffect(() => {
     const unsubscribe = firebaseAuth.onAuthStateChanged((fbUser) => {
       if (fbUser) {
         setFirebaseUid(fbUser.uid);
       }
+      // Don't clear firebaseUid on null — we keep the backend-stored UID as fallback
     });
     return unsubscribe;
   }, []);
@@ -125,9 +126,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(data.token);
       setUser(data.user);
 
-      // 2. Firebase Auth sign-in only if input looks like email
-      const isEmail = emailOrUsername.includes('@');
-      const userEmail = isEmail ? emailOrUsername : data.user.email;
+      // 2. Firebase Auth sign-in — always try with user's email
+      const userEmail = data.user.email;
       let fbUid = data.user.firebaseUid || '';
 
       if (userEmail) {
@@ -135,14 +135,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const fbResult = await signInWithEmailAndPassword(firebaseAuth, userEmail, password);
           fbUid = fbResult.user.uid;
         } catch {
-          // Only try create if logged in with actual email (password matches)
-          if (isEmail) {
-            try {
-              const fbResult = await createUserWithEmailAndPassword(firebaseAuth, userEmail, password);
-              fbUid = fbResult.user.uid;
-            } catch {
-              // Firebase auth mismatch — user can still use the app with backend auth
-            }
+          // Sign-in failed — try creating Firebase account
+          try {
+            const fbResult = await createUserWithEmailAndPassword(firebaseAuth, userEmail, password);
+            fbUid = fbResult.user.uid;
+          } catch {
+            // Firebase auth mismatch — user can still use the app with backend auth
           }
         }
       }

@@ -198,10 +198,13 @@ export default function ListingDetailView({ listing, onWaClick, onShare, isOwner
         ) : (
           <>
             {onMessage && (
-              <Button onClick={onMessage} variant="secondary" className="flex-1 flex items-center justify-center gap-2 bg-[var(--bg-input)] text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)]">
+              <button
+                onClick={onMessage}
+                className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2D6A4F] text-white font-semibold text-sm rounded-2xl hover:bg-[#1B4332] active:scale-[0.97] transition-all"
+              >
                 <MessageSquare size={16} />
                 {t('listing.message')}
-              </Button>
+              </button>
             )}
             <Button onClick={handleWhatsApp} className="flex-1 flex items-center justify-center gap-2">
               <MessageCircle size={16} />

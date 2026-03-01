@@ -5,6 +5,7 @@ import { Star } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useUser } from '../hooks/useUser';
 import { useMessages } from '../hooks/useMessages';
+import { auth as firebaseAuth } from '../config/firebase';
 import ProfileCard from '../components/profile/ProfileCard';
 import AnalyticsCards from '../components/profile/AnalyticsCards';
 import MyListings from '../components/profile/MyListings';
@@ -54,22 +55,29 @@ export default function ProfilePage() {
   };
 
   const handleProfileMessage = async () => {
-    if (!authUser || !firebaseUid || !profileUser) return;
+    if (!authUser || !profileUser) return;
+    const fbUser = firebaseAuth.currentUser;
+    const currentFbUid = fbUser?.uid || firebaseUid;
+    if (!currentFbUid) {
+      toast.error('Mesajlaşma için lütfen çıkış yapıp tekrar giriş yapın.');
+      return;
+    }
     if (!profileUser.firebaseUid) {
-      toast.error('Bu kullanıcıya henüz mesaj gönderilemiyor');
+      toast.error('Bu kullanıcıya henüz mesaj gönderilemez.');
       return;
     }
     try {
       const conversationId = await getOrCreateConversation(
-        firebaseUid,
+        currentFbUid,
         { userId: authUser.userId, name: authUser.name, profileImage: authUser.profileImage || '' },
         profileUser.firebaseUid,
         { userId: profileUser.userId, name: profileUser.name, profileImage: profileUser.profileImage || '' },
         { listingId: 'profile', listingTitle: profileUser.name, listingImage: profileUser.profileImage || '' }
       );
       navigate(`/mesajlar/${conversationId}`);
-    } catch {
-      toast.error('Mesaj gönderilemedi');
+    } catch (err: any) {
+      console.error('Profile message error:', err);
+      toast.error('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
     }
   };
 
