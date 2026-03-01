@@ -158,7 +158,9 @@
     "temperatureMax": "Max Temperature",
     "temperatureRange": "Temperature Range",
     "hasSecurity": "Security",
-    "has24Access": "24/7 Access"
+    "has24Access": "24/7 Access",
+    "product": "Product",
+    "selectProduct": "Select product..."
   },
   "weather": {
     "title": "Weather",

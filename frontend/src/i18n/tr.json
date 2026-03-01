@@ -158,7 +158,9 @@
     "temperatureMax": "Max Sıcaklık",
     "temperatureRange": "Sıcaklık Aralığı",
     "hasSecurity": "Güvenlik",
-    "has24Access": "7/24 Erişim"
+    "has24Access": "7/24 Erişim",
+    "product": "Ürün",
+    "selectProduct": "Ürün seçin..."
   },
   "weather": {
     "title": "Hava Durumu",

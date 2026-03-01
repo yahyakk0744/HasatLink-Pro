@@ -25,9 +25,12 @@ export default function HasatlinkPazariPage() {
 
   const CATEGORIES = [
     { value: '', label: isTr ? 'Hepsi' : 'All' },
-    { value: 'sebze', label: isTr ? 'Sebze' : 'Vegetable' },
     { value: 'meyve', label: isTr ? 'Meyve' : 'Fruit' },
+    { value: 'sebze', label: isTr ? 'Sebze' : 'Vegetable' },
     { value: 'tahıl', label: isTr ? 'Tahıl' : 'Grain' },
+    { value: 'pamuk', label: isTr ? 'Pamuk' : 'Cotton' },
+    { value: 'gübre', label: isTr ? 'Gübre' : 'Fertilizer' },
+    { value: 'fide', label: isTr ? 'Fide' : 'Seedling' },
     { value: 'bakliyat', label: isTr ? 'Bakliyat' : 'Legume' },
   ];
 

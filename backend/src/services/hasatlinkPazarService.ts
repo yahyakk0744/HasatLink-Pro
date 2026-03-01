@@ -130,16 +130,50 @@ export async function fetchHasatlinkPazarPrices(): Promise<HasatlinkPazarItem[]>
         }
       }
 
-      // Kategori belirle
-      const catMap: Record<string, string> = {
+      // Kategori belirle — ana kategori ve ürün bazlı eşleştirme
+      const PRODUCT_CATEGORY_MAP: Record<string, string> = {
+        // MEYVE ürünleri
+        'Kayısı': 'meyve', 'Portakal': 'meyve', 'Limon': 'meyve', 'Mandalina': 'meyve',
+        'Elma': 'meyve', 'Armut': 'meyve', 'Çilek': 'meyve', 'Kiraz': 'meyve',
+        'Vişne': 'meyve', 'Şeftali': 'meyve', 'Üzüm': 'meyve', 'Nar': 'meyve',
+        'İncir': 'meyve', 'Karpuz': 'meyve', 'Kavun': 'meyve', 'Muz': 'meyve',
+        'Erik': 'meyve', 'Ayva': 'meyve', 'Dut': 'meyve', 'Böğürtlen': 'meyve',
+        'Avokado': 'meyve', 'Hurma': 'meyve', 'Kivi': 'meyve', 'Greyfurt': 'meyve',
+        // SEBZE ürünleri
+        'Domates': 'sebze', 'Biber': 'sebze', 'Patlıcan': 'sebze', 'Salatalık': 'sebze',
+        'Kabak': 'sebze', 'Soğan': 'sebze', 'Sarımsak': 'sebze', 'Patates': 'sebze',
+        'Havuç': 'sebze', 'Ispanak': 'sebze', 'Marul': 'sebze', 'Lahana': 'sebze',
+        'Brokoli': 'sebze', 'Karnabahar': 'sebze', 'Fasulye': 'sebze', 'Bezelye': 'sebze',
+        'Bamya': 'sebze', 'Turp': 'sebze', 'Kereviz': 'sebze', 'Pırasa': 'sebze',
+        'Enginar': 'sebze', 'Semizotu': 'sebze', 'Maydanoz': 'sebze', 'Nane': 'sebze',
+        'Dereotu': 'sebze', 'Roka': 'sebze',
+        // TAHIL ürünleri
+        'Buğday': 'tahıl', 'Arpa': 'tahıl', 'Mısır': 'tahıl', 'Çavdar': 'tahıl',
+        'Yulaf': 'tahıl', 'Pirinç': 'tahıl', 'Darı': 'tahıl', 'Tritikale': 'tahıl', 'Sorgum': 'tahıl',
+        // PAMUK ürünleri
+        'Kütlü Pamuk': 'pamuk', 'Lif Pamuk': 'pamuk', 'Pamuk Tohumu': 'pamuk', 'Çiğit': 'pamuk',
+        // GÜBRE ürünleri
+        'Üre': 'gübre', 'DAP': 'gübre', 'Amonyum Sülfat': 'gübre', 'Potasyum Sülfat': 'gübre',
+        'NPK': 'gübre', 'Kalsiyum Amonyum Nitrat': 'gübre', 'TSP': 'gübre',
+        'Organik Gübre': 'gübre', 'Sıvı Gübre': 'gübre',
+        // FİDE ürünleri
+        'Domates Fidesi': 'fide', 'Biber Fidesi': 'fide', 'Patlıcan Fidesi': 'fide',
+        'Salatalık Fidesi': 'fide', 'Kavun Fidesi': 'fide', 'Karpuz Fidesi': 'fide',
+        'Marul Fidesi': 'fide', 'Çilek Fidesi': 'fide', 'Meyve Fidanı': 'fide',
+        'Zeytin Fidanı': 'fide', 'Narenciye Fidanı': 'fide', 'Ceviz Fidanı': 'fide', 'Bağ Çubuğu': 'fide',
+      };
+
+      const parentCatMap: Record<string, string> = {
         'MEYVE': 'meyve', 'SEBZE': 'sebze', 'TAHIL': 'tahıl',
         'PAMUK': 'pamuk', 'GÜBRE': 'gübre', 'FİDE': 'fide',
         'TOHUM': 'tohum', 'BAKLİYAT': 'bakliyat', 'DİĞER': 'diğer',
       };
 
+      const resolvedCategory = PRODUCT_CATEGORY_MAP[name] || parentCatMap[name] || parentCatMap[data.category] || 'diğer';
+
       result.push({
         name,
-        category: catMap[name] || 'diğer',
+        category: resolvedCategory,
         price: Math.round(avg * 100) / 100,
         minPrice: Math.round(min * 100) / 100,
         maxPrice: Math.round(max * 100) / 100,

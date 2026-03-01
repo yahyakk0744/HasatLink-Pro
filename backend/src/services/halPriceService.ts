@@ -65,6 +65,14 @@ const NAME_MAP: Record<string, { en: string; category: string }> = {
   'AYVA': { en: 'Quince', category: 'meyve' },
   'CENNET ELMASI': { en: 'Persimmon', category: 'meyve' },
   'HİNDİSTAN CEVİZİ': { en: 'Coconut', category: 'meyve' },
+  'VİŞNE': { en: 'Sour Cherry', category: 'meyve' },
+  'DUT': { en: 'Mulberry', category: 'meyve' },
+  'BÖĞÜRTLEN': { en: 'Blackberry', category: 'meyve' },
+  'AHUDUDU': { en: 'Raspberry', category: 'meyve' },
+  'CEVİZ': { en: 'Walnut', category: 'meyve' },
+  'FINDIK': { en: 'Hazelnut', category: 'meyve' },
+  'BADEM': { en: 'Almond', category: 'meyve' },
+  'ZEYTİN': { en: 'Olive', category: 'meyve' },
 };
 
 // Popüler ürünler - hero section'da ilk gösterilecekler
@@ -189,29 +197,35 @@ export async function fetchRealHalPrices(): Promise<TransformedPrice[]> {
 
   try {
     const today = new Date();
-    const todayStr = formatDate(today);
 
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = formatDate(yesterday);
+    // Bugünden geriye 5 gün dene (hafta sonu / tatil günleri için)
+    let mainItems: HalItem[] = [];
+    let mainDateStr = '';
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = formatDate(d);
+      const items = await fetchHalData(dateStr);
+      if (items.length > 0) {
+        mainItems = items;
+        mainDateStr = dateStr;
+        break;
+      }
+    }
 
-    // Bugün ve dünün verilerini paralel çek
-    const [todayItems, yesterdayItems] = await Promise.all([
-      fetchHalData(todayStr),
-      fetchHalData(yesterdayStr),
-    ]);
-
-    // Ana veri: bugün varsa bugün, yoksa dün
-    let mainItems = todayItems.length > 0 ? todayItems : yesterdayItems;
+    // Önceki günü bul (karşılaştırma verisi)
     let compareItems: HalItem[] = [];
-
-    if (todayItems.length > 0) {
-      compareItems = yesterdayItems;
-    } else if (yesterdayItems.length > 0) {
-      // Dünü ana veri olarak kullanıyorsak, önceki gün ile karşılaştır
-      const twoDaysAgo = new Date(today);
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-      compareItems = await fetchHalData(formatDate(twoDaysAgo));
+    if (mainDateStr) {
+      const mainDate = new Date(mainDateStr);
+      for (let i = 1; i <= 5; i++) {
+        const d = new Date(mainDate);
+        d.setDate(d.getDate() - i);
+        const items = await fetchHalData(formatDate(d));
+        if (items.length > 0) {
+          compareItems = items;
+          break;
+        }
+      }
     }
 
     if (mainItems.length === 0) {
@@ -261,7 +275,7 @@ export async function fetchRealHalPrices(): Promise<TransformedPrice[]> {
         minPrice: item.AsgariUcret,
         maxPrice: item.AzamiUcret,
         malTipi: item.MalTipAdi,
-        updatedAt: todayItems.length > 0 ? todayStr : yesterdayStr,
+        updatedAt: mainDateStr,
       });
 
       if (result.length >= 30) break;
@@ -286,25 +300,35 @@ export async function fetchAllHalPrices(): Promise<TransformedPrice[]> {
 
   try {
     const today = new Date();
-    const todayStr = formatDate(today);
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = formatDate(yesterday);
 
-    const [todayItems, yesterdayItems] = await Promise.all([
-      fetchHalData(todayStr),
-      fetchHalData(yesterdayStr),
-    ]);
+    // Bugünden geriye 5 gün dene
+    let mainItems: HalItem[] = [];
+    let mainDateStr = '';
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = formatDate(d);
+      const items = await fetchHalData(dateStr);
+      if (items.length > 0) {
+        mainItems = items;
+        mainDateStr = dateStr;
+        break;
+      }
+    }
 
-    const mainItems = todayItems.length > 0 ? todayItems : yesterdayItems;
+    // Karşılaştırma verisi
     let compareItems: HalItem[] = [];
-
-    if (todayItems.length > 0) {
-      compareItems = yesterdayItems;
-    } else if (yesterdayItems.length > 0) {
-      const twoDaysAgo = new Date(today);
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-      compareItems = await fetchHalData(formatDate(twoDaysAgo));
+    if (mainDateStr) {
+      const mainDate = new Date(mainDateStr);
+      for (let i = 1; i <= 5; i++) {
+        const d = new Date(mainDate);
+        d.setDate(d.getDate() - i);
+        const items = await fetchHalData(formatDate(d));
+        if (items.length > 0) {
+          compareItems = items;
+          break;
+        }
+      }
     }
 
     if (mainItems.length === 0) return cachedAllPrices;
@@ -335,7 +359,7 @@ export async function fetchAllHalPrices(): Promise<TransformedPrice[]> {
         minPrice: item.AsgariUcret,
         maxPrice: item.AzamiUcret,
         malTipi: item.MalTipAdi,
-        updatedAt: todayItems.length > 0 ? todayStr : yesterdayStr,
+        updatedAt: mainDateStr,
       };
     });
 

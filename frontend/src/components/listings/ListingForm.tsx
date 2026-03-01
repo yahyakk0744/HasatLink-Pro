@@ -6,7 +6,7 @@ import Input from '../ui/Input';
 import Button from '../ui/Button';
 import LocationPicker from '../map/LocationPicker';
 import {
-  CATEGORIES, CATEGORY_LABELS,
+  CATEGORIES, CATEGORY_LABELS, PAZAR_SUBCATEGORIES,
   PAZAR_UNITS, QUALITY_GRADES, STORAGE_TYPES,
   VEHICLE_TYPES,
   WORKER_SKILLS,
@@ -155,6 +155,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const [has24Access, setHas24Access] = useState(initialData?.has24Access || false);
 
   const subCategories = CATEGORIES[type as keyof typeof CATEGORIES]?.filter(c => c !== 'HEPSİ') || [];
+  const productOptions = type === 'pazar' && subCategory ? (PAZAR_SUBCATEGORIES[subCategory] || []) : [];
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -292,7 +293,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
               <button
                 key={cat}
                 type="button"
-                onClick={() => setSubCategory(cat)}
+                onClick={() => { setSubCategory(cat); setTitle(''); }}
                 className={`px-3 py-1.5 text-[10px] font-medium uppercase rounded-full transition-all ${
                   subCategory === cat ? 'bg-[#2D6A4F] text-white' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
                 }`}
@@ -302,6 +303,23 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
             ))}
           </div>
         </div>
+
+        {/* Product Selection — detailed subcategory for pazar */}
+        {productOptions.length > 0 && (
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-2">{t('listing.product') || 'Ürün Seçin'}</label>
+            <select
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
+            >
+              <option value="">{t('listing.selectProduct') || 'Ürün seçin...'}</option>
+              {productOptions.map(p => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <Input label={t('listing.title')} value={title} onChange={e => setTitle(e.target.value)} required />
 

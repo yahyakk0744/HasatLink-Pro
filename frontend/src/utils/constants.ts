@@ -7,6 +7,16 @@ export const CATEGORIES = {
   depolama: ['HEPSİ', 'SOĞUK HAVA DEPOSU', 'KURU DEPO', 'TAHIL SİLOSU', 'AÇIK DEPO', 'DİĞER'],
 } as const;
 
+// Pazar alt kategorileri — detaylı ürün listesi
+export const PAZAR_SUBCATEGORIES: Record<string, string[]> = {
+  MEYVE: ['Kayısı', 'Portakal', 'Limon', 'Mandalina', 'Elma', 'Armut', 'Çilek', 'Kiraz', 'Vişne', 'Şeftali', 'Üzüm', 'Nar', 'İncir', 'Karpuz', 'Kavun', 'Muz', 'Erik', 'Ayva', 'Dut', 'Böğürtlen', 'Avokado', 'Hurma', 'Kivi', 'Greyfurt'],
+  SEBZE: ['Domates', 'Biber', 'Patlıcan', 'Salatalık', 'Kabak', 'Soğan', 'Sarımsak', 'Patates', 'Havuç', 'Ispanak', 'Marul', 'Lahana', 'Brokoli', 'Karnabahar', 'Fasulye', 'Bezelye', 'Bamya', 'Turp', 'Kereviz', 'Pırasa', 'Enginar', 'Semizotu', 'Maydanoz', 'Nane', 'Dereotu', 'Roka'],
+  TAHIL: ['Buğday', 'Arpa', 'Mısır', 'Çavdar', 'Yulaf', 'Pirinç', 'Darı', 'Tritikale', 'Sorgum'],
+  PAMUK: ['Kütlü Pamuk', 'Lif Pamuk', 'Pamuk Tohumu', 'Çiğit'],
+  GÜBRE: ['Üre', 'DAP', 'Amonyum Sülfat', 'Potasyum Sülfat', 'NPK', 'Kalsiyum Amonyum Nitrat', 'TSP', 'Organik Gübre', 'Sıvı Gübre'],
+  FİDE: ['Domates Fidesi', 'Biber Fidesi', 'Patlıcan Fidesi', 'Salatalık Fidesi', 'Kavun Fidesi', 'Karpuz Fidesi', 'Marul Fidesi', 'Çilek Fidesi', 'Meyve Fidanı', 'Zeytin Fidanı', 'Narenciye Fidanı', 'Ceviz Fidanı', 'Bağ Çubuğu'],
+};
+
 export const CATEGORY_LABELS: Record<string, { tr: string; en: string; icon: string }> = {
   pazar: { tr: 'PAZAR', en: 'MARKET', icon: '🌾' },
   lojistik: { tr: 'LOJİSTİK', en: 'LOGISTICS', icon: '🚛' },

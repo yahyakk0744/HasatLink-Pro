@@ -8,7 +8,7 @@ import ListingGrid from '../components/listings/ListingGrid';
 import SubCategoryBar from '../components/layout/SubCategoryBar';
 import ListingForm from '../components/listings/ListingForm';
 import FAB from '../components/ui/FAB';
-import { CATEGORIES, CATEGORY_LABELS, LISTING_MODE_LABELS } from '../utils/constants';
+import { CATEGORIES, CATEGORY_LABELS, LISTING_MODE_LABELS, PAZAR_SUBCATEGORIES } from '../utils/constants';
 import SEO from '../components/ui/SEO';
 import type { Listing } from '../types';
 import toast from 'react-hot-toast';
@@ -26,22 +26,26 @@ export default function ListingsPage() {
   const search = searchParams.get('search') || '';
 
   const [subCategory, setSubCategory] = useState('HEPSİ');
+  const [productFilter, setProductFilter] = useState('');
   const [listingMode, setListingMode] = useState<'all' | 'sell' | 'buy'>('all');
   const [showForm, setShowForm] = useState(false);
 
   const subCategories = CATEGORIES[type as keyof typeof CATEGORIES] || CATEGORIES.pazar;
   const catLabel = CATEGORY_LABELS[type];
+  const productOptions = type === 'pazar' && subCategory !== 'HEPSİ' ? (PAZAR_SUBCATEGORIES[subCategory] || []) : [];
 
   useEffect(() => {
     const params: Record<string, string> = { type };
     if (subCategory !== 'HEPSİ') params.subCategory = subCategory;
-    if (search) params.search = search;
+    if (productFilter) params.search = productFilter;
+    else if (search) params.search = search;
     if (listingMode !== 'all') params.listingMode = listingMode;
     fetchListings(params);
-  }, [type, subCategory, search, listingMode, fetchListings]);
+  }, [type, subCategory, productFilter, search, listingMode, fetchListings]);
 
   useEffect(() => {
     setSubCategory('HEPSİ');
+    setProductFilter('');
     setListingMode('all');
   }, [type]);
 
@@ -87,7 +91,32 @@ export default function ListingsPage() {
         })}
       </div>
 
-      <SubCategoryBar categories={subCategories} active={subCategory} onChange={setSubCategory} />
+      <SubCategoryBar categories={subCategories} active={subCategory} onChange={(cat) => { setSubCategory(cat); setProductFilter(''); }} />
+
+      {/* Product-level filter for pazar */}
+      {productOptions.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto py-2 scrollbar-hide flex-nowrap">
+          <button
+            onClick={() => setProductFilter('')}
+            className={`px-3 py-1 text-[10px] font-medium rounded-full whitespace-nowrap flex-shrink-0 transition-all ${
+              !productFilter ? 'bg-[#A47148] text-white' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
+            }`}
+          >
+            Tümü
+          </button>
+          {productOptions.map(p => (
+            <button
+              key={p}
+              onClick={() => setProductFilter(p)}
+              className={`px-3 py-1 text-[10px] font-medium rounded-full whitespace-nowrap flex-shrink-0 transition-all ${
+                productFilter === p ? 'bg-[#A47148] text-white' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="mt-4">
         <ListingGrid listings={listings} loading={loading} />
