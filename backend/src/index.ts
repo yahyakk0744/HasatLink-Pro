@@ -18,6 +18,7 @@ import hasatlinkPazarRoutes from './routes/hasatlinkPazarRoutes';
 import contactRoutes from './routes/contactRoutes';
 import adRoutes from './routes/adRoutes';
 import adminRoutes from './routes/adminRoutes';
+import commentRoutes from './routes/commentRoutes';
 
 dotenv.config();
 
@@ -79,6 +80,7 @@ app.use('/api', hasatlinkPazarRoutes);
 app.use('/api', contactRoutes);
 app.use('/api', adRoutes);
 app.use('/api', adminRoutes);
+app.use('/api', commentRoutes);
 
 // VAPID public key endpoint
 app.get('/api/push/vapid-key', (_req, res) => {

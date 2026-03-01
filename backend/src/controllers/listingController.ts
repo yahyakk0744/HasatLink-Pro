@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import Listing from '../models/Listing';
 import User from '../models/User';
 import AIDiagnosis from '../models/AIDiagnosis';
+import Comment from '../models/Comment';
 
 export const getListings = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -86,6 +87,7 @@ export const deleteListing = async (req: Request, res: Response): Promise<void> 
       return;
     }
     await listing.deleteOne();
+    await Comment.deleteMany({ listingId: listing._id.toString() });
     res.json({ message: 'İlan silindi' });
   } catch (error) {
     res.status(500).json({ message: 'İlan silme hatası', error });

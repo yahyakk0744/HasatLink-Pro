@@ -17,6 +17,7 @@ import ReviewCard from '../components/ratings/ReviewCard';
 import ReviewForm from '../components/ratings/ReviewForm';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import EmptyState from '../components/ui/EmptyState';
+import CommentSection from '../components/comments/CommentSection';
 import toast from 'react-hot-toast';
 
 export default function ListingDetailPage() {
@@ -147,6 +148,9 @@ export default function ListingDetailPage() {
             onDelete={() => setShowDeleteConfirm(true)}
             onMessage={!isOwner ? handleMessage : undefined}
           />
+
+          {/* Comments */}
+          <CommentSection listingId={listing._id} />
         </div>
 
         <div className="space-y-6">

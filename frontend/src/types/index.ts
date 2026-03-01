@@ -145,6 +145,17 @@ export interface Rating {
   createdAt: string;
 }
 
+export interface Comment {
+  _id: string;
+  listingId: string;
+  userId: string;
+  userName: string;
+  userImage: string;
+  text: string;
+  parentId: string | null;
+  createdAt: string;
+}
+
 export interface AIDiagnosisResult {
   disease: string;
   confidence: number;
