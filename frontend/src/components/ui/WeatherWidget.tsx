@@ -5,15 +5,21 @@ import { useWeather } from '../../hooks/useWeather';
 
 interface WeatherWidgetProps {
   city?: string;
+  lat?: number;
+  lng?: number;
 }
 
-export default function WeatherWidget({ city = 'Ceyhan' }: WeatherWidgetProps) {
+export default function WeatherWidget({ city = 'Istanbul', lat, lng }: WeatherWidgetProps) {
   const { t } = useTranslation();
   const { weather, loading, fetchWeather } = useWeather();
 
   useEffect(() => {
-    fetchWeather(city);
-  }, [city, fetchWeather]);
+    if (lat && lng) {
+      fetchWeather(lat, lng);
+    } else {
+      fetchWeather(city);
+    }
+  }, [city, lat, lng, fetchWeather]);
 
   if (loading || !weather) {
     return (

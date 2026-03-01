@@ -44,7 +44,7 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
           {user.createdAt && (
             <div className="flex items-center gap-1 text-xs text-[#6B6560] mt-1">
               <Calendar size={12} />
-              <span>{t('profile.memberSince')}: {formatDate(user.createdAt)}</span>
+              <span>{t('profileInfo.memberSince')}: {formatDate(user.createdAt)}</span>
             </div>
           )}
         </div>
@@ -68,7 +68,7 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
       </div>
       {user.bio && (
         <div className="mt-4 pt-4 border-t border-[var(--bg-input)]">
-          <p className="text-xs font-medium uppercase text-[var(--text-secondary)] mb-1">{t('profile.bio')}</p>
+          <p className="text-xs font-medium uppercase text-[var(--text-secondary)] mb-1">{t('profileInfo.bio')}</p>
           <p className="text-sm text-[var(--text-primary)] leading-relaxed">{user.bio}</p>
         </div>
       )}

@@ -16,6 +16,7 @@ import WeatherWidget from '../components/ui/WeatherWidget';
 import { useRatings } from '../hooks/useRatings';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import SEO from '../components/ui/SEO';
+import { useLocation } from '../contexts/LocationContext';
 import type { User } from '../types';
 import toast from 'react-hot-toast';
 
@@ -72,7 +73,8 @@ export default function ProfilePage() {
     }
   };
 
-  const weatherCity = displayUser.location?.split(',')[0]?.trim() || 'Ceyhan';
+  const { location: geoLocation } = useLocation();
+  const weatherCity = geoLocation?.city || displayUser.location?.split(',')[0]?.trim() || 'Istanbul';
 
   // Rating distribution (5→1)
   const ratingDistribution = [5, 4, 3, 2, 1].map(star => ({
@@ -94,7 +96,7 @@ export default function ProfilePage() {
         onMessage={!isOwn && authUser ? handleProfileMessage : undefined}
       />
 
-      <WeatherWidget city={weatherCity} />
+      <WeatherWidget city={weatherCity} lat={geoLocation?.lat} lng={geoLocation?.lng} />
 
       {isOwn && stats && <AnalyticsCards stats={stats} />}
 

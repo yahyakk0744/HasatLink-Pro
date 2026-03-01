@@ -15,7 +15,7 @@ export default function CategoryNav() {
               key={key}
               to={`/${key}`}
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-full whitespace-nowrap transition-all ${
+                `flex items-center gap-2.5 px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-full whitespace-nowrap transition-all ${
                   isActive
                     ? 'bg-[var(--bg-invert)] text-[var(--text-on-invert)]'
                     : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'

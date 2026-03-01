@@ -65,11 +65,11 @@ export default function ProfileEditForm({ isOpen, onClose, user, onSubmit }: Pro
         <Input label={t('listing.phone')} value={phone} onChange={e => setPhone(e.target.value)} />
 
         <div>
-          <label className="block text-xs font-medium uppercase text-[#6B6560] mb-1">{t('profile.bio')}</label>
+          <label className="block text-xs font-medium uppercase text-[#6B6560] mb-1">{t('profileInfo.bio')}</label>
           <textarea
             value={bio}
             onChange={e => setBio(e.target.value.slice(0, 300))}
-            placeholder={t('profile.bioPlaceholder')}
+            placeholder={t('profileInfo.bioPlaceholder')}
             rows={3}
             maxLength={300}
             className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"

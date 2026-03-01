@@ -168,7 +168,7 @@
     "heatAlert": "Heat Warning",
     "stormAlert": "Storm Warning"
   },
-  "profile": {
+  "profileInfo": {
     "bio": "About",
     "bioPlaceholder": "Briefly describe yourself...",
     "memberSince": "Member since"

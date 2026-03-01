@@ -168,7 +168,7 @@
     "heatAlert": "Sıcak Hava Uyarısı",
     "stormAlert": "Fırtına Uyarısı"
   },
-  "profile": {
+  "profileInfo": {
     "bio": "Hakkımda",
     "bioPlaceholder": "Kendinizi kısaca tanıtın...",
     "memberSince": "Üye tarihi"
