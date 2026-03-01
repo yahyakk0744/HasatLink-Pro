@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, deleteUser } from 'firebase/auth';
+import { signInWithRedirect, getRedirectResult, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, deleteUser } from 'firebase/auth';
 import { auth as firebaseAuth, googleProvider } from '../config/firebase';
 import api from '../config/api';
 import type { User } from '../types';
@@ -38,6 +38,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   }, [token]);
+
+  // Handle Google redirect result on page load
+  const redirectHandled = useRef(false);
+  useEffect(() => {
+    if (redirectHandled.current) return;
+    redirectHandled.current = true;
+
+    getRedirectResult(firebaseAuth)
+      .then(async (result) => {
+        if (result?.user) {
+          try {
+            const idToken = await result.user.getIdToken();
+            const { data } = await api.post('/auth/google', { idToken });
+            localStorage.setItem('hasatlink_token', data.token);
+            setToken(data.token);
+            setUser(data.user);
+            setFirebaseUid(result.user.uid);
+          } catch (err) {
+            console.error('Google redirect backend error:', err);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Google redirect result error:', err);
+      });
+  }, []);
 
   // Keep firebaseUid in sync with auth state
   useEffect(() => {
@@ -139,6 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const loginWithGoogle = useCallback(async () => {
     try {
+      // Try popup first (works on most desktop browsers)
       const result = await signInWithPopup(firebaseAuth, googleProvider);
       const idToken = await result.user.getIdToken();
       const { data } = await api.post('/auth/google', { idToken });
@@ -151,6 +178,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (err.code === 'auth/popup-closed-by-user') {
         return { success: false, message: 'Giriş iptal edildi' };
       }
+      // Popup blocked or failed — fall back to redirect
+      if (
+        err.code === 'auth/popup-blocked' ||
+        err.code === 'auth/cancelled-popup-request' ||
+        err.code === 'auth/internal-error' ||
+        err.code === 'auth/web-storage-unsupported'
+      ) {
+        try {
+          await signInWithRedirect(firebaseAuth, googleProvider);
+          // Page will redirect, return pending state
+          return { success: true };
+        } catch (redirectErr: any) {
+          console.error('Google redirect error:', redirectErr);
+          return { success: false, message: 'Google giriş hatası' };
+        }
+      }
+      console.error('Google login error:', err.code, err.message);
       return { success: false, message: err.response?.data?.message || 'Google giriş hatası' };
     }
   }, []);

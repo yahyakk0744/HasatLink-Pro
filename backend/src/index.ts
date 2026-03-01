@@ -22,7 +22,13 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+  origin: process.env.CORS_ORIGIN?.split(',') || [
+    'https://hasatlink.com',
+    'https://www.hasatlink.com',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+  ],
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
