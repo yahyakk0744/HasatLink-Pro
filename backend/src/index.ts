@@ -27,21 +27,20 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
-// Rate limiting (in-memory)
-const rateMap = new Map<string, { count: number; reset: number }>();
-app.use((req, res, next) => {
-  const ip = req.ip || 'unknown';
-  const now = Date.now();
-  const entry = rateMap.get(ip);
-  if (!entry || now > entry.reset) {
-    rateMap.set(ip, { count: 1, reset: now + 60_000 });
-    return next();
-  }
-  entry.count++;
-  if (entry.count > 100) {
-    res.status(429).json({ message: 'Çok fazla istek, lütfen bekleyin' });
-    return;
-  }
+// Rate limiting (in-memory, endpoint-aware)
+import { rateLimit } from './middleware/rateLimit';
+app.use(rateLimit);
+
+// Input sanitization (XSS & injection protection)
+import { sanitize } from './middleware/sanitize';
+app.use(sanitize);
+
+// Security headers
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   next();
 });
 
