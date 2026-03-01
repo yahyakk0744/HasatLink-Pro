@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HasatLink</string>
+    <string name="title_activity_main">HasatLink</string>
+    <string name="package_name">com.hasatlink.app</string>
+    <string name="custom_url_scheme">com.hasatlink.app</string>
+</resources>

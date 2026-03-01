@@ -6,3 +6,10 @@ dist-ssr
 *.log
 .DS_Store
 .claude/
+
+# Capacitor Android build outputs
+frontend/android/app/build/
+frontend/android/.gradle/
+frontend/android/build/
+frontend/android/.idea/
+*.apk
