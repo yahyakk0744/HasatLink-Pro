@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import { useSocket } from './SocketContext';
 import api from '../config/api';
 import type { Notification } from '../types';
 
@@ -16,6 +17,7 @@ const NotificationContext = createContext<NotificationContextType | null>(null);
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  const { socket } = useSocket();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const weatherCheckedRef = useRef(false);
@@ -38,12 +40,24 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     if (!user?.userId) return;
     try {
       await api.get('/weather/alerts');
-      // After alert check, refresh notifications to pick up any new ones
       await fetchNotifications();
     } catch {
       // Weather alert check failed — non-critical
     }
   }, [user?.userId, fetchNotifications]);
+
+  // Socket.IO real-time notifications
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewNotification = (notification: Notification) => {
+      setNotifications(prev => [notification, ...prev]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    socket.on('notification:new', handleNewNotification);
+    return () => { socket.off('notification:new', handleNewNotification); };
+  }, [socket]);
 
   useEffect(() => {
     if (user?.userId) {
@@ -55,8 +69,8 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         checkWeatherAlerts();
       }
 
-      // Poll notifications every 30 seconds
-      const notifInterval = setInterval(fetchNotifications, 30000);
+      // Fallback poll every 60 seconds (Socket.IO handles real-time)
+      const notifInterval = setInterval(fetchNotifications, 60000);
       // Check weather alerts every 30 minutes
       const weatherInterval = setInterval(checkWeatherAlerts, 30 * 60 * 1000);
 

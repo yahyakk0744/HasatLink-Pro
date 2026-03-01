@@ -26,9 +26,15 @@ export default function Footer() {
   const year = new Date().getFullYear();
   const [socials, setSocials] = useState({ instagramUrl: '', twitterUrl: '' });
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
     api.get('/settings').then(({ data }) => setSocials(data)).catch(() => {});
+
+    // PWA standalone detection
+    const standalone = window.matchMedia('(display-mode: standalone)').matches
+      || (navigator as any).standalone === true;
+    setIsStandalone(standalone);
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -111,48 +117,48 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Mobile App Download Section */}
-        <div className="border-t border-white/10 mt-8 pt-8">
-          <div className="flex flex-col md:flex-row items-center gap-6 bg-gradient-to-r from-[#2D6A4F]/20 to-[#1B4332]/20 border border-[#2D6A4F]/30 rounded-2xl p-6">
-            <div className="w-16 h-16 bg-[#2D6A4F] rounded-2xl flex items-center justify-center flex-shrink-0">
-              <Smartphone size={32} className="text-white" />
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <h4 className="text-lg font-semibold mb-1">
-                {isTr ? 'HasatLink Mobil Uygulamayı İndir' : 'Download HasatLink Mobile App'}
-              </h4>
-              <p className="text-sm text-white/60">
-                {isTr
-                  ? 'Hızlı erişim, bildirimler ve offline kullanım için HasatLink uygulamasını telefonunuza ekleyin'
-                  : 'Add HasatLink to your phone for quick access, notifications and offline use'}
-              </p>
-            </div>
-            <div className="flex gap-3">
-              {/* Google Play style button (PWA install) */}
-              <button
-                onClick={handleInstallPWA}
-                className="flex items-center gap-2 px-5 py-3 bg-white text-[#1A1A1A] rounded-xl font-semibold text-sm hover:bg-white/90 transition-colors"
-              >
-                <Download size={18} />
-                <div className="text-left">
-                  <div className="text-[9px] uppercase tracking-wide opacity-60">{isTr ? 'Hemen Yükle' : 'Install Now'}</div>
-                  <div className="text-xs font-bold -mt-0.5">Android</div>
-                </div>
-              </button>
-              {/* App Store style button (PWA install) */}
-              <button
-                onClick={handleInstallPWA}
-                className="flex items-center gap-2 px-5 py-3 bg-white text-[#1A1A1A] rounded-xl font-semibold text-sm hover:bg-white/90 transition-colors"
-              >
-                <Download size={18} />
-                <div className="text-left">
-                  <div className="text-[9px] uppercase tracking-wide opacity-60">{isTr ? 'Ana Ekrana Ekle' : 'Add to Home'}</div>
-                  <div className="text-xs font-bold -mt-0.5">iOS</div>
-                </div>
-              </button>
+        {/* Mobile App Download Section — hide in PWA standalone mode */}
+        {!isStandalone && (
+          <div className="border-t border-white/10 mt-8 pt-8">
+            <div className="flex flex-col md:flex-row items-center gap-6 bg-gradient-to-r from-[#2D6A4F]/20 to-[#1B4332]/20 border border-[#2D6A4F]/30 rounded-2xl p-6">
+              <div className="w-16 h-16 bg-[#2D6A4F] rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Smartphone size={32} className="text-white" />
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h4 className="text-lg font-semibold mb-1">
+                  {isTr ? 'HasatLink Mobil Uygulamayı İndir' : 'Download HasatLink Mobile App'}
+                </h4>
+                <p className="text-sm text-white/60">
+                  {isTr
+                    ? 'Hızlı erişim ve bildirimler için HasatLink uygulamasını telefonunuza ekleyin'
+                    : 'Add HasatLink to your phone for quick access and notifications'}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleInstallPWA}
+                  className="flex items-center gap-2 px-5 py-3 bg-white text-[#1A1A1A] rounded-xl font-semibold text-sm hover:bg-white/90 transition-colors"
+                >
+                  <Download size={18} />
+                  <div className="text-left">
+                    <div className="text-[9px] uppercase tracking-wide opacity-60">{isTr ? 'Hemen Yükle' : 'Install Now'}</div>
+                    <div className="text-xs font-bold -mt-0.5">Android</div>
+                  </div>
+                </button>
+                <button
+                  onClick={handleInstallPWA}
+                  className="flex items-center gap-2 px-5 py-3 bg-white text-[#1A1A1A] rounded-xl font-semibold text-sm hover:bg-white/90 transition-colors"
+                >
+                  <Download size={18} />
+                  <div className="text-left">
+                    <div className="text-[9px] uppercase tracking-wide opacity-60">{isTr ? 'Ana Ekrana Ekle' : 'Add to Home'}</div>
+                    <div className="text-xs font-bold -mt-0.5">iOS</div>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="border-t border-white/10 mt-8 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[#6B6560]">&copy; {year} HasatLink. {t('footer.rights')}</p>

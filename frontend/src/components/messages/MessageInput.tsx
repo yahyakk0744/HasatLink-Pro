@@ -1,20 +1,56 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send } from 'lucide-react';
+import { useSocket } from '../../contexts/SocketContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface MessageInputProps {
   onSend: (text: string) => void;
   disabled?: boolean;
+  conversationId?: string;
 }
 
-export default function MessageInput({ onSend, disabled }: MessageInputProps) {
+export default function MessageInput({ onSend, disabled, conversationId }: MessageInputProps) {
   const { t } = useTranslation();
+  const { socket } = useSocket();
+  const { user } = useAuth();
   const [text, setText] = useState('');
+  const typingRef = useRef(false);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const emitTyping = useCallback((isTyping: boolean) => {
+    if (!socket || !conversationId || !user?.userId) return;
+    const event = isTyping ? 'typing:start' : 'typing:stop';
+    socket.emit(event, { conversationId, userId: user.userId });
+  }, [socket, conversationId, user?.userId]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setText(e.target.value);
+
+    if (!typingRef.current && e.target.value.trim()) {
+      typingRef.current = true;
+      emitTyping(true);
+    }
+
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(() => {
+      typingRef.current = false;
+      emitTyping(false);
+    }, 2000);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
+
+    // Stop typing indicator
+    if (typingRef.current) {
+      typingRef.current = false;
+      emitTyping(false);
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    }
+
     onSend(trimmed);
     setText('');
   };
@@ -24,7 +60,7 @@ export default function MessageInput({ onSend, disabled }: MessageInputProps) {
       <input
         type="text"
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={handleChange}
         placeholder={t('messages.typeMessage')}
         disabled={disabled}
         className="flex-1 px-4 py-2.5 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]"

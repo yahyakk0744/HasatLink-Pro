@@ -113,7 +113,7 @@ export interface Listing {
 export interface Notification {
   _id: string;
   userId: string;
-  type: 'borsa' | 'istatistik' | 'sistem' | 'ilan' | 'rating' | 'hava';
+  type: 'borsa' | 'istatistik' | 'sistem' | 'ilan' | 'rating' | 'hava' | 'mesaj';
   title: string;
   message: string;
   relatedId: string;

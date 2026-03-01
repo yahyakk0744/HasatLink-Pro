@@ -11,6 +11,17 @@ function formatTime(timestamp: any): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+function ReadReceipt({ read }: { read: boolean }) {
+  return (
+    <span className={`inline-flex ml-1 ${read ? 'text-blue-300' : 'text-white/40'}`}>
+      <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
+        <path d="M1 5l3 3L10 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M6 5l3 3L15 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
 export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}>
@@ -22,13 +33,10 @@ export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         }`}
       >
         <p className="text-sm leading-relaxed break-words">{message.text}</p>
-        <p
-          className={`text-[10px] mt-1 ${
-            isOwn ? 'text-white/60' : 'text-[#6B6560]'
-          }`}
-        >
-          {formatTime(message.createdAt)}
-        </p>
+        <div className={`flex items-center justify-end gap-0.5 mt-1 ${isOwn ? 'text-white/60' : 'text-[#6B6560]'}`}>
+          <span className="text-[10px]">{formatTime(message.createdAt)}</span>
+          {isOwn && <ReadReceipt read={message.read} />}
+        </div>
       </div>
     </div>
   );

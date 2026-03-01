@@ -1,8 +1,10 @@
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import connectDB from './config/db';
 import errorHandler from './middleware/errorHandler';
+import { initSocket } from './socket';
 
 import userRoutes from './routes/userRoutes';
 import listingRoutes from './routes/listingRoutes';
@@ -19,6 +21,10 @@ import adminRoutes from './routes/adminRoutes';
 dotenv.config();
 
 const app = express();
+const httpServer = createServer(app);
+
+// Initialize Socket.IO
+initSocket(httpServer);
 
 // Middleware
 app.use(cors({
@@ -66,8 +72,13 @@ app.use('/api', contactRoutes);
 app.use('/api', adRoutes);
 app.use('/api', adminRoutes);
 
+// VAPID public key endpoint
+app.get('/api/push/vapid-key', (_req, res) => {
+  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || 'BBQR8Itsvely1iLKMQrjuNbs3pCFq_m1x9KF3vrODBzLaPpSAd7cyOSJ_RibGPC1R6PKtBTGIWUX06HwgnlVbJA' });
+});
+
 // Error handler
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`HasatLink Backend running on port ${PORT}`));
+httpServer.listen(PORT, () => console.log(`HasatLink Backend running on port ${PORT}`));
