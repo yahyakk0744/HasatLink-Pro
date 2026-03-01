@@ -4,6 +4,7 @@ import { ImagePlus, X } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
+import LocationPicker from '../map/LocationPicker';
 import {
   CATEGORIES, CATEGORY_LABELS,
   PAZAR_UNITS, QUALITY_GRADES, STORAGE_TYPES,
@@ -98,6 +99,8 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const [unit, setUnit] = useState(initialData?.unit || 'kg');
   const [location, setLocation] = useState(initialData?.location || 'Ceyhan, Adana');
   const [phone, setPhone] = useState(initialData?.phone || '');
+  const [coordLat, setCoordLat] = useState(initialData?.coordinates?.lat || 0);
+  const [coordLng, setCoordLng] = useState(initialData?.coordinates?.lng || 0);
   const [images, setImages] = useState<string[]>(initialData?.images || []);
 
   // Pazar
@@ -180,6 +183,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         price: parseFloat(price) || 0,
         amount: parseFloat(amount) || 0,
         unit, location, phone, images,
+        coordinates: coordLat && coordLng ? { lat: coordLat, lng: coordLng } : undefined,
       };
 
       if (type === 'pazar') {
@@ -539,6 +543,13 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
           <Input label={t('listing.location')} value={location} onChange={e => setLocation(e.target.value)} />
           <Input label={t('listing.phone')} value={phone} onChange={e => setPhone(e.target.value)} />
         </div>
+
+        {/* Map Location Picker */}
+        <LocationPicker
+          lat={coordLat || undefined}
+          lng={coordLng || undefined}
+          onSelect={(lat, lng) => { setCoordLat(lat); setCoordLng(lng); }}
+        />
 
         {/* Pazar specific: price already handled above, others need generic price if not shown */}
         {type !== 'pazar' && type !== 'lojistik' && type !== 'isgucu' && type !== 'ekipman' && type !== 'arazi' && type !== 'depolama' && (

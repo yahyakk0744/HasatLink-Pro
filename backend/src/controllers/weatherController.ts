@@ -8,6 +8,8 @@ const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
 export const getWeather = async (req: Request, res: Response): Promise<void> => {
   try {
+    const lat = req.query.lat as string | undefined;
+    const lon = req.query.lon as string | undefined;
     const city = (req.query.city as string) || 'Istanbul';
     const apiKey = process.env.OPENWEATHER_API_KEY;
 
@@ -23,16 +25,19 @@ export const getWeather = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    const cacheKey = city.toLowerCase();
+    // Build cache key and API URL based on lat/lon or city
+    const cacheKey = lat && lon ? `${lat},${lon}` : city.toLowerCase();
     const cached = weatherCache[cacheKey];
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       res.json(cached.data);
       return;
     }
 
-    const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)},TR&appid=${apiKey}&units=metric&lang=tr`
-    );
+    const url = lat && lon
+      ? `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=tr`
+      : `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)},TR&appid=${apiKey}&units=metric&lang=tr`;
+
+    const response = await fetch(url);
     const data = await response.json();
 
     if (data.cod !== 200) {
@@ -48,7 +53,7 @@ export const getWeather = async (req: Request, res: Response): Promise<void> => 
     }
 
     const weatherData = {
-      city,
+      city: data.name || city,
       temp: Math.round(data.main.temp),
       description: data.weather[0].description,
       icon: data.weather[0].icon,

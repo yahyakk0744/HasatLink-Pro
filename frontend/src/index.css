@@ -70,6 +70,64 @@ body {
   background-color: var(--bg-page);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile app-like experience */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Prevent elastic bounce on iOS */
+html {
+  overscroll-behavior: none;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Min touch target for mobile */
+@media (max-width: 768px) {
+  a, button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Tighter spacing on mobile */
+  .max-w-7xl { padding-left: 1rem; padding-right: 1rem; }
+}
+
+/* Pull-to-refresh */
+.pull-to-refresh {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  pointer-events: none;
+  transition: transform 0.3s ease;
+  transform: translateY(-100%);
+}
+.pull-to-refresh.visible {
+  transform: translateY(0);
+}
+
+/* Disable pinch zoom */
+* {
+  touch-action: pan-x pan-y;
 }
 
 /* Scrollbar */

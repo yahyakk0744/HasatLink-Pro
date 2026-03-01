@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, MapPin, TrendingUp, TrendingDown, Droplets, Wind, Cloud, BarChart3, ShoppingBag, PackageOpen } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocation } from '../contexts/LocationContext';
 import { useHalPrices } from '../hooks/useHalPrices';
 import { useHasatlinkPazar } from '../hooks/useHasatlinkPazar';
 import { useWeather } from '../hooks/useWeather';
@@ -68,6 +69,7 @@ export default function HomePage() {
   const { allPrices, fetchAllPrices } = useHalPrices();
   const { prices: hasatlinkPrices, fetchPrices: fetchHasatlinkPrices } = useHasatlinkPazar();
   const { weather, fetchWeather } = useWeather();
+  const { location: geoLocation } = useLocation();
   const navigate = useNavigate();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const [platformStats, setPlatformStats] = useState({ activeListings: 0, registeredUsers: 0, cities: 0, aiDiagnoses: 0 });
@@ -76,10 +78,15 @@ export default function HomePage() {
     fetchListings({ limit: '8' });
     fetchAllPrices();
     fetchHasatlinkPrices();
-    const city = user?.location?.split(',')[0]?.trim();
-    fetchWeather(city || 'Istanbul');
+    // Use geolocation coords if available, else user's profile city, else Istanbul
+    if (geoLocation?.lat && geoLocation?.lng) {
+      fetchWeather(geoLocation.lat, geoLocation.lng);
+    } else {
+      const city = user?.location?.split(',')[0]?.trim();
+      fetchWeather(city || 'Istanbul');
+    }
     api.get('/stats/platform').then(({ data }) => setPlatformStats(data)).catch(() => {});
-  }, [fetchListings, fetchAllPrices, fetchHasatlinkPrices, fetchWeather, user]);
+  }, [fetchListings, fetchAllPrices, fetchHasatlinkPrices, fetchWeather, user, geoLocation]);
 
   // Top pazar products for comparison (pick 6 popular ones)
   const popularProducts = ['Domates', 'Biber', 'Patlıcan', 'Salatalık', 'Soğan', 'Patates'];

@@ -6,6 +6,7 @@ import MobileBottomNav from './components/layout/MobileBottomNav';
 import Footer from './components/layout/Footer';
 import ScrollToTop from './components/ui/ScrollToTop';
 import CookieConsent from './components/ui/CookieConsent';
+import PWAInstallPrompt from './components/ui/PWAInstallPrompt';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import ListingsPage from './pages/ListingsPage';
@@ -89,6 +90,7 @@ export default function App() {
       <MobileBottomNav />
       <ScrollToTop />
       <CookieConsent />
+      <PWAInstallPrompt />
     </div>
   );
 }

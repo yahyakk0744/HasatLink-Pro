@@ -7,6 +7,7 @@ import { ThemeProvider } from './contexts/ThemeContext.tsx'
 import { AuthProvider } from './contexts/AuthContext.tsx'
 import { NotificationProvider } from './contexts/NotificationContext.tsx'
 import { MessageProvider } from './contexts/MessageContext.tsx'
+import { LocationProvider } from './contexts/LocationContext.tsx'
 import './index.css'
 import './i18n/config'
 import { initGA } from './utils/analytics'
@@ -45,6 +46,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <ThemeProvider>
         <BrowserRouter>
           <AuthProvider>
+            <LocationProvider>
             <NotificationProvider>
               <MessageProvider>
                 <App />
@@ -62,6 +64,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 }}
               />
             </NotificationProvider>
+            </LocationProvider>
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>

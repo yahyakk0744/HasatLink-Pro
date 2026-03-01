@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { Download, Smartphone } from 'lucide-react';
 import api from '../../config/api';
 
 function InstagramIcon() {
@@ -24,10 +25,25 @@ export default function Footer() {
   const isTr = i18n.language?.startsWith('tr');
   const year = new Date().getFullYear();
   const [socials, setSocials] = useState({ instagramUrl: '', twitterUrl: '' });
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     api.get('/settings').then(({ data }) => setSocials(data)).catch(() => {});
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
+
+  const handleInstallPWA = async () => {
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
+      setDeferredPrompt(null);
+    }
+  };
 
   const hasSocials = socials.instagramUrl || socials.twitterUrl;
 
@@ -91,6 +107,49 @@ export default function Footer() {
               <Link to="/kullanim-sartlari" className="text-sm text-white/70 hover:text-white">{isTr ? 'Kullanım Şartları' : 'Terms of Service'}</Link>
               <Link to="/cerez-politikasi" className="text-sm text-white/70 hover:text-white">{isTr ? 'Çerez Politikası' : 'Cookie Policy'}</Link>
               <Link to="/iletisim" className="text-sm text-white/70 hover:text-white">{isTr ? 'İletişim' : 'Contact'}</Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile App Download Section */}
+        <div className="border-t border-white/10 mt-8 pt-8">
+          <div className="flex flex-col md:flex-row items-center gap-6 bg-gradient-to-r from-[#2D6A4F]/20 to-[#1B4332]/20 border border-[#2D6A4F]/30 rounded-2xl p-6">
+            <div className="w-16 h-16 bg-[#2D6A4F] rounded-2xl flex items-center justify-center flex-shrink-0">
+              <Smartphone size={32} className="text-white" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h4 className="text-lg font-semibold mb-1">
+                {isTr ? 'HasatLink Mobil Uygulamayı İndir' : 'Download HasatLink Mobile App'}
+              </h4>
+              <p className="text-sm text-white/60">
+                {isTr
+                  ? 'Hızlı erişim, bildirimler ve offline kullanım için HasatLink uygulamasını telefonunuza ekleyin'
+                  : 'Add HasatLink to your phone for quick access, notifications and offline use'}
+              </p>
+            </div>
+            <div className="flex gap-3">
+              {/* Google Play style button (PWA install) */}
+              <button
+                onClick={handleInstallPWA}
+                className="flex items-center gap-2 px-5 py-3 bg-white text-[#1A1A1A] rounded-xl font-semibold text-sm hover:bg-white/90 transition-colors"
+              >
+                <Download size={18} />
+                <div className="text-left">
+                  <div className="text-[9px] uppercase tracking-wide opacity-60">{isTr ? 'Hemen Yükle' : 'Install Now'}</div>
+                  <div className="text-xs font-bold -mt-0.5">Android</div>
+                </div>
+              </button>
+              {/* App Store style button (PWA install) */}
+              <button
+                onClick={handleInstallPWA}
+                className="flex items-center gap-2 px-5 py-3 bg-white text-[#1A1A1A] rounded-xl font-semibold text-sm hover:bg-white/90 transition-colors"
+              >
+                <Download size={18} />
+                <div className="text-left">
+                  <div className="text-[9px] uppercase tracking-wide opacity-60">{isTr ? 'Ana Ekrana Ekle' : 'Add to Home'}</div>
+                  <div className="text-xs font-bold -mt-0.5">iOS</div>
+                </div>
+              </button>
             </div>
           </div>
         </div>
