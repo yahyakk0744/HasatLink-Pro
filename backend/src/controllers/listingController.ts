@@ -114,22 +114,31 @@ export const shareListing = async (req: Request, res: Response): Promise<void> =
 
 export const getPlatformStats = async (_req: Request, res: Response): Promise<void> => {
   try {
-    const [activeListings, registeredUsers, aiDiagnoses, citiesResult] = await Promise.all([
+    const [activeListings, registeredUsers, aiDiagnoses, citiesResult, categoryAgg] = await Promise.all([
       Listing.countDocuments({ status: 'active' }),
       User.countDocuments(),
       AIDiagnosis.countDocuments(),
       User.distinct('location'),
+      Listing.aggregate([
+        { $match: { status: 'active' } },
+        { $group: { _id: '$type', count: { $sum: 1 } } },
+      ]),
     ]);
     const cities = new Set(
       citiesResult
         .map((loc: string) => loc?.split(',').pop()?.trim())
         .filter(Boolean)
     );
+    const categoryCounts: Record<string, number> = {};
+    for (const item of categoryAgg) {
+      if (item._id) categoryCounts[item._id] = item.count;
+    }
     res.json({
       activeListings,
       registeredUsers,
       cities: Math.max(cities.size, 1),
       aiDiagnoses,
+      categoryCounts,
     });
   } catch (error) {
     res.status(500).json({ message: 'İstatistik hatası', error });
