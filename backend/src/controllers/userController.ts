@@ -5,12 +5,14 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import admin from '../config/firebase';
 import { checkFieldsForProfanity } from '../utils/profanityFilter';
+import ProfanityLog from '../models/ProfanityLog';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password, location, firebaseUid } = req.body;
     const profaneField = checkFieldsForProfanity({ name });
     if (profaneField) {
+      ProfanityLog.create({ userId: '', field: profaneField, content: name?.substring(0, 200) || '', endpoint: 'register' }).catch(() => {});
       res.status(400).json({ message: 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' });
       return;
     }
@@ -93,6 +95,7 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     }
     const profaneField = checkFieldsForProfanity({ name: updates.name, bio: updates.bio });
     if (profaneField) {
+      ProfanityLog.create({ userId: authUserId, field: profaneField, content: updates[profaneField]?.substring(0, 200) || '', endpoint: 'updateUser' }).catch(() => {});
       res.status(400).json({ message: 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' });
       return;
     }

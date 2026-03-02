@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Edit2, Trash2, Eye, EyeOff, X } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Plus, Edit2, Trash2, Eye, EyeOff, X, FileText } from 'lucide-react';
+import AdminLayout from '../components/admin/AdminLayout';
 import api from '../config/api';
 import toast from 'react-hot-toast';
 import type { Blog } from '../types';
@@ -11,7 +10,6 @@ import { formatDate } from '../utils/formatters';
 const BLOG_CATEGORIES = ['genel', 'haberler', 'rehber', 'ipuçları', 'teknoloji', 'pazar'];
 
 export default function AdminBlogPage() {
-  const { user } = useAuth();
   const { i18n } = useTranslation();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -26,8 +24,6 @@ export default function AdminBlogPage() {
   const [category, setCategory] = useState('genel');
   const [author, setAuthor] = useState('HasatLink');
   const [published, setPublished] = useState(false);
-
-  if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
 
   const fetchBlogs = async () => {
     try {
@@ -78,9 +74,8 @@ export default function AdminBlogPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 animate-fade-in">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">{lang === 'tr' ? 'Blog Yönetimi' : 'Blog Management'}</h1>
+    <AdminLayout title="Blog Yönetimi" icon={<FileText size={24} />}>
+      <div className="flex justify-end mb-4">
         <button
           onClick={() => { resetForm(); setShowForm(true); }}
           className="flex items-center gap-2 px-4 py-2.5 bg-[#2D6A4F] text-white text-sm font-semibold rounded-xl hover:bg-[#1B4332] transition-colors"
@@ -174,6 +169,6 @@ export default function AdminBlogPage() {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 }

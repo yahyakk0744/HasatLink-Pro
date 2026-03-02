@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { DollarSign, Save, Plus, X, Trash2, ChevronLeft } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import SEO from '../components/ui/SEO';
+import { DollarSign, Save, Plus, X, Trash2 } from 'lucide-react';
+import AdminLayout from '../components/admin/AdminLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Toggle from '../components/ui/Toggle';
@@ -29,8 +27,6 @@ const defaultSettings: SiteSettings = {
 export default function AdminRevenuePage() {
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [form, setForm] = useState<SiteSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -137,21 +133,10 @@ export default function AdminRevenuePage() {
     setFeatureInput('');
   };
 
-  if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
   if (loading) return <LoadingSpinner size="lg" className="py-20" />;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 animate-fade-in">
-      <SEO title={isTr ? 'Admin - Gelir Yönetimi' : 'Admin - Revenue'} />
-
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate('/admin')} className="p-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors">
-          <ChevronLeft size={20} />
-        </button>
-        <DollarSign size={24} className="text-[#2D6A4F]" />
-        <h1 className="text-2xl font-semibold tracking-tight">{isTr ? 'Gelir Yönetimi' : 'Revenue Management'}</h1>
-      </div>
-
+    <AdminLayout title="Gelir Yönetimi" icon={<DollarSign size={24} />}>
       <div className="space-y-6">
         {/* Öne Çıkan İlan */}
         <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-6 shadow-sm space-y-4">
@@ -326,6 +311,6 @@ export default function AdminRevenuePage() {
           </Button>
         </div>
       </Modal>
-    </div>
+    </AdminLayout>
   );
 }

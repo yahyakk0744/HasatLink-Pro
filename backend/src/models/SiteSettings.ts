@@ -20,6 +20,7 @@ export interface ISiteSettings extends Document {
   premiumMembership: { enabled: boolean; packages: IPremiumPackage[] };
   commission: { enabled: boolean; percentage: number };
   aiUsageLimit: { enabled: boolean; dailyFreeCount: number };
+  maintenanceMode: boolean;
 }
 
 const PremiumPackageSchema = new Schema<IPremiumPackage>({
@@ -55,6 +56,7 @@ const SiteSettingsSchema = new Schema<ISiteSettings>({
     enabled: { type: Boolean, default: false },
     dailyFreeCount: { type: Number, default: 3 },
   },
+  maintenanceMode: { type: Boolean, default: false },
 });
 
 export default mongoose.model<ISiteSettings>('SiteSettings', SiteSettingsSchema);

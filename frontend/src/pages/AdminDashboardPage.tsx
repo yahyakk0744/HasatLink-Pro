@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import AdminLayout from '../components/admin/AdminLayout';
 import {
-  LayoutDashboard, Package, Users, MessageSquare, Settings, DollarSign,
-  Megaphone, TrendingUp, ShoppingCart, ChevronRight, AlertCircle, Eye
+  LayoutDashboard, Users, Package, AlertTriangle, ShieldCheck,
+  Star, Clock, Flag, TrendingUp, Eye
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import SEO from '../components/ui/SEO';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
 import api from '../config/api';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { useNavigate } from 'react-router-dom';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, AreaChart, Area
+} from 'recharts';
 
 interface DashboardStats {
   totalUsers: number;
@@ -19,9 +21,23 @@ interface DashboardStats {
   totalAds: number;
   activeAds: number;
   bannedUsers: number;
+  verifiedUsers: number;
+  suspendedUsers: number;
+  featuredListings: number;
+  pendingListings: number;
+  totalReports: number;
+  pendingReports: number;
+  totalProfanityLogs: number;
   listingsByType: { _id: string; count: number }[];
-  recentListings: { _id: string; title: string; type: string; status: string; createdAt: string; userId: string }[];
-  recentUsers: { name: string; email: string; username: string; createdAt: string; role: string; isBanned: boolean }[];
+  recentListings: any[];
+  recentUsers: any[];
+}
+
+interface EnhancedStats {
+  userRegistrations: { date: string; count: number }[];
+  listingCreations: { date: string; count: number }[];
+  categoryDistribution: { name: string; value: number }[];
+  cityDistribution: { name: string; value: number }[];
 }
 
 const typeLabels: Record<string, string> = {
@@ -33,177 +49,323 @@ const typeLabels: Record<string, string> = {
   depolama: 'Depolama',
 };
 
-const statusColors: Record<string, string> = {
-  active: 'bg-emerald-100 text-emerald-700',
-  sold: 'bg-blue-100 text-blue-700',
-  rented: 'bg-purple-100 text-purple-700',
-  closed: 'bg-gray-100 text-gray-500',
-};
+const PIE_COLORS = ['#2D6A4F', '#1B4332', '#A47148', '#0077B6', '#7C3AED', '#DC2626'];
 
 export default function AdminDashboardPage() {
-  const { i18n } = useTranslation();
-  const isTr = i18n.language?.startsWith('tr');
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [enhanced, setEnhanced] = useState<EnhancedStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/admin/stats')
-      .then(({ data }) => setStats(data))
+    Promise.all([
+      api.get('/admin/stats').then(({ data }) => data),
+      api.get('/admin/stats/enhanced').then(({ data }) => data).catch(() => null),
+    ])
+      .then(([statsData, enhancedData]) => {
+        setStats(statsData);
+        setEnhanced(enhancedData);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
-  if (loading) return <LoadingSpinner size="lg" className="py-20" />;
+  if (loading) {
+    return (
+      <AdminLayout title="Dashboard" icon={<LayoutDashboard size={24} />}>
+        <LoadingSpinner size="lg" className="py-20" />
+      </AdminLayout>
+    );
+  }
 
-  const navCards = [
-    { icon: Package, label: isTr ? 'İlan Yönetimi' : 'Listings', desc: isTr ? 'İlanları listele, düzenle, sil' : 'List, edit, delete listings', path: '/admin/ilanlar', color: '#2D6A4F' },
-    { icon: Users, label: isTr ? 'Kullanıcı Yönetimi' : 'Users', desc: isTr ? 'Kullanıcıları yönet' : 'Manage users', path: '/admin/kullanicilar', color: '#1B4332' },
-    { icon: TrendingUp, label: isTr ? 'Hal Fiyatları' : 'Market Prices', desc: isTr ? 'Hal fiyatlarını güncelle' : 'Update market prices', path: '/admin/hal-fiyatlari', color: '#A47148' },
-    { icon: ShoppingCart, label: isTr ? 'HasatLink Pazarı' : 'HasatLink Market', desc: isTr ? 'Pazar fiyatlarını gör' : 'View market prices', path: '/admin/pazar-fiyatlari', color: '#6D4C41' },
-    { icon: MessageSquare, label: isTr ? 'İletişim Mesajları' : 'Contact Messages', desc: `${stats?.unreadContacts || 0} ${isTr ? 'okunmamış' : 'unread'}`, path: '/admin/mesajlar', color: '#C1341B' },
-    { icon: Settings, label: isTr ? 'Site Ayarları' : 'Site Settings', desc: isTr ? 'Logo, başlık, sosyal medya' : 'Logo, title, social media', path: '/admin/ayarlar', color: '#555' },
-    { icon: DollarSign, label: isTr ? 'Gelir Yönetimi' : 'Revenue', desc: isTr ? 'Premium, komisyon, öne çıkan' : 'Premium, commission, featured', path: '/admin/gelir', color: '#2D6A4F' },
-    { icon: Megaphone, label: isTr ? 'Reklam Yönetimi' : 'Ads', desc: `${stats?.activeAds || 0} ${isTr ? 'aktif reklam' : 'active ads'}`, path: '/admin/reklamlar', color: '#1565C0' },
+  const statCards = [
+    {
+      label: 'Toplam İlan',
+      value: stats?.totalListings ?? 0,
+      sub: `${stats?.activeListings ?? 0} aktif`,
+      color: '#2D6A4F',
+      icon: Package,
+    },
+    {
+      label: 'Toplam Kullanıcı',
+      value: stats?.totalUsers ?? 0,
+      sub: `${stats?.verifiedUsers ?? 0} doğrulanmış`,
+      color: '#1B4332',
+      icon: Users,
+    },
+    {
+      label: 'Bekleyen İlanlar',
+      value: stats?.pendingListings ?? 0,
+      sub: '',
+      color: '#F59E0B',
+      icon: Clock,
+    },
+    {
+      label: 'Bekleyen Raporlar',
+      value: stats?.pendingReports ?? 0,
+      sub: '',
+      color: '#C1341B',
+      icon: Flag,
+    },
+    {
+      label: 'Öne Çıkan İlanlar',
+      value: stats?.featuredListings ?? 0,
+      sub: '',
+      color: '#7C3AED',
+      icon: Star,
+    },
+    {
+      label: 'Engelli Kullanıcılar',
+      value: stats?.bannedUsers ?? 0,
+      sub: '',
+      color: '#DC2626',
+      icon: AlertTriangle,
+    },
+    {
+      label: 'Askıdaki Kullanıcılar',
+      value: stats?.suspendedUsers ?? 0,
+      sub: '',
+      color: '#EA580C',
+      icon: ShieldCheck,
+    },
+    {
+      label: 'Küfür Logları',
+      value: stats?.totalProfanityLogs ?? 0,
+      sub: '',
+      color: '#6B7280',
+      icon: Eye,
+    },
+  ];
+
+  const quickActions = [
+    {
+      label: 'İlan Onayları',
+      path: '/admin/ilanlar',
+      icon: Package,
+      badge: stats?.pendingListings ?? 0,
+      color: '#2D6A4F',
+    },
+    {
+      label: 'Raporlar',
+      path: '/admin/moderasyon',
+      icon: Flag,
+      badge: stats?.pendingReports ?? 0,
+      color: '#C1341B',
+    },
+    {
+      label: 'Bildirim Gönder',
+      path: '/admin/bildirimler',
+      icon: TrendingUp,
+      badge: 0,
+      color: '#7C3AED',
+    },
+    {
+      label: 'Kullanıcılar',
+      path: '/admin/kullanicilar',
+      icon: Users,
+      badge: 0,
+      color: '#1B4332',
+    },
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 animate-fade-in">
-      <SEO title={isTr ? 'Admin Panel' : 'Admin Panel'} />
+    <AdminLayout title="Dashboard" icon={<LayoutDashboard size={24} />}>
+      <div className="animate-fade-in space-y-6">
 
-      <div className="flex items-center gap-3 mb-6">
-        <LayoutDashboard size={24} className="text-[#2D6A4F]" />
-        <h1 className="text-2xl font-semibold tracking-tight">{isTr ? 'Admin Panel' : 'Admin Panel'}</h1>
-      </div>
-
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: isTr ? 'Toplam İlan' : 'Total Listings', value: stats?.totalListings || 0, sub: `${stats?.activeListings || 0} ${isTr ? 'aktif' : 'active'}`, color: '#2D6A4F' },
-          { label: isTr ? 'Toplam Kullanıcı' : 'Total Users', value: stats?.totalUsers || 0, sub: `${stats?.bannedUsers || 0} ${isTr ? 'engelli' : 'banned'}`, color: '#1B4332' },
-          { label: isTr ? 'İletişim' : 'Contacts', value: stats?.totalContacts || 0, sub: `${stats?.unreadContacts || 0} ${isTr ? 'okunmamış' : 'unread'}`, color: '#C1341B' },
-          { label: isTr ? 'Reklamlar' : 'Ads', value: stats?.totalAds || 0, sub: `${stats?.activeAds || 0} ${isTr ? 'aktif' : 'active'}`, color: '#1565C0' },
-        ].map((s) => (
-          <div key={s.label} className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-4 shadow-sm">
-            <p className="text-xs text-[var(--text-secondary)] font-medium">{s.label}</p>
-            <p className="text-2xl font-bold mt-1" style={{ color: s.color }}>{s.value}</p>
-            <p className="text-xs text-[var(--text-secondary)] mt-1">{s.sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Listings by Type */}
-      {stats?.listingsByType && stats.listingsByType.length > 0 && (
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm mb-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
-            {isTr ? 'Kategoriye Göre İlanlar' : 'Listings by Category'}
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-            {stats.listingsByType.map((item) => (
-              <div key={item._id} className="text-center p-3 rounded-xl bg-[var(--bg-input)]">
-                <p className="text-lg font-bold text-[#2D6A4F]">{item.count}</p>
-                <p className="text-xs text-[var(--text-secondary)]">{typeLabels[item._id] || item._id}</p>
+        {/* Section 1: Stat Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {statCards.map((card) => (
+            <div
+              key={card.label}
+              className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-4 shadow-sm"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <card.icon size={16} style={{ color: card.color }} />
+                <p className="text-xs text-[var(--text-secondary)] font-medium">{card.label}</p>
               </div>
+              <p className="text-2xl font-bold" style={{ color: card.color }}>
+                {card.value}
+              </p>
+              {card.sub && (
+                <p className="text-xs text-[var(--text-secondary)] mt-1">{card.sub}</p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Section 2: Charts */}
+
+        {/* Row 1: User Registrations AreaChart (full width) */}
+        {enhanced?.userRegistrations && enhanced.userRegistrations.length > 0 && (
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+              Kullanıcı Kayıtları
+            </h2>
+            <div className="min-h-[200px] md:min-h-[250px]">
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={enhanced.userRegistrations}>
+                  <defs>
+                    <linearGradient id="colorRegistrations" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2D6A4F" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#2D6A4F" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                  <YAxis width={30} tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#2D6A4F"
+                    strokeWidth={2}
+                    fill="url(#colorRegistrations)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Row 2: Listing Creations BarChart + Category Distribution PieChart */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Listing Creations BarChart */}
+          {enhanced?.listingCreations && enhanced.listingCreations.length > 0 && (
+            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+                İlan Oluşturma
+              </h2>
+              <div className="min-h-[200px] md:min-h-[250px]">
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={enhanced.listingCreations}>
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                    <YAxis width={30} tick={{ fontSize: 10 }} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#2D6A4F" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Category Distribution PieChart */}
+          {enhanced?.categoryDistribution && enhanced.categoryDistribution.length > 0 && (
+            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+                Kategori Dağılımı
+              </h2>
+              <div className="min-h-[200px] md:min-h-[250px]">
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={enhanced.categoryDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={90}
+                      paddingAngle={3}
+                      dataKey="value"
+                      nameKey="name"
+                      label={({ name, percent }) =>
+                        `${name} ${(percent * 100).toFixed(0)}%`
+                      }
+                      labelLine={false}
+                    >
+                      {enhanced.categoryDistribution.map((_, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={PIE_COLORS[index % PIE_COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Row 3: City Distribution horizontal BarChart (full width) */}
+        {enhanced?.cityDistribution && enhanced.cityDistribution.length > 0 && (
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+              Şehir Bazlı Kullanıcılar
+            </h2>
+            <div style={{ minHeight: Math.max(250, enhanced.cityDistribution.length * 32) }}>
+              <ResponsiveContainer width="100%" height={Math.max(250, enhanced.cityDistribution.length * 32)}>
+                <BarChart data={enhanced.cityDistribution} layout="vertical">
+                  <XAxis type="number" tick={{ fontSize: 10 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={80}
+                    tick={{ fontSize: 10 }}
+                  />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#2D6A4F" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Section 3: Quick Actions */}
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+            Hızlı İşlemler
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            {quickActions.map((action) => (
+              <button
+                key={action.path}
+                onClick={() => navigate(action.path)}
+                className="flex items-center gap-3 p-4 rounded-xl bg-[var(--bg-input)] hover:bg-[var(--bg-input-hover)] transition-colors text-left group"
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: action.color + '15' }}
+                >
+                  <action.icon size={20} style={{ color: action.color }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate">{action.label}</p>
+                </div>
+                {action.badge > 0 && (
+                  <span
+                    className="text-xs font-bold text-white px-2 py-0.5 rounded-full shrink-0"
+                    style={{ backgroundColor: action.color }}
+                  >
+                    {action.badge}
+                  </span>
+                )}
+              </button>
             ))}
           </div>
         </div>
-      )}
 
-      {/* Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        {navCards.map((card) => (
-          <button
-            key={card.path}
-            onClick={() => navigate(card.path)}
-            className="flex items-center gap-4 p-5 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl shadow-sm hover:shadow-md transition-all text-left group"
-          >
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: card.color + '15' }}>
-              <card.icon size={22} style={{ color: card.color }} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">{card.label}</p>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{card.desc}</p>
-            </div>
-            <ChevronRight size={18} className="text-[var(--text-secondary)] group-hover:translate-x-1 transition-transform" />
-          </button>
-        ))}
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Listings */}
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-              {isTr ? 'Son İlanlar' : 'Recent Listings'}
+        {/* Section 4: Listings by Category */}
+        {stats?.listingsByType && stats.listingsByType.length > 0 && (
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+              Kategoriye Göre İlanlar
             </h2>
-            <button onClick={() => navigate('/admin/ilanlar')} className="text-xs text-[#2D6A4F] font-semibold flex items-center gap-1">
-              {isTr ? 'Tümü' : 'All'} <ChevronRight size={14} />
-            </button>
-          </div>
-          {stats?.recentListings && stats.recentListings.length > 0 ? (
-            <div className="space-y-3">
-              {stats.recentListings.map((l) => (
-                <div key={l._id} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-input)]">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{l.title}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-[var(--text-secondary)]">{typeLabels[l.type] || l.type}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusColors[l.status] || ''}`}>{l.status}</span>
-                    </div>
-                  </div>
-                  <button onClick={() => navigate(`/ilan/${l._id}`)} className="p-2 rounded-lg hover:bg-[var(--bg-surface)] transition-colors">
-                    <Eye size={16} className="text-[var(--text-secondary)]" />
-                  </button>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              {stats.listingsByType.map((item) => (
+                <div
+                  key={item._id}
+                  className="text-center p-3 rounded-xl bg-[var(--bg-input)]"
+                >
+                  <p className="text-lg font-bold text-[#2D6A4F]">{item.count}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    {typeLabels[item._id] || item._id}
+                  </p>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] py-4">
-              <AlertCircle size={16} /> {isTr ? 'Henüz ilan yok' : 'No listings yet'}
-            </div>
-          )}
-        </div>
-
-        {/* Recent Users */}
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-              {isTr ? 'Son Kullanıcılar' : 'Recent Users'}
-            </h2>
-            <button onClick={() => navigate('/admin/kullanicilar')} className="text-xs text-[#2D6A4F] font-semibold flex items-center gap-1">
-              {isTr ? 'Tümü' : 'All'} <ChevronRight size={14} />
-            </button>
           </div>
-          {stats?.recentUsers && stats.recentUsers.length > 0 ? (
-            <div className="space-y-3">
-              {stats.recentUsers.map((u, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-input)]">
-                  <div className="w-9 h-9 rounded-full bg-[#2D6A4F]/10 flex items-center justify-center text-sm font-bold text-[#2D6A4F]">
-                    {u.name?.charAt(0)?.toUpperCase() || '?'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{u.name}</p>
-                    <p className="text-xs text-[var(--text-secondary)] truncate">{u.email}</p>
-                  </div>
-                  {u.role === 'admin' && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#2D6A4F]/10 text-[#2D6A4F] font-semibold">Admin</span>
-                  )}
-                  {u.isBanned && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold">{isTr ? 'Engelli' : 'Banned'}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] py-4">
-              <AlertCircle size={16} /> {isTr ? 'Henüz kullanıcı yok' : 'No users yet'}
-            </div>
-          )}
-        </div>
+        )}
+
       </div>
-    </div>
+    </AdminLayout>
   );
 }

@@ -14,6 +14,7 @@ export interface User {
   totalRatings: number;
   bio: string;
   isBanned: boolean;
+  isSuspended?: boolean;
   firebaseUid?: string;
   createdAt: string;
 }
@@ -105,6 +106,7 @@ export interface Listing {
   temperatureMax: number;
   hasSecurity: boolean;
   has24Access: boolean;
+  isFeatured?: boolean;
   // Stats
   stats: { views: number; whatsappClicks: number; shares: number };
   // Populated seller info
@@ -256,6 +258,7 @@ export interface SiteSettings {
   premiumMembership: { enabled: boolean; packages: PremiumPackage[] };
   commission: { enabled: boolean; percentage: number };
   aiUsageLimit: { enabled: boolean; dailyFreeCount: number };
+  maintenanceMode?: boolean;
 }
 
 export interface Ad {

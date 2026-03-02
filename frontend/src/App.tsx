@@ -42,6 +42,7 @@ const AccountSettingsPage = lazy(() => import('./pages/AccountSettingsPage'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage'));
 const AdminBlogPage = lazy(() => import('./pages/AdminBlogPage'));
+const AdminModerationPage = lazy(() => import('./pages/AdminModerationPage'));
 
 function PageLoader() {
   return <LoadingSpinner size="lg" className="py-20" />;
@@ -97,6 +98,7 @@ export default function App() {
             <Route path="/admin/reklamlar" element={<AdminAdsPage />} />
             <Route path="/admin/bildirimler" element={<AdminNotificationsPage />} />
             <Route path="/admin/blog" element={<AdminBlogPage />} />
+            <Route path="/admin/moderasyon" element={<AdminModerationPage />} />
             <Route path="/gizlilik" element={<PrivacyPage />} />
             <Route path="/kullanim-sartlari" element={<TermsPage />} />
             <Route path="/cerez-politikasi" element={<CookiePolicyPage />} />

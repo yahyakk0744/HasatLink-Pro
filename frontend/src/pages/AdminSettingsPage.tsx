@@ -1,13 +1,10 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { Settings, Save, DollarSign, Megaphone, UserCog, ChevronRight, ChevronLeft } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import SEO from '../components/ui/SEO';
+import { useState, useEffect } from 'react';
+import AdminLayout from '../components/admin/AdminLayout';
+import { Settings, Save, AlertTriangle } from 'lucide-react';
+import api from '../config/api';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import api from '../config/api';
 import toast from 'react-hot-toast';
 
 function InstagramIcon() {
@@ -43,13 +40,19 @@ function YouTubeIcon() {
 }
 
 export default function AdminSettingsPage() {
-  const { i18n } = useTranslation();
-  const isTr = i18n.language?.startsWith('tr');
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [form, setForm] = useState({ siteTitle: '', siteDescription: '', logoUrl: '', instagramUrl: '', twitterUrl: '', linkedinUrl: '', youtubeUrl: '' });
+  const [form, setForm] = useState({
+    siteTitle: '',
+    siteDescription: '',
+    logoUrl: '',
+    instagramUrl: '',
+    twitterUrl: '',
+    linkedinUrl: '',
+    youtubeUrl: '',
+    maintenanceMode: false,
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [togglingMaintenance, setTogglingMaintenance] = useState(false);
 
   useEffect(() => {
     api.get('/settings')
@@ -61,190 +64,239 @@ export default function AdminSettingsPage() {
         twitterUrl: data.twitterUrl || '',
         linkedinUrl: data.linkedinUrl || '',
         youtubeUrl: data.youtubeUrl || '',
+        maintenanceMode: data.maintenanceMode || false,
       }))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
+  const handleToggleMaintenance = async () => {
+    const newValue = !form.maintenanceMode;
+    setTogglingMaintenance(true);
+    try {
+      await api.put('/admin/settings', { maintenanceMode: newValue });
+      setForm(f => ({ ...f, maintenanceMode: newValue }));
+      toast.success(newValue ? 'Bakim modu aktif edildi' : 'Bakim modu kapatildi');
+    } catch {
+      toast.error('Bakim modu degistirilemedi');
+    } finally {
+      setTogglingMaintenance(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
       await api.put('/admin/settings', form);
-      toast.success(isTr ? 'Ayarlar kaydedildi' : 'Settings saved');
+      toast.success('Ayarlar kaydedildi');
     } catch {
-      toast.error(isTr ? 'Kaydetme başarısız' : 'Save failed');
+      toast.error('Kaydetme basarisiz');
     } finally {
       setSaving(false);
     }
   };
 
-  if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
-  if (loading) return <LoadingSpinner size="lg" className="py-20" />;
+  if (loading) {
+    return (
+      <AdminLayout title="Site Ayarlari" icon={<Settings size={24} />}>
+        <LoadingSpinner size="lg" className="py-20" />
+      </AdminLayout>
+    );
+  }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 animate-fade-in">
-      <SEO title={isTr ? 'Admin - Ayarlar' : 'Admin - Settings'} />
+    <AdminLayout title="Site Ayarlari" icon={<Settings size={24} />}>
+      <div className="max-w-2xl animate-fade-in">
 
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate('/admin')} className="p-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors">
-          <ChevronLeft size={20} />
-        </button>
-        <Settings size={24} className="text-[#2D6A4F]" />
-        <h1 className="text-2xl font-semibold tracking-tight">{isTr ? 'Site Ayarları' : 'Site Settings'}</h1>
-      </div>
+        {/* Bakim Modu */}
+        <div
+          className={`border rounded-2xl p-6 mb-6 transition-colors duration-300 ${
+            form.maintenanceMode
+              ? 'bg-red-500/10 border-red-500/30'
+              : 'bg-[var(--bg-surface)] border-[var(--border-default)]'
+          }`}
+        >
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-4">
+            Bakim Modu
+          </h2>
 
-      {/* Site Info */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-6 shadow-sm space-y-6 mb-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-          {isTr ? 'Site Bilgileri' : 'Site Information'}
-        </h2>
-        <div className="space-y-4">
-          <Input
-            label={isTr ? 'Site Başlığı' : 'Site Title'}
-            value={form.siteTitle}
-            onChange={e => setForm(f => ({ ...f, siteTitle: e.target.value }))}
-            placeholder="HasatLink"
-          />
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">{isTr ? 'Site Açıklaması' : 'Site Description'}</label>
-            <textarea
-              value={form.siteDescription}
-              onChange={e => setForm(f => ({ ...f, siteDescription: e.target.value }))}
-              placeholder={isTr ? 'HasatLink - Tarım Pazarı' : 'HasatLink - Agriculture Marketplace'}
-              rows={3}
-              className="w-full px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-default)] rounded-2xl text-sm outline-none focus:border-[#2D6A4F] transition-colors resize-none"
+          <div className="flex items-start gap-4">
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                form.maintenanceMode ? 'bg-red-500/20' : 'bg-amber-500/10'
+              }`}
+            >
+              <AlertTriangle
+                size={20}
+                className={form.maintenanceMode ? 'text-red-500' : 'text-amber-500'}
+              />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">
+                    {form.maintenanceMode ? 'Bakim Modu Aktif' : 'Bakim Modu Kapali'}
+                  </p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">
+                    Bakim modu aktifken kullanicilar siteye erisemez
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleToggleMaintenance}
+                  disabled={togglingMaintenance}
+                  className={`
+                    relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent
+                    transition-colors duration-200 ease-in-out focus:outline-none focus:ring-4 focus:ring-[#2D6A4F]/20
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    ${form.maintenanceMode ? 'bg-red-500' : 'bg-[var(--border-default)]'}
+                  `}
+                >
+                  <span
+                    className={`
+                      pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0
+                      transition duration-200 ease-in-out
+                      ${form.maintenanceMode ? 'translate-x-5' : 'translate-x-0'}
+                    `}
+                  />
+                </button>
+              </div>
+
+              {form.maintenanceMode && (
+                <div className="mt-3 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl">
+                  <p className="text-xs text-red-600 font-medium">
+                    Dikkat: Site su anda bakim modunda. Kullanicilar siteye erisemiyor.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Site Bilgileri */}
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-6 mb-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-4">
+            Site Bilgileri
+          </h2>
+
+          <div className="space-y-4">
+            <Input
+              label="Site Basligi"
+              value={form.siteTitle}
+              onChange={e => setForm(f => ({ ...f, siteTitle: e.target.value }))}
+              placeholder="HasatLink"
             />
-          </div>
-          <Input
-            label={isTr ? 'Logo URL' : 'Logo URL'}
-            value={form.logoUrl}
-            onChange={e => setForm(f => ({ ...f, logoUrl: e.target.value }))}
-            placeholder="https://example.com/logo.png"
-          />
-          {form.logoUrl && (
-            <div className="flex items-center gap-3 p-3 bg-[var(--bg-input)] rounded-xl">
-              <img src={form.logoUrl} alt="Logo" className="w-12 h-12 object-contain rounded-lg" onError={e => (e.currentTarget.style.display = 'none')} />
-              <span className="text-xs text-[var(--text-secondary)]">{isTr ? 'Logo önizleme' : 'Logo preview'}</span>
-            </div>
-          )}
-        </div>
-      </div>
 
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-6 shadow-sm space-y-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-          {isTr ? 'Sosyal Medya Linkleri' : 'Social Media Links'}
-        </h2>
-
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--bg-input)] flex items-center justify-center shrink-0">
-              <InstagramIcon />
-            </div>
-            <div className="flex-1">
-              <Input
-                label="Instagram URL"
-                value={form.instagramUrl}
-                onChange={e => setForm(f => ({ ...f, instagramUrl: e.target.value }))}
-                placeholder="https://instagram.com/hasatlink"
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">
+                Site Aciklamasi
+              </label>
+              <textarea
+                value={form.siteDescription}
+                onChange={e => setForm(f => ({ ...f, siteDescription: e.target.value }))}
+                placeholder="HasatLink - Tarim Pazari"
+                rows={3}
+                className="w-full px-4 py-3 bg-[var(--bg-input)] border border-transparent rounded-2xl text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:border-[#2D6A4F] focus:ring-4 focus:ring-[#2D6A4F]/20 focus:bg-[var(--focus-bg)] transition-all resize-none"
               />
             </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--bg-input)] flex items-center justify-center shrink-0">
-              <XIcon />
-            </div>
-            <div className="flex-1">
-              <Input
-                label="X (Twitter) URL"
-                value={form.twitterUrl}
-                onChange={e => setForm(f => ({ ...f, twitterUrl: e.target.value }))}
-                placeholder="https://x.com/hasatlink"
-              />
-            </div>
-          </div>
+            <Input
+              label="Logo URL"
+              value={form.logoUrl}
+              onChange={e => setForm(f => ({ ...f, logoUrl: e.target.value }))}
+              placeholder="https://example.com/logo.png"
+            />
 
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--bg-input)] flex items-center justify-center shrink-0">
-              <LinkedInIcon />
-            </div>
-            <div className="flex-1">
-              <Input
-                label="LinkedIn URL"
-                value={form.linkedinUrl}
-                onChange={e => setForm(f => ({ ...f, linkedinUrl: e.target.value }))}
-                placeholder="https://linkedin.com/company/hasatlink"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--bg-input)] flex items-center justify-center shrink-0">
-              <YouTubeIcon />
-            </div>
-            <div className="flex-1">
-              <Input
-                label="YouTube URL"
-                value={form.youtubeUrl}
-                onChange={e => setForm(f => ({ ...f, youtubeUrl: e.target.value }))}
-                placeholder="https://youtube.com/@hasatlink"
-              />
-            </div>
+            {form.logoUrl && (
+              <div className="flex items-center gap-3 p-3 bg-[var(--bg-input)] rounded-xl">
+                <img
+                  src={form.logoUrl}
+                  alt="Logo"
+                  className="w-12 h-12 object-contain rounded-lg"
+                  onError={e => (e.currentTarget.style.display = 'none')}
+                />
+                <span className="text-xs text-[var(--text-secondary)]">Logo onizleme</span>
+              </div>
+            )}
           </div>
         </div>
 
-        <Button onClick={handleSave} disabled={saving}>
-          <Save size={14} className="mr-2" />
-          {saving ? (isTr ? 'Kaydediliyor...' : 'Saving...') : (isTr ? 'Kaydet' : 'Save')}
-        </Button>
-      </div>
+        {/* Sosyal Medya Linkleri */}
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-6 mb-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-4">
+            Sosyal Medya Linkleri
+          </h2>
 
-      {/* Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-        <button
-          onClick={() => navigate('/hesap-ayarlari')}
-          className="flex items-center gap-4 p-5 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl shadow-sm hover:shadow-md transition-all text-left group sm:col-span-2"
-        >
-          <div className="w-12 h-12 rounded-xl bg-[#2D6A4F]/10 flex items-center justify-center shrink-0">
-            <UserCog size={22} className="text-[#2D6A4F]" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm">{isTr ? 'Hesap Ayarları' : 'Account Settings'}</p>
-            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{isTr ? 'Kullanıcı adı, email, şifre değiştir' : 'Username, email, password change'}</p>
-          </div>
-          <ChevronRight size={18} className="text-[var(--text-secondary)] group-hover:translate-x-1 transition-transform" />
-        </button>
-      </div>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[var(--bg-input)] flex items-center justify-center shrink-0">
+                <InstagramIcon />
+              </div>
+              <div className="flex-1">
+                <Input
+                  label="Instagram URL"
+                  value={form.instagramUrl}
+                  onChange={e => setForm(f => ({ ...f, instagramUrl: e.target.value }))}
+                  placeholder="https://instagram.com/hasatlink"
+                />
+              </div>
+            </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-        <button
-          onClick={() => navigate('/admin/gelir')}
-          className="flex items-center gap-4 p-5 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl shadow-sm hover:shadow-md transition-all text-left group"
-        >
-          <div className="w-12 h-12 rounded-xl bg-[#2D6A4F]/10 flex items-center justify-center shrink-0">
-            <DollarSign size={22} className="text-[#2D6A4F]" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm">{isTr ? 'Gelir Yönetimi' : 'Revenue Management'}</p>
-            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{isTr ? 'Öne çıkan ilan, premium, komisyon' : 'Featured listing, premium, commission'}</p>
-          </div>
-          <ChevronRight size={18} className="text-[var(--text-secondary)] group-hover:translate-x-1 transition-transform" />
-        </button>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[var(--bg-input)] flex items-center justify-center shrink-0">
+                <XIcon />
+              </div>
+              <div className="flex-1">
+                <Input
+                  label="X (Twitter) URL"
+                  value={form.twitterUrl}
+                  onChange={e => setForm(f => ({ ...f, twitterUrl: e.target.value }))}
+                  placeholder="https://x.com/hasatlink"
+                />
+              </div>
+            </div>
 
-        <button
-          onClick={() => navigate('/admin/reklamlar')}
-          className="flex items-center gap-4 p-5 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl shadow-sm hover:shadow-md transition-all text-left group"
-        >
-          <div className="w-12 h-12 rounded-xl bg-[#2D6A4F]/10 flex items-center justify-center shrink-0">
-            <Megaphone size={22} className="text-[#2D6A4F]" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[var(--bg-input)] flex items-center justify-center shrink-0">
+                <LinkedInIcon />
+              </div>
+              <div className="flex-1">
+                <Input
+                  label="LinkedIn URL"
+                  value={form.linkedinUrl}
+                  onChange={e => setForm(f => ({ ...f, linkedinUrl: e.target.value }))}
+                  placeholder="https://linkedin.com/company/hasatlink"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[var(--bg-input)] flex items-center justify-center shrink-0">
+                <YouTubeIcon />
+              </div>
+              <div className="flex-1">
+                <Input
+                  label="YouTube URL"
+                  value={form.youtubeUrl}
+                  onChange={e => setForm(f => ({ ...f, youtubeUrl: e.target.value }))}
+                  placeholder="https://youtube.com/@hasatlink"
+                />
+              </div>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm">{isTr ? 'Reklam Yönetimi' : 'Ad Management'}</p>
-            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{isTr ? 'Banner reklamlar, istatistikler' : 'Banner ads, statistics'}</p>
-          </div>
-          <ChevronRight size={18} className="text-[var(--text-secondary)] group-hover:translate-x-1 transition-transform" />
-        </button>
+        </div>
+
+        {/* Save Button */}
+        <div className="flex justify-end mb-6">
+          <Button onClick={handleSave} disabled={saving} loading={saving} size="lg">
+            <span className="flex items-center gap-2">
+              <Save size={16} />
+              {saving ? 'Kaydediliyor...' : 'Kaydet'}
+            </span>
+          </Button>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

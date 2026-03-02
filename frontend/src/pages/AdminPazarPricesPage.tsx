@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { ShoppingCart, ChevronLeft, RefreshCw, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import SEO from '../components/ui/SEO';
+import { ShoppingCart, RefreshCw, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import AdminLayout from '../components/admin/AdminLayout';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import api from '../config/api';
 import toast from 'react-hot-toast';
@@ -20,8 +18,6 @@ const categoryLabels: Record<string, string> = {
 export default function AdminPazarPricesPage() {
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [items, setItems] = useState<HasatlinkPazarItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterCat, setFilterCat] = useState('');
@@ -40,22 +36,13 @@ export default function AdminPazarPricesPage() {
 
   useEffect(() => { fetchPrices(); }, []);
 
-  if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
-
   const categories = [...new Set(items.map(i => i.category))];
   const filtered = filterCat ? items.filter(i => i.category === filterCat) : items;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 animate-fade-in">
-      <SEO title={isTr ? 'Admin - HasatLink Pazarı' : 'Admin - HasatLink Market'} />
-
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate('/admin')} className="p-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors">
-          <ChevronLeft size={20} />
-        </button>
-        <ShoppingCart size={24} className="text-[#6D4C41]" />
-        <h1 className="text-2xl font-semibold tracking-tight">{isTr ? 'HasatLink Pazarı Fiyatları' : 'HasatLink Market Prices'}</h1>
-        <button onClick={fetchPrices} className="ml-auto p-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors" title={isTr ? 'Yenile' : 'Refresh'}>
+    <AdminLayout title="HasatLink Pazarı" icon={<ShoppingCart size={24} />}>
+      <div className="flex justify-end mb-4">
+        <button onClick={fetchPrices} className="p-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors" title={isTr ? 'Yenile' : 'Refresh'}>
           <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
         </button>
       </div>
@@ -130,6 +117,6 @@ export default function AdminPazarPricesPage() {
           ))}
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 }

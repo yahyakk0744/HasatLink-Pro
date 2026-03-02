@@ -6,6 +6,7 @@ export interface IListing extends Document {
   listingMode: 'sell' | 'buy';
   subCategory: string;
   status: string;
+  isFeatured: boolean;
   title: string;
   description: string;
   price: number;
@@ -70,7 +71,8 @@ const ListingSchema = new Schema<IListing>({
   type: { type: String, required: true, enum: ['pazar', 'lojistik', 'isgucu', 'ekipman', 'arazi', 'depolama'] },
   listingMode: { type: String, enum: ['sell', 'buy'], default: 'sell' },
   subCategory: { type: String, default: '' },
-  status: { type: String, default: 'active', enum: ['active', 'sold', 'rented', 'closed'] },
+  status: { type: String, default: 'active', enum: ['active', 'pending', 'sold', 'rented', 'closed'] },
+  isFeatured: { type: Boolean, default: false },
   title: { type: String, required: true },
   description: { type: String, default: '' },
   price: { type: Number, default: 0 },

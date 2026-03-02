@@ -5,6 +5,7 @@ import User from '../models/User';
 import AIDiagnosis from '../models/AIDiagnosis';
 import Comment from '../models/Comment';
 import { checkFieldsForProfanity } from '../utils/profanityFilter';
+import ProfanityLog from '../models/ProfanityLog';
 
 export const getListings = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -77,6 +78,7 @@ export const createListing = async (req: Request, res: Response): Promise<void> 
   try {
     const profaneField = checkFieldsForProfanity({ title: req.body.title, description: req.body.description });
     if (profaneField) {
+      ProfanityLog.create({ userId: (req as any).userId || '', field: profaneField, content: req.body[profaneField]?.substring(0, 200) || '', endpoint: 'createListing' }).catch(() => {});
       res.status(400).json({ message: 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' });
       return;
     }
@@ -100,6 +102,7 @@ export const updateListing = async (req: Request, res: Response): Promise<void> 
     }
     const profaneField = checkFieldsForProfanity({ title: req.body.title, description: req.body.description });
     if (profaneField) {
+      ProfanityLog.create({ userId: (req as AuthRequest).userId || '', field: profaneField, content: req.body[profaneField]?.substring(0, 200) || '', endpoint: 'updateListing' }).catch(() => {});
       res.status(400).json({ message: 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' });
       return;
     }

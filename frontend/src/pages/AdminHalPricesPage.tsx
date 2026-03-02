@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { TrendingUp, Plus, Pencil, Trash2, ChevronLeft, Save, X } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import SEO from '../components/ui/SEO';
+import { TrendingUp, Plus, Pencil, Trash2, Save, X } from 'lucide-react';
+import AdminLayout from '../components/admin/AdminLayout';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
@@ -19,8 +17,6 @@ const defaultForm = { name: '', nameEn: '', price: 0, unit: '₺/kg', category: 
 export default function AdminHalPricesPage() {
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [prices, setPrices] = useState<MarketPrice[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterCat, setFilterCat] = useState('');
@@ -89,22 +85,10 @@ export default function AdminHalPricesPage() {
     }
   };
 
-  if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
-
   const filtered = filterCat ? prices.filter(p => p.category === filterCat) : prices;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 animate-fade-in">
-      <SEO title={isTr ? 'Admin - Hal Fiyatları' : 'Admin - Market Prices'} />
-
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate('/admin')} className="p-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors">
-          <ChevronLeft size={20} />
-        </button>
-        <TrendingUp size={24} className="text-[#A47148]" />
-        <h1 className="text-2xl font-semibold tracking-tight">{isTr ? 'Hal Fiyatları Yönetimi' : 'Market Prices Management'}</h1>
-      </div>
-
+    <AdminLayout title="Hal Fiyatları" icon={<TrendingUp size={24} />}>
       {/* Filter + Add */}
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="flex bg-[var(--bg-input)] rounded-xl p-1 gap-1 overflow-x-auto">
@@ -224,6 +208,6 @@ export default function AdminHalPricesPage() {
           <Button variant="danger" onClick={handleDelete} loading={deleting} className="flex-1">{isTr ? 'Sil' : 'Delete'}</Button>
         </div>
       </Modal>
-    </div>
+    </AdminLayout>
   );
 }

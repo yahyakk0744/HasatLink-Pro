@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { Megaphone, Plus, Trash2, Edit3, Eye, MousePointer, ChevronLeft } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import SEO from '../components/ui/SEO';
+import { Megaphone, Plus, Trash2, Edit3, Eye, MousePointer } from 'lucide-react';
+import AdminLayout from '../components/admin/AdminLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Toggle from '../components/ui/Toggle';
@@ -34,8 +32,6 @@ export default function AdminAdsPage() {
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
   const lang = isTr ? 'tr' : 'en';
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [ads, setAds] = useState<Ad[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterSlot, setFilterSlot] = useState<SlotType | 'all'>('all');
@@ -115,21 +111,11 @@ export default function AdminAdsPage() {
 
   const filtered = filterSlot === 'all' ? ads : ads.filter(a => a.slot === filterSlot);
 
-  if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
   if (loading) return <LoadingSpinner size="lg" className="py-20" />;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 animate-fade-in">
-      <SEO title={isTr ? 'Admin - Reklam Yönetimi' : 'Admin - Ad Management'} />
-
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/admin')} className="p-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors">
-            <ChevronLeft size={20} />
-          </button>
-          <Megaphone size={24} className="text-[#2D6A4F]" />
-          <h1 className="text-2xl font-semibold tracking-tight">{isTr ? 'Reklam Yönetimi' : 'Ad Management'}</h1>
-        </div>
+    <AdminLayout title="Reklam Yönetimi" icon={<Megaphone size={24} />}>
+      <div className="flex justify-end mb-4">
         <Button size="sm" onClick={() => openModal()}>
           <Plus size={14} className="mr-1" />
           {isTr ? 'Yeni Reklam' : 'New Ad'}
@@ -264,6 +250,6 @@ export default function AdminAdsPage() {
           </Button>
         </div>
       </Modal>
-    </div>
+    </AdminLayout>
   );
 }
