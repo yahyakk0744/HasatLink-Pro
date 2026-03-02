@@ -149,35 +149,58 @@ export default function HomePage() {
       />
 
       {/* ─── 1. Hero Banner ─── */}
-      <section className="relative bg-gradient-to-br from-[#1B4332] via-[#2D6A4F] to-[#40916C] text-white py-16 md:py-24 overflow-hidden">
-        <div className="absolute inset-0 opacity-15">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl animate-float-slow" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#A47148] rounded-full blur-3xl animate-float-slow-reverse" />
+      <section className="relative bg-gradient-to-b from-[#0A0A0A] via-[#111111] to-[#1A1A1A] text-white py-20 md:py-32 overflow-hidden">
+        {/* Ambient glow effects */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#2D6A4F]/8 rounded-full blur-[120px] animate-float-slow" />
+          <div className="absolute top-0 right-0 w-80 h-80 bg-[#A47148]/6 rounded-full blur-[100px] animate-float-slow-reverse" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#2D6A4F]/5 rounded-full blur-[80px]" />
         </div>
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+
         <div className="max-w-4xl mx-auto px-4 relative text-center">
-          <h1
-            className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-4 animate-slide-up"
+          {/* Üst yazı */}
+          <p
+            className="text-xs md:text-sm font-semibold tracking-[0.3em] uppercase text-[#A47148] mb-4 animate-slide-up"
             style={{ animationDelay: '0ms', animationFillMode: 'both' }}
           >
-            {lang === 'tr' ? "Türkiye'nin Tarım Pazaryeri" : "Turkey's Agricultural Marketplace"}
-          </h1>
-          <p
-            className="text-lg md:text-xl text-white/70 mb-10 max-w-2xl mx-auto animate-slide-up"
-            style={{ animationDelay: '100ms', animationFillMode: 'both' }}
+            {lang === 'tr' ? 'TARIM PAZARININ DİJİTAL GÜCÜ' : 'THE DIGITAL POWER OF AGRICULTURE'}
+          </p>
+
+          {/* Ana başlık */}
+          <h1
+            className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-none mb-6 animate-slide-up"
+            style={{ animationDelay: '80ms', animationFillMode: 'both' }}
           >
-            {lang === 'tr' ? 'Binlerce çiftçi ve alıcı burada buluşuyor' : 'Thousands of farmers and buyers meet here'}
+            <span className="bg-gradient-to-r from-white via-white to-white/60 bg-clip-text text-transparent">
+              HASAT{' '}
+            </span>
+            <span className="bg-gradient-to-r from-[#2D6A4F] to-[#40916C] bg-clip-text text-transparent">
+              LİNK
+            </span>
+          </h1>
+
+          {/* Alt yazı */}
+          <p
+            className="text-base md:text-lg text-white/50 mb-12 max-w-xl mx-auto leading-relaxed animate-slide-up"
+            style={{ animationDelay: '160ms', animationFillMode: 'both' }}
+          >
+            {lang === 'tr'
+              ? 'Türkiye\'nin en kapsamlı tarım pazaryeri. Ürün alın, satın, lojistik bulun, ekipman kiralayın.'
+              : 'Turkey\'s most comprehensive agricultural marketplace. Buy, sell, find logistics, rent equipment.'}
           </p>
 
           {/* Search Bar */}
           <form
             onSubmit={handleHeroSearch}
             className="flex flex-col sm:flex-row items-stretch gap-2 max-w-2xl mx-auto animate-slide-up"
-            style={{ animationDelay: '200ms', animationFillMode: 'both' }}
+            style={{ animationDelay: '240ms', animationFillMode: 'both' }}
           >
             <select
               value={heroCategory}
               onChange={e => setHeroCategory(e.target.value)}
-              className="px-4 py-3.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/30 sm:w-40"
+              className="px-4 py-3.5 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/50 sm:w-40 transition-colors hover:bg-white/10"
             >
               <option value="" className="text-gray-900">{lang === 'tr' ? 'Tümü' : 'All'}</option>
               {Object.entries(CATEGORY_LABELS).map(([key, cat]) => (
@@ -190,13 +213,13 @@ export default function HomePage() {
                 value={heroSearch}
                 onChange={e => setHeroSearch(e.target.value)}
                 placeholder={lang === 'tr' ? 'İlan, ürün veya hizmet ara...' : 'Search listings, products or services...'}
-                className="w-full px-5 py-3.5 pl-12 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-white/30"
+                className="w-full px-5 py-3.5 pl-12 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/50 transition-colors hover:bg-white/10"
               />
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" />
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
             </div>
             <button
               type="submit"
-              className="px-8 py-3.5 bg-white text-[#1B4332] font-semibold text-sm rounded-xl hover:bg-white/90 transition-colors"
+              className="px-8 py-3.5 bg-[#2D6A4F] text-white font-semibold text-sm rounded-xl hover:bg-[#40916C] transition-colors shadow-lg shadow-[#2D6A4F]/20"
             >
               {lang === 'tr' ? 'Ara' : 'Search'}
             </button>
