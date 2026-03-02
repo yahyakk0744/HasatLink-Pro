@@ -149,7 +149,7 @@ export default function HomePage() {
       />
 
       {/* ─── 1. Hero Banner ─── */}
-      <section className="relative bg-gradient-to-b from-[#0A0A0A] via-[#111111] to-[#1A1A1A] text-white py-12 md:py-32 overflow-hidden">
+      <section className="relative bg-gradient-to-b from-[#0A0A0A] via-[#111111] to-[#1A1A1A] text-white py-8 md:py-32 overflow-hidden">
         {/* Ambient glow effects */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#2D6A4F]/8 rounded-full blur-[120px] animate-float-slow" />
@@ -159,7 +159,7 @@ export default function HomePage() {
         {/* Subtle grid pattern */}
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
-        <div className="max-w-4xl mx-auto px-4 relative text-center">
+        <div className="max-w-4xl mx-auto px-3 md:px-4 relative text-center">
           {/* Üst yazı */}
           <p
             className="text-xs md:text-sm font-semibold tracking-[0.3em] uppercase text-[#A47148] mb-4 animate-slide-up"
@@ -170,7 +170,7 @@ export default function HomePage() {
 
           {/* Ana başlık */}
           <h1
-            className="text-4xl md:text-7xl lg:text-8xl font-black tracking-tight leading-none mb-4 md:mb-6 animate-slide-up"
+            className="text-3xl sm:text-4xl md:text-7xl lg:text-8xl font-black tracking-tight leading-none mb-3 md:mb-6 animate-slide-up"
             style={{ animationDelay: '80ms', animationFillMode: 'both' }}
           >
             <span className="bg-gradient-to-r from-white via-white to-white/60 bg-clip-text text-transparent">
@@ -183,7 +183,7 @@ export default function HomePage() {
 
           {/* Alt yazı */}
           <p
-            className="text-sm md:text-lg text-white/50 mb-8 md:mb-12 max-w-xl mx-auto leading-relaxed animate-slide-up"
+            className="text-xs sm:text-sm md:text-lg text-white/50 mb-6 md:mb-12 max-w-xl mx-auto leading-relaxed animate-slide-up"
             style={{ animationDelay: '160ms', animationFillMode: 'both' }}
           >
             {lang === 'tr'
@@ -194,7 +194,7 @@ export default function HomePage() {
           {/* Search Bar */}
           <form
             onSubmit={handleHeroSearch}
-            className="flex flex-col sm:flex-row items-stretch gap-2 max-w-2xl mx-auto animate-slide-up"
+            className="flex flex-col sm:flex-row items-stretch gap-2 w-full max-w-2xl mx-auto animate-slide-up"
             style={{ animationDelay: '240ms', animationFillMode: 'both' }}
           >
             <select

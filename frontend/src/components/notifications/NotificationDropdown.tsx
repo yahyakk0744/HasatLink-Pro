@@ -22,7 +22,7 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
   }, [onClose]);
 
   return (
-    <div ref={ref} className="absolute right-0 top-12 w-80 bg-[var(--bg-surface)] rounded-2xl shadow-2xl border border-[var(--border-subtle)] overflow-hidden animate-fade-in z-50">
+    <div ref={ref} className="absolute right-0 top-12 w-[calc(100vw-24px)] sm:w-80 max-w-80 bg-[var(--bg-surface)] rounded-2xl shadow-2xl border border-[var(--border-subtle)] overflow-hidden animate-fade-in z-50">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-subtle)]">
         <h3 className="text-sm font-semibold tracking-tight">{t('notifications.title')}</h3>
         <button onClick={() => markAllAsRead()} className="text-[10px] font-medium text-[#2D6A4F] uppercase">

@@ -198,7 +198,7 @@ export default function Footer() {
               <Link to="/cerez-politikasi" className="hover:text-white">{isTr ? 'Çerez' : 'Cookies'}</Link>
               <Link to="/iletisim" className="hover:text-white">{isTr ? 'İletişim' : 'Contact'}</Link>
             </div>
-            <p className="text-[10px] text-[#6B6560]">&copy; {year} HasatLink</p>
+            <p className="text-[10px] text-[#6B6560]">&copy; {year} HasatLink. Tüm hakları saklıdır.</p>
           </div>
         </div>
 
@@ -287,14 +287,14 @@ export default function Footer() {
           )}
 
           {/* Desktop bottom bar */}
-          <div className="border-t border-white/10 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-[#6B6560]">&copy; {year} HasatLink. {t('footer.rights')}</p>
+          <div className="border-t border-white/10 mt-8 pt-6 flex flex-col items-center gap-3 text-center">
             <div className="flex items-center gap-4 text-xs text-[#6B6560]">
               <Link to="/gizlilik" className="hover:text-white">{isTr ? 'Gizlilik' : 'Privacy'}</Link>
               <Link to="/kullanim-sartlari" className="hover:text-white">{isTr ? 'Kullanım Şartları' : 'Terms'}</Link>
               <Link to="/cerez-politikasi" className="hover:text-white">{isTr ? 'Çerezler' : 'Cookies'}</Link>
               <Link to="/iletisim" className="hover:text-white">{isTr ? 'İletişim' : 'Contact'}</Link>
             </div>
+            <p className="text-xs text-[#6B6560]">&copy; {year} HasatLink. Tüm hakları saklıdır.</p>
           </div>
         </div>
       </div>
