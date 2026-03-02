@@ -12,6 +12,7 @@ export interface ISiteSettings extends Document {
   siteTitle: string;
   siteDescription: string;
   logoUrl: string;
+  facebookUrl: string;
   instagramUrl: string;
   twitterUrl: string;
   linkedinUrl: string;
@@ -35,6 +36,7 @@ const SiteSettingsSchema = new Schema<ISiteSettings>({
   siteTitle: { type: String, default: 'HasatLink' },
   siteDescription: { type: String, default: '' },
   logoUrl: { type: String, default: '' },
+  facebookUrl: { type: String, default: '' },
   instagramUrl: { type: String, default: '' },
   twitterUrl: { type: String, default: '' },
   linkedinUrl: { type: String, default: '' },

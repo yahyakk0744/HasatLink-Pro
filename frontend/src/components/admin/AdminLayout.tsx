@@ -16,6 +16,7 @@ import {
   Settings,
   Menu,
   X,
+  Home,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -104,8 +105,15 @@ export default function AdminLayout({ children, title, icon }: AdminLayoutProps)
         })}
       </nav>
 
-      {/* Bottom branding */}
-      <div className="px-5 py-4 border-t border-[var(--border-default)]">
+      {/* Back to site + branding */}
+      <div className="px-3 py-3 border-t border-[var(--border-default)] space-y-2">
+        <button
+          onClick={() => handleNavigate('/')}
+          className="w-full flex items-center gap-3 py-2 px-4 rounded-xl text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-input)] transition-colors"
+        >
+          <Home size={16} />
+          <span>Site'ye Dön</span>
+        </button>
         <p className="text-xs text-[var(--text-secondary)] text-center">
           <span className="font-semibold text-[var(--text-primary)]">HASAT</span>
           <span className="font-semibold text-[#2D6A4F]">LiNK</span>
@@ -156,17 +164,24 @@ export default function AdminLayout({ children, title, icon }: AdminLayoutProps)
 
       {/* Mobile header */}
       <div className="sticky top-0 z-30 md:hidden bg-[var(--bg-surface)] border-b border-[var(--border-default)]">
-        <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex items-center gap-2 px-3 py-2.5">
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="p-2 -ml-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors"
+            className="p-2 -ml-1 rounded-xl hover:bg-[var(--bg-input)] transition-colors shrink-0"
           >
-            <Menu size={22} className="text-[var(--text-primary)]" />
+            <Menu size={20} className="text-[var(--text-primary)]" />
           </button>
-          <div className="flex items-center gap-2 min-w-0">
-            {icon && <span className="text-[#2D6A4F] shrink-0">{icon}</span>}
-            <h1 className="text-lg font-bold text-[var(--text-primary)] truncate">{title}</h1>
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {icon && <span className="text-[#2D6A4F] shrink-0 [&_svg]:w-5 [&_svg]:h-5">{icon}</span>}
+            <h1 className="text-base font-bold text-[var(--text-primary)] truncate">{title}</h1>
           </div>
+          <button
+            onClick={() => navigate('/')}
+            className="p-2 rounded-xl hover:bg-[var(--bg-input)] transition-colors shrink-0"
+            title="Site'ye Dön"
+          >
+            <Home size={18} className="text-[var(--text-secondary)]" />
+          </button>
         </div>
       </div>
 

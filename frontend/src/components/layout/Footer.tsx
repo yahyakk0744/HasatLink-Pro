@@ -5,6 +5,13 @@ import { ChevronDown, Download } from 'lucide-react';
 import api from '../../config/api';
 
 /* ---- Social SVG Icons ---- */
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+    </svg>
+  );
+}
 function InstagramIcon() {
   return (
     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
@@ -54,6 +61,7 @@ function AccordionSection({ title, children }: { title: string; children: React.
 }
 
 interface Socials {
+  facebookUrl: string;
   instagramUrl: string;
   twitterUrl: string;
   linkedinUrl: string;
@@ -64,12 +72,13 @@ export default function Footer() {
   const { t, i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
   const year = new Date().getFullYear();
-  const [socials, setSocials] = useState<Socials>({ instagramUrl: '', twitterUrl: '', linkedinUrl: '', youtubeUrl: '' });
+  const [socials, setSocials] = useState<Socials>({ facebookUrl: '', instagramUrl: '', twitterUrl: '', linkedinUrl: '', youtubeUrl: '' });
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
     api.get('/settings').then(({ data }) => setSocials({
+      facebookUrl: data.facebookUrl || '',
       instagramUrl: data.instagramUrl || '',
       twitterUrl: data.twitterUrl || '',
       linkedinUrl: data.linkedinUrl || '',
@@ -89,9 +98,10 @@ export default function Footer() {
     if (deferredPrompt) { await deferredPrompt.prompt(); setDeferredPrompt(null); }
   };
 
-  const hasSocials = socials.instagramUrl || socials.twitterUrl || socials.linkedinUrl || socials.youtubeUrl;
+  const hasSocials = socials.facebookUrl || socials.instagramUrl || socials.twitterUrl || socials.linkedinUrl || socials.youtubeUrl;
 
   const socialIcons = [
+    { url: socials.facebookUrl, icon: <FacebookIcon />, label: 'Facebook' },
     { url: socials.instagramUrl, icon: <InstagramIcon />, label: 'Instagram' },
     { url: socials.twitterUrl, icon: <XIcon />, label: 'X' },
     { url: socials.linkedinUrl, icon: <LinkedInIcon />, label: 'LinkedIn' },
@@ -172,14 +182,23 @@ export default function Footer() {
           )}
 
           {/* Bottom bar */}
-          <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between flex-wrap gap-2">
-            <p className="text-[10px] text-[#6B6560]">&copy; {year} HasatLink</p>
+          <div className="mt-4 pt-3 border-t border-white/10 flex flex-col items-center gap-2">
+            {hasSocials && (
+              <div className="flex items-center gap-2 mb-1">
+                {socialIcons.map(s => (
+                  <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-[#2D6A4F] hover:text-white transition-colors">
+                    {s.icon}
+                  </a>
+                ))}
+              </div>
+            )}
             <div className="flex items-center gap-3 text-[10px] text-[#6B6560]">
               <Link to="/gizlilik" className="hover:text-white">{isTr ? 'Gizlilik' : 'Privacy'}</Link>
               <Link to="/kullanim-sartlari" className="hover:text-white">{isTr ? 'Şartlar' : 'Terms'}</Link>
               <Link to="/cerez-politikasi" className="hover:text-white">{isTr ? 'Çerez' : 'Cookies'}</Link>
               <Link to="/iletisim" className="hover:text-white">{isTr ? 'İletişim' : 'Contact'}</Link>
             </div>
+            <p className="text-[10px] text-[#6B6560]">&copy; {year} HasatLink</p>
           </div>
         </div>
 
@@ -268,7 +287,7 @@ export default function Footer() {
           )}
 
           {/* Desktop bottom bar */}
-          <div className="border-t border-white/10 mt-8 pt-6 flex items-center justify-between">
+          <div className="border-t border-white/10 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-xs text-[#6B6560]">&copy; {year} HasatLink. {t('footer.rights')}</p>
             <div className="flex items-center gap-4 text-xs text-[#6B6560]">
               <Link to="/gizlilik" className="hover:text-white">{isTr ? 'Gizlilik' : 'Privacy'}</Link>

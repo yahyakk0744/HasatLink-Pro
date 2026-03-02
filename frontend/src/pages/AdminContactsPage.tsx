@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Mail, MailOpen, Trash2, Clock, User, AtSign } from 'lucide-react';
+import { Mail, MailOpen, Trash2, Clock, User, AtSign, ArrowLeft } from 'lucide-react';
 import AdminLayout from '../components/admin/AdminLayout';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
@@ -60,7 +60,11 @@ export default function AdminContactsPage() {
     }
   };
 
-  if (loading) return <LoadingSpinner size="lg" className="py-20" />;
+  if (loading) return (
+    <AdminLayout title="İletişim Mesajları" icon={<Mail size={24} />}>
+      <LoadingSpinner size="lg" className="py-20" />
+    </AdminLayout>
+  );
 
   const unreadCount = messages.filter(m => !m.isRead).length;
 
@@ -79,7 +83,7 @@ export default function AdminContactsPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Message List */}
-          <div className="lg:col-span-1 space-y-2 max-h-[70vh] overflow-y-auto">
+          <div className={`lg:col-span-1 space-y-2 max-h-[70vh] overflow-y-auto ${selected ? 'hidden lg:block' : ''}`}>
             {messages.map(msg => (
               <button
                 key={msg._id}
@@ -114,11 +118,19 @@ export default function AdminContactsPage() {
           </div>
 
           {/* Message Detail */}
-          <div className="lg:col-span-2">
+          <div className={`lg:col-span-2 ${!selected ? 'hidden lg:block' : ''}`}>
             {selected ? (
               <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-6 shadow-sm">
                 <div className="flex items-start justify-between mb-4">
-                  <h2 className="text-lg font-semibold">{selected.subject}</h2>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelected(null)}
+                      className="lg:hidden p-2 -ml-2 rounded-xl hover:bg-[var(--bg-surface-hover)] text-[var(--text-secondary)] transition-colors"
+                    >
+                      <ArrowLeft size={18} />
+                    </button>
+                    <h2 className="text-lg font-semibold">{selected.subject}</h2>
+                  </div>
                   <div className="flex items-center gap-2">
                     {!selected.isRead && (
                       <button

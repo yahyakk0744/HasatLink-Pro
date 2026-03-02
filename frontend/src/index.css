@@ -64,6 +64,10 @@ html.theme-transition *::after {
   transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease, box-shadow 300ms ease !important;
 }
 
+#root {
+  overflow-x: hidden;
+}
+
 /* Custom base styles */
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
@@ -96,13 +100,8 @@ body {
   overflow-x: hidden;
 }
 
-/* Min touch target for mobile */
+/* Mobile spacing */
 @media (max-width: 768px) {
-  a, button {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  /* Tighter spacing on mobile */
   .max-w-7xl { padding-left: 1rem; padding-right: 1rem; }
 }
 
@@ -128,6 +127,15 @@ body {
 /* Disable pinch zoom */
 * {
   touch-action: pan-x pan-y;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 /* Scrollbar */
@@ -173,6 +181,13 @@ html.dark .leaflet-tile {
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in {
+  animation: slideInLeft 0.25s ease-out;
 }
 @keyframes ticker {
   0% { transform: translateX(0); }

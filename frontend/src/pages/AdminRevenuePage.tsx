@@ -133,7 +133,11 @@ export default function AdminRevenuePage() {
     setFeatureInput('');
   };
 
-  if (loading) return <LoadingSpinner size="lg" className="py-20" />;
+  if (loading) return (
+    <AdminLayout title="Gelir Yönetimi" icon={<DollarSign size={24} />}>
+      <LoadingSpinner size="lg" className="py-20" />
+    </AdminLayout>
+  );
 
   return (
     <AdminLayout title="Gelir Yönetimi" icon={<DollarSign size={24} />}>

@@ -252,8 +252,11 @@ export interface SiteSettings {
   siteTitle: string;
   siteDescription: string;
   logoUrl: string;
+  facebookUrl: string;
   instagramUrl: string;
   twitterUrl: string;
+  linkedinUrl: string;
+  youtubeUrl: string;
   featuredListing: { enabled: boolean; pricePerListing: number; durationOptions: number[] };
   premiumMembership: { enabled: boolean; packages: PremiumPackage[] };
   commission: { enabled: boolean; percentage: number };

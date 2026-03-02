@@ -111,7 +111,11 @@ export default function AdminAdsPage() {
 
   const filtered = filterSlot === 'all' ? ads : ads.filter(a => a.slot === filterSlot);
 
-  if (loading) return <LoadingSpinner size="lg" className="py-20" />;
+  if (loading) return (
+    <AdminLayout title="Reklam Yönetimi" icon={<Megaphone size={24} />}>
+      <LoadingSpinner size="lg" className="py-20" />
+    </AdminLayout>
+  );
 
   return (
     <AdminLayout title="Reklam Yönetimi" icon={<Megaphone size={24} />}>
@@ -150,8 +154,8 @@ export default function AdminAdsPage() {
         <div className="space-y-4">
           {filtered.map(ad => (
             <div key={ad._id} className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-4 shadow-sm">
-              <div className="flex gap-4">
-                <div className="w-32 h-20 rounded-xl overflow-hidden bg-[var(--bg-input)] shrink-0">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <div className="w-full h-32 sm:w-32 sm:h-20 rounded-xl overflow-hidden bg-[var(--bg-input)] shrink-0">
                   <img src={ad.imageUrl} alt="" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -172,7 +176,7 @@ export default function AdminAdsPage() {
                     <span className="flex items-center gap-1"><MousePointer size={12} /> {ad.clickCount}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2 shrink-0">
+                <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 shrink-0">
                   <Toggle checked={ad.enabled} onChange={() => handleToggle(ad)} />
                   <div className="flex gap-1">
                     <button onClick={() => openModal(ad)} className="p-2 hover:bg-[var(--bg-surface-hover)] rounded-xl transition-colors">

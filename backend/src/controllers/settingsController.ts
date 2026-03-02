@@ -21,6 +21,7 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
       siteTitle,
       siteDescription,
       logoUrl,
+      facebookUrl,
       instagramUrl,
       twitterUrl,
       linkedinUrl,
@@ -35,6 +36,7 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
     if (siteTitle !== undefined) update.siteTitle = siteTitle;
     if (siteDescription !== undefined) update.siteDescription = siteDescription;
     if (logoUrl !== undefined) update.logoUrl = logoUrl;
+    if (facebookUrl !== undefined) update.facebookUrl = facebookUrl;
     if (instagramUrl !== undefined) update.instagramUrl = instagramUrl;
     if (twitterUrl !== undefined) update.twitterUrl = twitterUrl;
     if (linkedinUrl !== undefined) update.linkedinUrl = linkedinUrl;

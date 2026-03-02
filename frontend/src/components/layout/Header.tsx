@@ -28,10 +28,10 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-30 glass border-b border-[var(--border-subtle)]">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
+      <div className="max-w-7xl mx-auto px-3 md:px-4 py-2.5 md:py-3 flex items-center gap-2 md:gap-4">
         {/* Logo */}
         <Link to="/" className="shrink-0">
-          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">
+          <h1 className="text-lg md:text-2xl font-semibold tracking-tight">
             <span className="text-[var(--text-primary)]">HASAT</span>
             <span className="text-[#2D6A4F]">LiNK</span>
           </h1>
@@ -51,24 +51,24 @@ export default function Header() {
           </div>
         </form>
 
-        <div className="flex items-center gap-3 ml-auto">
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-3 ml-auto">
           <LanguageSwitcher />
 
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors"
+            className="p-1.5 md:p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors"
             aria-label="Toggle theme"
           >
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            {theme === 'dark' ? <Sun size={18} className="md:w-5 md:h-5" /> : <Moon size={18} className="md:w-5 md:h-5" />}
           </button>
 
-          {/* Messages */}
+          {/* Messages - hidden on mobile, accessible from bottom nav */}
           {user && (
-            <Link to="/mesajlar" className="relative p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors">
-              <MessageSquare size={20} />
+            <Link to="/mesajlar" className="relative p-1.5 md:p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors hidden sm:flex">
+              <MessageSquare size={18} className="md:w-5 md:h-5" />
               {messageUnreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-[#2D6A4F] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 md:w-5 md:h-5 bg-[#2D6A4F] text-white text-[8px] md:text-[10px] font-bold rounded-full flex items-center justify-center">
                   {messageUnreadCount > 9 ? '9+' : messageUnreadCount}
                 </span>
               )}
@@ -80,11 +80,11 @@ export default function Header() {
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors"
+                className="relative p-1.5 md:p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors"
               >
-                <Bell size={20} />
+                <Bell size={18} className="md:w-5 md:h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-[#C1341B] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 md:w-5 md:h-5 bg-[#C1341B] text-white text-[8px] md:text-[10px] font-bold rounded-full flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -95,35 +95,35 @@ export default function Header() {
             </div>
           )}
 
-          {/* Admin */}
+          {/* Admin - hidden on mobile, accessible from bottom nav */}
           {user?.role === 'admin' && (
-            <Link to="/admin" className="p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors" title="Admin Panel">
-              <Shield size={20} className="text-[#2D6A4F]" />
+            <Link to="/admin" className="p-1.5 md:p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors hidden sm:flex" title="Admin Panel">
+              <Shield size={18} className="text-[#2D6A4F] md:w-5 md:h-5" />
             </Link>
           )}
 
           {/* Auth */}
           {user ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:gap-2">
               <Link
                 to="/profil"
-                className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-input)] rounded-full hover:bg-[var(--bg-surface-hover)] transition-colors"
+                className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 bg-[var(--bg-input)] rounded-full hover:bg-[var(--bg-surface-hover)] transition-colors"
               >
                 {user.profileImage ? (
-                  <img src={user.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
+                  <img src={user.profileImage} alt="" className="w-5 h-5 md:w-6 md:h-6 rounded-full object-cover" />
                 ) : (
-                  <User size={16} />
+                  <User size={14} className="md:w-4 md:h-4" />
                 )}
                 <span className="text-xs font-semibold uppercase hidden sm:block">{user.name}</span>
               </Link>
-              <button onClick={logout} className="p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors" title={t('logout')}>
-                <LogOut size={16} className="text-[var(--text-secondary)]" />
+              <button onClick={logout} className="p-1.5 md:p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors hidden sm:flex" title={t('logout')}>
+                <LogOut size={14} className="text-[var(--text-secondary)] md:w-4 md:h-4" />
               </button>
             </div>
           ) : (
             <Link
               to="/giris"
-              className="px-4 py-2 bg-[#2D6A4F] text-white text-xs font-semibold tracking-wide rounded-full hover:bg-[#1B4332] transition-colors"
+              className="px-3 md:px-4 py-1.5 md:py-2 bg-[#2D6A4F] text-white text-[10px] md:text-xs font-semibold tracking-wide rounded-full hover:bg-[#1B4332] transition-colors"
             >
               {t('login')}
             </Link>

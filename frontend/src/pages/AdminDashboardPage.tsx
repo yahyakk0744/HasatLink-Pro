@@ -265,10 +265,6 @@ export default function AdminDashboardPage() {
                       paddingAngle={3}
                       dataKey="value"
                       nameKey="name"
-                      label={({ name, percent }) =>
-                        `${name} ${(percent * 100).toFixed(0)}%`
-                      }
-                      labelLine={false}
                     >
                       {enhanced.categoryDistribution.map((_, index) => (
                         <Cell

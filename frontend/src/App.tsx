@@ -50,6 +50,7 @@ function PageLoader() {
 
 export default function App() {
   const { pathname } = useLocation();
+  const isAdmin = pathname.startsWith('/admin');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -58,10 +59,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-page)' }}>
-      <Header />
-      <CategoryNav />
+      {!isAdmin && <Header />}
+      {!isAdmin && <CategoryNav />}
 
-      <main className="pb-20 md:pb-0">
+      <main className={isAdmin ? '' : 'pb-20 md:pb-0'}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -107,9 +108,9 @@ export default function App() {
         </Suspense>
       </main>
 
-      <MobileAppDownload />
-      <Footer />
-      <MobileBottomNav />
+      {!isAdmin && <MobileAppDownload />}
+      {!isAdmin && <Footer />}
+      {!isAdmin && <MobileBottomNav />}
       <ScrollToTop />
       <CookieConsent />
       <PWAInstallPrompt />
