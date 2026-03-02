@@ -16,6 +16,8 @@ import {
   STORAGE_CAPACITY_UNITS, RENT_DURATIONS_DEPO,
 } from '../../utils/constants';
 import type { Listing } from '../../types';
+import { containsProfanity } from '../../utils/profanityFilter';
+import toast from 'react-hot-toast';
 
 interface ListingFormProps {
   isOpen: boolean;
@@ -175,6 +177,10 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (containsProfanity(title) || containsProfanity(description)) {
+      toast.error('Uygunsuz içerik tespit edildi, lütfen düzenleyin');
+      return;
+    }
     setLoading(true);
     try {
       const data: Partial<Listing> = {

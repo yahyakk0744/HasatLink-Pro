@@ -4,10 +4,16 @@ import Listing from '../models/Listing';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import admin from '../config/firebase';
+import { checkFieldsForProfanity } from '../utils/profanityFilter';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password, location, firebaseUid } = req.body;
+    const profaneField = checkFieldsForProfanity({ name });
+    if (profaneField) {
+      res.status(400).json({ message: 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' });
+      return;
+    }
     const existing = await User.findOne({ email });
     if (existing) {
       res.status(400).json({ message: 'Bu email zaten kayıtlı' });
@@ -84,6 +90,11 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     const updates: Record<string, any> = {};
     for (const key of allowedFields) {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
+    }
+    const profaneField = checkFieldsForProfanity({ name: updates.name, bio: updates.bio });
+    if (profaneField) {
+      res.status(400).json({ message: 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' });
+      return;
     }
     const user = await User.findOneAndUpdate(
       { userId: req.params.userId },

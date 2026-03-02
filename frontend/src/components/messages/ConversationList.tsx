@@ -8,6 +8,9 @@ interface ConversationListProps {
   currentUid: string;
   activeConversationId: string | null;
   onSelectConversation: (id: string) => void;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 export default function ConversationList({
@@ -15,6 +18,9 @@ export default function ConversationList({
   currentUid,
   activeConversationId,
   onSelectConversation,
+  selectionMode,
+  selectedIds,
+  onToggleSelect,
 }: ConversationListProps) {
   const { t } = useTranslation();
 
@@ -38,7 +44,9 @@ export default function ConversationList({
           conversation={conv}
           currentUid={currentUid}
           isActive={conv.id === activeConversationId}
-          onClick={() => onSelectConversation(conv.id)}
+          onClick={() => selectionMode && onToggleSelect ? onToggleSelect(conv.id) : onSelectConversation(conv.id)}
+          selectionMode={selectionMode}
+          isSelected={selectedIds?.has(conv.id)}
         />
       ))}
     </div>

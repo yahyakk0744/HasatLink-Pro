@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import Comment from '../models/Comment';
 import User from '../models/User';
+import { containsProfanity } from '../utils/profanityFilter';
 
 export const getListingComments = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -17,11 +18,25 @@ export const createComment = async (req: Request, res: Response): Promise<void> 
     const userId = (req as AuthRequest).userId!;
     const { listingId, text, parentId } = req.body;
 
+    if (containsProfanity(text)) {
+      res.status(400).json({ message: 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' });
+      return;
+    }
+
     if (parentId) {
       const parent = await Comment.findById(parentId);
       if (!parent) {
         res.status(404).json({ message: 'Yanıtlanacak yorum bulunamadı' });
         return;
+      }
+
+      // Enforce max 2 levels of nesting (L0 → L1 → L2)
+      if (parent.parentId) {
+        const grandparent = await Comment.findById(parent.parentId);
+        if (grandparent && grandparent.parentId) {
+          res.status(400).json({ message: 'Maksimum yanıt derinliğine ulaşıldı' });
+          return;
+        }
       }
     }
 

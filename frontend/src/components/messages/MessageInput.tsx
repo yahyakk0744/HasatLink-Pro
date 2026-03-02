@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Send } from 'lucide-react';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { containsProfanity } from '../../utils/profanityFilter';
+import toast from 'react-hot-toast';
 
 interface MessageInputProps {
   onSend: (text: string) => void;
@@ -43,6 +45,11 @@ export default function MessageInput({ onSend, disabled, conversationId }: Messa
     e.preventDefault();
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
+
+    if (containsProfanity(trimmed)) {
+      toast.error('Uygunsuz içerik tespit edildi, lütfen düzenleyin');
+      return;
+    }
 
     // Stop typing indicator
     if (typingRef.current) {

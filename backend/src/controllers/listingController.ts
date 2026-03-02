@@ -4,6 +4,7 @@ import Listing from '../models/Listing';
 import User from '../models/User';
 import AIDiagnosis from '../models/AIDiagnosis';
 import Comment from '../models/Comment';
+import { checkFieldsForProfanity } from '../utils/profanityFilter';
 
 export const getListings = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -74,6 +75,11 @@ export const getListing = async (req: Request, res: Response): Promise<void> => 
 
 export const createListing = async (req: Request, res: Response): Promise<void> => {
   try {
+    const profaneField = checkFieldsForProfanity({ title: req.body.title, description: req.body.description });
+    if (profaneField) {
+      res.status(400).json({ message: 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' });
+      return;
+    }
     const listing = await Listing.create({ ...req.body, userId: (req as any).userId || req.body.userId });
     res.status(201).json(listing);
   } catch (error) {
@@ -90,6 +96,11 @@ export const updateListing = async (req: Request, res: Response): Promise<void> 
     }
     if ((req as AuthRequest).userId !== listing.userId) {
       res.status(403).json({ message: 'Bu ilanı düzenleme yetkiniz yok' });
+      return;
+    }
+    const profaneField = checkFieldsForProfanity({ title: req.body.title, description: req.body.description });
+    if (profaneField) {
+      res.status(400).json({ message: 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' });
       return;
     }
     Object.assign(listing, req.body);

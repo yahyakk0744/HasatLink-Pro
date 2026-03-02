@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { CheckSquare, Square } from 'lucide-react';
 import type { Conversation } from '../../types';
 
 interface ConversationItemProps {
@@ -6,6 +7,8 @@ interface ConversationItemProps {
   currentUid: string;
   isActive: boolean;
   onClick: () => void;
+  selectionMode?: boolean;
+  isSelected?: boolean;
 }
 
 function formatRelativeTime(timestamp: any, t: (key: string) => string): string {
@@ -20,7 +23,7 @@ function formatRelativeTime(timestamp: any, t: (key: string) => string): string 
   return date.toLocaleDateString();
 }
 
-export default function ConversationItem({ conversation, currentUid, isActive, onClick }: ConversationItemProps) {
+export default function ConversationItem({ conversation, currentUid, isActive, onClick, selectionMode, isSelected }: ConversationItemProps) {
   const { t } = useTranslation();
 
   // Get the other participant
@@ -33,9 +36,20 @@ export default function ConversationItem({ conversation, currentUid, isActive, o
     <button
       onClick={onClick}
       className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-surface-hover)] transition-colors text-left ${
-        isActive ? 'bg-[var(--bg-input)]' : ''
-      }`}
+        isActive && !selectionMode ? 'bg-[var(--bg-input)]' : ''
+      } ${isSelected ? 'bg-[#2D6A4F]/5' : ''}`}
     >
+      {/* Selection checkbox */}
+      {selectionMode && (
+        <div className="shrink-0">
+          {isSelected ? (
+            <CheckSquare size={20} className="text-[#2D6A4F]" />
+          ) : (
+            <Square size={20} className="text-[#6B6560]" />
+          )}
+        </div>
+      )}
+
       {/* Avatar */}
       <div className="w-11 h-11 rounded-full bg-[#2D6A4F]/10 flex items-center justify-center shrink-0 overflow-hidden">
         {profileImage ? (

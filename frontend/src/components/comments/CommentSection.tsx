@@ -4,6 +4,7 @@ import { Send, Trash2, Reply } from 'lucide-react';
 import { useComments } from '../../hooks/useComments';
 import { useAuth } from '../../contexts/AuthContext';
 import { timeAgo } from '../../utils/formatters';
+import { containsProfanity } from '../../utils/profanityFilter';
 import toast from 'react-hot-toast';
 
 interface CommentSectionProps {
@@ -35,6 +36,10 @@ export default function CommentSection({ listingId }: CommentSectionProps) {
 
   const handleSubmit = async () => {
     if (!text.trim() || submitting) return;
+    if (containsProfanity(text)) {
+      toast.error('Uygunsuz içerik tespit edildi, lütfen düzenleyin');
+      return;
+    }
     setSubmitting(true);
     const ok = await createComment({ listingId, text: text.trim() });
     if (ok) {
@@ -48,6 +53,10 @@ export default function CommentSection({ listingId }: CommentSectionProps) {
 
   const handleReply = async (parentId: string) => {
     if (!replyText.trim() || submitting) return;
+    if (containsProfanity(replyText)) {
+      toast.error('Uygunsuz içerik tespit edildi, lütfen düzenleyin');
+      return;
+    }
     setSubmitting(true);
     const ok = await createComment({ listingId, text: replyText.trim(), parentId });
     if (ok) {
@@ -69,8 +78,8 @@ export default function CommentSection({ listingId }: CommentSectionProps) {
     }
   };
 
-  const renderComment = (comment: typeof comments[0], isReply = false) => (
-    <div key={comment._id} className={isReply ? 'ml-8' : ''}>
+  const renderComment = (comment: typeof comments[0], depth = 0) => (
+    <div key={comment._id} style={{ marginLeft: depth * 32 }}>
       <div className="bg-[var(--bg-surface)] rounded-2xl p-4 shadow-sm">
         <div className="flex items-center gap-3 mb-2">
           <Link to={`/profil/${comment.userId}`} className="shrink-0">
@@ -93,7 +102,7 @@ export default function CommentSection({ listingId }: CommentSectionProps) {
         </div>
         <p className="text-sm text-[var(--text-primary)] leading-relaxed ml-11">{comment.text}</p>
         <div className="flex items-center gap-3 ml-11 mt-2">
-          {user && !isReply && (
+          {user && depth < 2 && (
             <button
               onClick={() => { setReplyTo(replyTo === comment._id ? null : comment._id); setReplyText(''); }}
               className="text-[10px] text-[#6B6560] hover:text-[#2D6A4F] flex items-center gap-1 transition-colors"
@@ -116,7 +125,7 @@ export default function CommentSection({ listingId }: CommentSectionProps) {
 
       {/* Inline reply form */}
       {replyTo === comment._id && (
-        <div className="ml-8 mt-2 flex gap-2">
+        <div className="mt-2 flex gap-2" style={{ marginLeft: 32 }}>
           <input
             value={replyText}
             onChange={e => setReplyText(e.target.value)}
@@ -135,7 +144,7 @@ export default function CommentSection({ listingId }: CommentSectionProps) {
       )}
 
       {/* Replies */}
-      {repliesMap[comment._id]?.map(reply => renderComment(reply, true))}
+      {repliesMap[comment._id]?.map(reply => renderComment(reply, depth + 1))}
     </div>
   );
 

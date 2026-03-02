@@ -5,6 +5,8 @@ import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import type { User } from '../../types';
+import { containsProfanity } from '../../utils/profanityFilter';
+import toast from 'react-hot-toast';
 
 interface ProfileEditFormProps {
   isOpen: boolean;
@@ -43,6 +45,10 @@ export default function ProfileEditForm({ isOpen, onClose, user, onSubmit }: Pro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (containsProfanity(name) || containsProfanity(bio)) {
+      toast.error('Uygunsuz içerik tespit edildi, lütfen düzenleyin');
+      return;
+    }
     setLoading(true);
     try {
       await onSubmit({ name, location, phone, profileImage, bio });

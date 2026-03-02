@@ -3,9 +3,11 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   setDoc,
   addDoc,
   updateDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -125,11 +127,30 @@ export const useMessages = () => {
     []
   );
 
+  const deleteConversation = useCallback(async (conversationId: string) => {
+    const messagesRef = collection(db, 'conversations', conversationId, 'messages');
+    const messagesSnap = await getDocs(messagesRef);
+    const batch = writeBatch(db);
+    messagesSnap.docs.forEach((d) => {
+      batch.delete(d.ref);
+    });
+    await batch.commit();
+    await deleteDoc(doc(db, 'conversations', conversationId));
+  }, []);
+
+  const deleteMultipleConversations = useCallback(async (ids: string[]) => {
+    for (const id of ids) {
+      await deleteConversation(id);
+    }
+  }, [deleteConversation]);
+
   return {
     getOrCreateConversation,
     sendMessage,
     subscribeToConversations,
     subscribeToMessages,
     markAsRead,
+    deleteConversation,
+    deleteMultipleConversations,
   };
 };

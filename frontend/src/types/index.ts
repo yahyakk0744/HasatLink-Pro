@@ -141,7 +141,7 @@ export interface Rating {
   _id: string;
   fromUserId: string;
   toUserId: string;
-  listingId: string;
+  listingId?: string;
   score: number;
   comment: string;
   fromUserName: string;

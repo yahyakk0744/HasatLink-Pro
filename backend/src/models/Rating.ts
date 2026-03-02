@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IRating extends Document {
   fromUserId: string;
   toUserId: string;
-  listingId: string;
+  listingId?: string;
   score: number;
   comment: string;
   fromUserName: string;
