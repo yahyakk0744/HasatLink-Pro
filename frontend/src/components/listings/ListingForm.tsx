@@ -200,7 +200,8 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         data.storageType = storageType;
         data.minOrderAmount = parseFloat(minOrderAmount) || 0;
       } else if (type === 'lojistik') {
-        data.isFrigo = isFrigo;
+        data.subCategory = vehicleType;
+        data.isFrigo = vehicleType === 'FRİGO KAMYON' ? true : isFrigo;
         data.vehicleType = vehicleType;
         data.capacity = parseFloat(capacity) || 0;
         data.routeFrom = routeFrom;
@@ -291,24 +292,26 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
           </div>
         </div>
 
-        {/* Sub Category */}
-        <div>
-          <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-2">{t('listing.subCategory')}</label>
-          <div className="flex gap-2 flex-wrap">
-            {subCategories.map(cat => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => { setSubCategory(cat); setTitle(''); }}
-                className={`px-3 py-1.5 text-[10px] font-medium uppercase rounded-full transition-all ${
-                  subCategory === cat ? 'bg-[#2D6A4F] text-white' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+        {/* Sub Category — hidden for lojistik (vehicle type serves as sub-category) */}
+        {type !== 'lojistik' && (
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-2">{t('listing.subCategory')}</label>
+            <div className="flex gap-2 flex-wrap">
+              {subCategories.map(cat => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => { setSubCategory(cat); setTitle(''); }}
+                  className={`px-3 py-1.5 text-[10px] font-medium uppercase rounded-full transition-all ${
+                    subCategory === cat ? 'bg-[#2D6A4F] text-white' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Product Selection — detailed subcategory for pazar */}
         {productOptions.length > 0 && (
@@ -353,7 +356,9 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
               </div>
             </div>
 
-            <Input label={t('listing.minOrder')} type="number" value={minOrderAmount} onChange={e => setMinOrderAmount(e.target.value)} />
+            {listingMode === 'sell' && (
+              <Input label={t('listing.minOrder')} type="number" value={minOrderAmount} onChange={e => setMinOrderAmount(e.target.value)} />
+            )}
 
             <div>
               <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">
@@ -387,7 +392,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
               <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">
                 {listingMode === 'buy' ? t('listing.neededVehicleType') : t('listing.vehicleType')}
               </label>
-              <SelectButtons options={VEHICLE_TYPES} value={vehicleType} onChange={setVehicleType} color="#0077B6" />
+              <SelectButtons options={VEHICLE_TYPES} value={vehicleType} onChange={(v) => { setVehicleType(v); if (v === 'FRİGO KAMYON') setIsFrigo(true); }} color="#0077B6" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -408,7 +413,9 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
             </div>
 
             <div className="flex items-center gap-6">
-              <CheckboxField label={t('listing.frigo')} checked={isFrigo} onChange={setIsFrigo} />
+              {vehicleType !== 'FRİGO KAMYON' && (
+                <CheckboxField label={t('listing.frigo')} checked={isFrigo} onChange={setIsFrigo} />
+              )}
               <CheckboxField label={t('listing.insurance')} checked={hasInsurance} onChange={setHasInsurance} />
             </div>
           </>
@@ -424,12 +431,14 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
               <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (₺ toplam)'} type="number" value={price} onChange={e => setPrice(e.target.value)} />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Input label={listingMode === 'buy' ? t('listing.neededWorkers') : t('listing.workerCount')} type="number" value={workerCount} onChange={e => setWorkerCount(e.target.value)} />
+            <CheckboxField label={t('listing.team')} checked={isTeam} onChange={(v) => { setIsTeam(v); if (!v) setWorkerCount('1'); }} />
+
+            <div className={`grid ${isTeam ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+              {isTeam && (
+                <Input label={listingMode === 'buy' ? t('listing.neededWorkers') : t('listing.workerCount')} type="number" value={workerCount} onChange={e => setWorkerCount(e.target.value)} />
+              )}
               <Input label={t('listing.experience')} type="number" value={experienceYears} onChange={e => setExperienceYears(e.target.value)} />
             </div>
-
-            <CheckboxField label={t('listing.team')} checked={isTeam} onChange={setIsTeam} />
 
             <div>
               <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">
@@ -543,20 +552,24 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Input label={t('listing.temperatureMin') + ' (°C)'} type="number" value={temperatureMin} onChange={e => setTemperatureMin(e.target.value)} />
-              <Input label={t('listing.temperatureMax') + ' (°C)'} type="number" value={temperatureMax} onChange={e => setTemperatureMax(e.target.value)} />
-            </div>
+            {subCategory === 'SOĞUK HAVA DEPOSU' && (
+              <div className="grid grid-cols-2 gap-3">
+                <Input label={t('listing.temperatureMin') + ' (°C)'} type="number" value={temperatureMin} onChange={e => setTemperatureMin(e.target.value)} />
+                <Input label={t('listing.temperatureMax') + ' (°C)'} type="number" value={temperatureMax} onChange={e => setTemperatureMax(e.target.value)} />
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.rentDuration')}</label>
               <SelectButtons options={RENT_DURATIONS_DEPO} value={rentDuration} onChange={setRentDuration} color="#0077B6" />
             </div>
 
-            <div className="flex items-center gap-6">
-              <CheckboxField label={t('listing.hasSecurity')} checked={hasSecurity} onChange={setHasSecurity} />
-              <CheckboxField label={t('listing.has24Access')} checked={has24Access} onChange={setHas24Access} />
-            </div>
+            {subCategory && subCategory !== 'AÇIK DEPO' && (
+              <div className="flex items-center gap-6">
+                <CheckboxField label={t('listing.hasSecurity')} checked={hasSecurity} onChange={setHasSecurity} />
+                <CheckboxField label={t('listing.has24Access')} checked={has24Access} onChange={setHas24Access} />
+              </div>
+            )}
           </>
         )}
 

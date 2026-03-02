@@ -14,7 +14,25 @@ export const PAZAR_SUBCATEGORIES: Record<string, string[]> = {
   TAHIL: ['Buğday', 'Arpa', 'Mısır', 'Çavdar', 'Yulaf', 'Pirinç', 'Darı', 'Tritikale', 'Sorgum'],
   PAMUK: ['Kütlü Pamuk', 'Lif Pamuk', 'Pamuk Tohumu', 'Çiğit'],
   GÜBRE: ['Üre', 'DAP', 'Amonyum Sülfat', 'Potasyum Sülfat', 'NPK', 'Kalsiyum Amonyum Nitrat', 'TSP', 'Organik Gübre', 'Sıvı Gübre'],
-  FİDE: ['Domates Fidesi', 'Biber Fidesi', 'Patlıcan Fidesi', 'Salatalık Fidesi', 'Kavun Fidesi', 'Karpuz Fidesi', 'Marul Fidesi', 'Çilek Fidesi', 'Meyve Fidanı', 'Zeytin Fidanı', 'Narenciye Fidanı', 'Ceviz Fidanı', 'Bağ Çubuğu'],
+  FİDE: [
+    'Domates Fidesi', 'Biber Fidesi', 'Patlıcan Fidesi', 'Salatalık Fidesi',
+    'Kavun Fidesi', 'Karpuz Fidesi', 'Marul Fidesi', 'Çilek Fidesi',
+    'Yaban Mersini Fidesi', 'Ahududu Fidesi', 'Böğürtlen Fidesi', 'Frambuaz Fidesi',
+    'Elma Fidanı', 'Armut Fidanı', 'Kiraz Fidanı', 'Şeftali Fidanı', 'Kayısı Fidanı',
+    'Vişne Fidanı', 'Erik Fidanı', 'Nar Fidanı', 'İncir Fidanı',
+    'Zeytin Fidanı', 'Narenciye Fidanı', 'Ceviz Fidanı', 'Badem Fidanı',
+    'Fındık Fidanı', 'Avokado Fidanı', 'Kivi Fidanı', 'Dut Fidanı',
+    'Bağ Çubuğu',
+  ],
+  TOHUM: [
+    'Buğday Tohumu', 'Arpa Tohumu', 'Mısır Tohumu', 'Ayçiçeği Tohumu',
+    'Pamuk Tohumu', 'Çeltik Tohumu', 'Sebze Tohumu', 'Çim Tohumu',
+    'Yonca Tohumu', 'Fiğ Tohumu', 'Korunga Tohumu', 'Sorgum Tohumu',
+  ],
+  BAKLİYAT: [
+    'Nohut', 'Kırmızı Mercimek', 'Yeşil Mercimek', 'Kuru Fasulye',
+    'Börülce', 'Bakla', 'Bezelye', 'Soya Fasulyesi', 'Barbunya', 'Maş Fasulyesi',
+  ],
 };
 
 export const CATEGORY_LABELS: Record<string, { tr: string; en: string; icon: string }> = {
