@@ -38,12 +38,12 @@ function StatCounter({ end, suffix, label, icon }: { end: number; suffix: string
   const { ref, inView } = useInView(0.3);
   const value = useCountUp(end, 2000, inView);
   return (
-    <div ref={ref} className="bg-[var(--bg-surface)] rounded-2xl p-5 shadow-sm border border-[var(--border-default)] text-center">
-      <div className="flex justify-center mb-2">{icon}</div>
-      <p className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
+    <div ref={ref} className="bg-[var(--bg-surface)] rounded-2xl p-3 md:p-5 shadow-sm border border-[var(--border-default)] text-center">
+      <div className="flex justify-center mb-1 md:mb-2">{icon}</div>
+      <p className="text-xl md:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
         {value.toLocaleString()}{suffix}
       </p>
-      <p className="text-xs font-medium text-[var(--text-secondary)] mt-1">{label}</p>
+      <p className="text-[10px] md:text-xs font-medium text-[var(--text-secondary)] mt-0.5 md:mt-1">{label}</p>
     </div>
   );
 }
@@ -149,7 +149,7 @@ export default function HomePage() {
       />
 
       {/* ─── 1. Hero Banner ─── */}
-      <section className="relative bg-gradient-to-b from-[#0A0A0A] via-[#111111] to-[#1A1A1A] text-white py-20 md:py-32 overflow-hidden">
+      <section className="relative bg-gradient-to-b from-[#0A0A0A] via-[#111111] to-[#1A1A1A] text-white py-12 md:py-32 overflow-hidden">
         {/* Ambient glow effects */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#2D6A4F]/8 rounded-full blur-[120px] animate-float-slow" />
@@ -170,7 +170,7 @@ export default function HomePage() {
 
           {/* Ana başlık */}
           <h1
-            className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-none mb-6 animate-slide-up"
+            className="text-4xl md:text-7xl lg:text-8xl font-black tracking-tight leading-none mb-4 md:mb-6 animate-slide-up"
             style={{ animationDelay: '80ms', animationFillMode: 'both' }}
           >
             <span className="bg-gradient-to-r from-white via-white to-white/60 bg-clip-text text-transparent">
@@ -183,7 +183,7 @@ export default function HomePage() {
 
           {/* Alt yazı */}
           <p
-            className="text-base md:text-lg text-white/50 mb-12 max-w-xl mx-auto leading-relaxed animate-slide-up"
+            className="text-sm md:text-lg text-white/50 mb-8 md:mb-12 max-w-xl mx-auto leading-relaxed animate-slide-up"
             style={{ animationDelay: '160ms', animationFillMode: 'both' }}
           >
             {lang === 'tr'
@@ -229,11 +229,11 @@ export default function HomePage() {
 
       {/* ─── 2. Category Grid with Lucide Icons ─── */}
       <AnimatedSection>
-        <section className="max-w-6xl mx-auto px-4 py-12">
-          <h2 className="text-2xl font-bold tracking-tight text-center mb-8">
+        <section className="max-w-6xl mx-auto px-3 md:px-4 py-8 md:py-12">
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-center mb-5 md:mb-8">
             {lang === 'tr' ? 'Kategoriler' : 'Categories'}
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
             {Object.entries(CATEGORY_LABELS).map(([key, cat]) => {
               const count = platformStats.categoryCounts[key] || 0;
               const color = CATEGORY_COLORS[key] || '#2D6A4F';
@@ -241,13 +241,13 @@ export default function HomePage() {
                 <Link
                   key={key}
                   to={`/${key}`}
-                  className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-6 shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-200 group text-center"
+                  className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl md:rounded-2xl p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-200 group text-center"
                 >
-                  <div className="flex justify-center mb-3" style={{ color }}>
+                  <div className="flex justify-center mb-1.5 md:mb-3 [&_svg]:w-5 [&_svg]:h-5 md:[&_svg]:w-7 md:[&_svg]:h-7" style={{ color }}>
                     {CATEGORY_ICONS[key]}
                   </div>
-                  <h3 className="text-sm font-semibold tracking-tight mb-1">{cat[lang]}</h3>
-                  <p className="text-xs text-[var(--text-secondary)]">
+                  <h3 className="text-[11px] md:text-sm font-semibold tracking-tight mb-0.5 md:mb-1">{cat[lang]}</h3>
+                  <p className="text-[10px] md:text-xs text-[var(--text-secondary)]">
                     {count} {lang === 'tr' ? 'ilan' : 'listings'}
                   </p>
                 </Link>
@@ -260,16 +260,16 @@ export default function HomePage() {
       {/* ─── 3. Tarım Rehberi (Blog) ─── */}
       {blogPosts.length > 0 && (
         <AnimatedSection>
-          <section className="max-w-6xl mx-auto px-4 py-12">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold tracking-tight">
+          <section className="max-w-6xl mx-auto px-3 md:px-4 py-8 md:py-12">
+            <div className="flex items-center justify-between mb-5 md:mb-8">
+              <h2 className="text-xl md:text-2xl font-bold tracking-tight">
                 {lang === 'tr' ? 'Tarım Rehberi' : 'Agriculture Guide'}
               </h2>
               <Link to="/blog" className="text-xs font-medium uppercase text-[#2D6A4F] flex items-center gap-1 hover:gap-2 transition-all">
                 {lang === 'tr' ? 'Tümünü Gör' : 'View All'} <ArrowRight size={12} />
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               {blogPosts.map(blog => (
                 <Link
                   key={blog._id}
@@ -304,10 +304,10 @@ export default function HomePage() {
 
       {/* ─── 6. Weather + Hal Fiyatları + HasatLink Pazarı ─── */}
       <AnimatedSection>
-        <section className="max-w-7xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <section className="max-w-7xl mx-auto px-3 md:px-4 py-6 md:py-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
             {/* Hava Durumu */}
-            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-4 shadow-sm">
+            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-3 md:p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <Cloud size={14} className="text-[#0077B6]" />
                 <h3 className="text-xs font-semibold tracking-tight">{t('weather.title')}</h3>
@@ -333,8 +333,8 @@ export default function HomePage() {
             </div>
 
             {/* Hal Fiyatları */}
-            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-3 md:p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-3 md:mb-4">
                 <div className="flex items-center gap-2">
                   <BarChart3 size={16} className="text-[#2D6A4F]" />
                   <h3 className="text-sm font-semibold tracking-tight">
@@ -385,8 +385,8 @@ export default function HomePage() {
             </div>
 
             {/* HasatLink Pazarı */}
-            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-3 md:p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-3 md:mb-4">
                 <div className="flex items-center gap-2">
                   <ShoppingBag size={16} className="text-[#A47148]" />
                   <h3 className="text-sm font-semibold tracking-tight">
@@ -442,9 +442,9 @@ export default function HomePage() {
 
       {/* ─── 6. Featured Listings ─── */}
       <AnimatedSection>
-        <section className="max-w-7xl mx-auto px-4 py-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold tracking-tight">{lang === 'tr' ? 'Öne Çıkan İlanlar' : 'Featured Listings'}</h2>
+        <section className="max-w-7xl mx-auto px-3 md:px-4 py-8 md:py-12">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h2 className="text-xl md:text-2xl font-semibold tracking-tight">{lang === 'tr' ? 'Öne Çıkan İlanlar' : 'Featured Listings'}</h2>
             <Link to="/pazar" className="text-xs font-medium uppercase text-[#2D6A4F] flex items-center gap-1 hover:gap-2 transition-all">
               {t('all')} <ArrowRight size={12} />
             </Link>
@@ -481,8 +481,8 @@ export default function HomePage() {
 
       {/* ─── 7. AI + Map Section ─── */}
       <AnimatedSection>
-        <section className="max-w-7xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section className="max-w-7xl mx-auto px-3 md:px-4 py-6 md:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <AIDiagnosisPanel />
             <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[2.5rem] p-4 shadow-sm overflow-hidden">
               <div className="flex items-center gap-2 mb-3 px-2">
@@ -502,42 +502,42 @@ export default function HomePage() {
 
       {/* ─── 8. Nasıl Çalışır (How It Works) ─── */}
       <AnimatedSection>
-        <section className="max-w-4xl mx-auto px-4 py-12">
-          <h2 className="text-2xl font-bold tracking-tight text-center mb-10">
+        <section className="max-w-4xl mx-auto px-3 md:px-4 py-8 md:py-12">
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-center mb-6 md:mb-10">
             {lang === 'tr' ? 'Nasıl Çalışır?' : 'How It Works?'}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          <div className="grid grid-cols-3 gap-3 md:gap-8 relative">
             <div className="hidden md:block absolute top-12 left-[16.67%] right-[16.67%] h-0.5 bg-[#2D6A4F]/20" />
             {[
               {
-                icon: <UserPlus size={28} />,
+                icon: <UserPlus className="w-4 h-4 md:w-7 md:h-7" />,
                 title: lang === 'tr' ? 'Ücretsiz Kayıt Ol' : 'Sign Up Free',
                 desc: lang === 'tr' ? 'Hızlıca hesap oluşturun ve platforma katılın.' : 'Quickly create an account and join the platform.',
               },
               {
-                icon: <Search size={28} />,
+                icon: <Search className="w-4 h-4 md:w-7 md:h-7" />,
                 title: lang === 'tr' ? 'İlan Ver veya Ara' : 'Post or Search',
                 desc: lang === 'tr' ? 'Ürün, hizmet veya ekipman ilanı verin ya da arayın.' : 'Post or search for products, services, or equipment.',
               },
               {
-                icon: <MessageCircle size={28} />,
+                icon: <MessageCircle className="w-4 h-4 md:w-7 md:h-7" />,
                 title: lang === 'tr' ? 'Doğrudan İletişime Geç' : 'Contact Directly',
                 desc: lang === 'tr' ? 'Alıcı ve satıcılarla doğrudan bağlantı kurun.' : 'Connect directly with buyers and sellers.',
               },
             ].map((step, i) => (
               <div key={i} className="text-center relative">
-                <div className="w-16 h-16 rounded-full bg-[#2D6A4F] text-white flex items-center justify-center mx-auto mb-4 relative z-10">
-                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#A47148] text-white text-xs font-bold flex items-center justify-center">
+                <div className="w-9 h-9 md:w-16 md:h-16 rounded-full bg-[#2D6A4F] text-white flex items-center justify-center mx-auto mb-2 md:mb-4 relative z-10">
+                  <span className="absolute -top-1 -right-1 md:-top-2 md:-right-2 w-4 h-4 md:w-6 md:h-6 rounded-full bg-[#A47148] text-white text-[8px] md:text-xs font-bold flex items-center justify-center">
                     {i + 1}
                   </span>
                   {step.icon}
                 </div>
-                <h3 className="text-base font-semibold mb-2">{step.title}</h3>
-                <p className="text-sm text-[var(--text-secondary)]">{step.desc}</p>
+                <h3 className="text-[11px] md:text-base font-semibold mb-0.5 md:mb-2 leading-tight">{step.title}</h3>
+                <p className="text-[9px] md:text-sm text-[var(--text-secondary)] leading-snug hidden xs:block md:block">{step.desc}</p>
               </div>
             ))}
           </div>
-          <p className="text-center text-xs text-[var(--text-secondary)] mt-8">
+          <p className="text-center text-[10px] md:text-xs text-[var(--text-secondary)] mt-5 md:mt-8">
             {lang === 'tr'
               ? 'HasatLink alım-satım sürecine dahil olmaz, yalnızca kullanıcıları buluşturur.'
               : 'HasatLink does not participate in transactions, it only connects users.'}
@@ -547,8 +547,8 @@ export default function HomePage() {
 
       {/* ─── 9. Trust Badges (Stats Row) ─── */}
       <AnimatedSection>
-        <section className="max-w-5xl mx-auto px-4 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <section className="max-w-5xl mx-auto px-3 md:px-4 py-8 md:py-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
             <StatCounter
               end={platformStats.activeListings}
               suffix=""
