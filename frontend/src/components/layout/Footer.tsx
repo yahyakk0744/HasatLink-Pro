@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Download } from 'lucide-react';
 import api from '../../config/api';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 /* ---- Social SVG Icons ---- */
 function FacebookIcon() {
@@ -73,8 +74,7 @@ export default function Footer() {
   const isTr = i18n.language?.startsWith('tr');
   const year = new Date().getFullYear();
   const [socials, setSocials] = useState<Socials>({ facebookUrl: '', instagramUrl: '', twitterUrl: '', linkedinUrl: '', youtubeUrl: '' });
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isStandalone, setIsStandalone] = useState(false);
+  const { canInstall, isInstalled, promptInstall } = usePWAInstall();
 
   useEffect(() => {
     api.get('/settings').then(({ data }) => setSocials({
@@ -84,19 +84,7 @@ export default function Footer() {
       linkedinUrl: data.linkedinUrl || '',
       youtubeUrl: data.youtubeUrl || '',
     })).catch(() => {});
-
-    const standalone = window.matchMedia('(display-mode: standalone)').matches
-      || (navigator as any).standalone === true;
-    setIsStandalone(standalone);
-
-    const handler = (e: Event) => { e.preventDefault(); setDeferredPrompt(e); };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
-
-  const handleInstallPWA = async () => {
-    if (deferredPrompt) { await deferredPrompt.prompt(); setDeferredPrompt(null); }
-  };
 
   const hasSocials = socials.facebookUrl || socials.instagramUrl || socials.twitterUrl || socials.linkedinUrl || socials.youtubeUrl;
 
@@ -166,14 +154,14 @@ export default function Footer() {
           </AccordionSection>
 
           {/* PWA install — single row */}
-          {!isStandalone && (
+          {!isInstalled && (
             <div className="flex items-center gap-3 mt-4 py-3 px-3 bg-white/5 rounded-xl">
               <Download size={16} className="text-[#2D6A4F] shrink-0" />
               <p className="flex-1 text-[11px] text-white/60 leading-tight">
                 {isTr ? 'Ana ekrana ekle' : 'Add to home screen'}
               </p>
               <button
-                onClick={handleInstallPWA}
+                onClick={promptInstall}
                 className="px-3 py-1.5 bg-[#2D6A4F] text-white text-[10px] font-semibold uppercase rounded-lg hover:bg-[#1B4332] transition-colors shrink-0"
               >
                 {isTr ? 'Yükle' : 'Install'}
@@ -261,7 +249,7 @@ export default function Footer() {
           </div>
 
           {/* Desktop PWA install */}
-          {!isStandalone && (
+          {!isInstalled && (
             <div className="border-t border-white/10 mt-8 pt-8">
               <div className="flex items-center gap-6 bg-gradient-to-r from-[#2D6A4F]/20 to-[#1B4332]/20 border border-[#2D6A4F]/30 rounded-2xl p-6">
                 <div className="w-12 h-12 bg-[#2D6A4F] rounded-xl flex items-center justify-center shrink-0">
@@ -276,7 +264,7 @@ export default function Footer() {
                   </p>
                 </div>
                 <button
-                  onClick={handleInstallPWA}
+                  onClick={promptInstall}
                   className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#1A1A1A] rounded-xl font-semibold text-sm hover:bg-white/90 transition-colors"
                 >
                   <Download size={16} />

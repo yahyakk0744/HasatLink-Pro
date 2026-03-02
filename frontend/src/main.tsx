@@ -9,6 +9,7 @@ import { NotificationProvider } from './contexts/NotificationContext.tsx'
 import { MessageProvider } from './contexts/MessageContext.tsx'
 import { SocketProvider } from './contexts/SocketContext.tsx'
 import { LocationProvider } from './contexts/LocationContext.tsx'
+import './utils/pwaInstallManager'
 import './index.css'
 import './i18n/config'
 import { initGA } from './utils/analytics'
@@ -37,7 +38,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 // Service Worker registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.warn('SW registration failed:', err);
+    });
   });
 }
 

@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Download, Share } from 'lucide-react';
 import IOSInstallGuide from './IOSInstallGuide';
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 const DISMISSED_KEY = 'hasatlink_pwa_dismissed';
 
@@ -14,43 +10,28 @@ function isMobileDevice(): boolean {
 }
 
 export default function PWAInstallPrompt() {
+  const { canInstall, isInstalled, promptInstall } = usePWAInstall();
   const [show, setShow] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isStandalone, setIsStandalone] = useState(false);
   const [showInstallGuide, setShowInstallGuide] = useState(false);
 
   useEffect(() => {
-    const standalone = window.matchMedia('(display-mode: standalone)').matches
-      || (navigator as any).standalone === true;
-    setIsStandalone(standalone);
-
+    if (isInstalled) return;
     const dismissed = localStorage.getItem(DISMISSED_KEY);
-    if (dismissed === 'forever' || standalone) return;
-
+    if (dismissed === 'forever') return;
     if (!isMobileDevice()) return;
 
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShow(true);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-
-    // Show banner after delay for all mobile devices
+    // Show banner after short delay for mobile devices
     const timer = setTimeout(() => setShow(true), 2000);
-
-    return () => { clearTimeout(timer); window.removeEventListener('beforeinstallprompt', handler); };
-  }, []);
+    return () => clearTimeout(timer);
+  }, [isInstalled]);
 
   const handleInstall = async () => {
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      setDeferredPrompt(null);
+    if (canInstall) {
+      await promptInstall();
       setShow(false);
       return;
     }
-    // No native prompt available — show "Add to Home Screen" guide
+    // No native prompt — show manual "Add to Home Screen" guide (iOS etc.)
     setShow(false);
     setShowInstallGuide(true);
   };
@@ -60,7 +41,7 @@ export default function PWAInstallPrompt() {
     setShow(false);
   };
 
-  if (!show || isStandalone) return <IOSInstallGuide isOpen={showInstallGuide} onClose={() => setShowInstallGuide(false)} />;
+  if (!show || isInstalled) return <IOSInstallGuide isOpen={showInstallGuide} onClose={() => setShowInstallGuide(false)} />;
 
   return (
     <>
@@ -76,7 +57,7 @@ export default function PWAInstallPrompt() {
               onClick={handleInstall}
               className="px-4 py-1.5 bg-[#2D6A4F] text-white text-xs font-bold rounded-lg hover:bg-[#1B4332] transition-colors shrink-0"
             >
-              {deferredPrompt ? (
+              {canInstall ? (
                 <><Download size={12} className="inline mr-1 -mt-0.5" />Yükle</>
               ) : (
                 <><Share size={12} className="inline mr-1 -mt-0.5" />Nasıl?</>

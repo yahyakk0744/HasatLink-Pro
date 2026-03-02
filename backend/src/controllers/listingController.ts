@@ -4,6 +4,8 @@ import Listing from '../models/Listing';
 import User from '../models/User';
 import AIDiagnosis from '../models/AIDiagnosis';
 import Comment from '../models/Comment';
+import ListingView from '../models/ListingView';
+import ListingShare from '../models/ListingShare';
 import { checkFieldsForProfanity } from '../utils/profanityFilter';
 import ProfanityLog from '../models/ProfanityLog';
 
@@ -66,8 +68,17 @@ export const getListing = async (req: Request, res: Response): Promise<void> => 
       res.status(404).json({ message: 'İlan bulunamadı' });
       return;
     }
-    listing.stats.views += 1;
-    await listing.save();
+
+    const identifier = (req as AuthRequest).userId || req.ip || 'unknown';
+    try {
+      await ListingView.create({ listingId: listing._id.toString(), identifier });
+      listing.stats.views += 1;
+      await listing.save();
+    } catch (err: any) {
+      if (err?.code !== 11000) throw err;
+      // Duplicate view — skip increment
+    }
+
     res.json(listing);
   } catch (error) {
     res.status(500).json({ message: 'İlan detay hatası', error });
@@ -144,8 +155,18 @@ export const waClick = async (req: Request, res: Response): Promise<void> => {
 
 export const shareListing = async (req: Request, res: Response): Promise<void> => {
   try {
-    await Listing.findByIdAndUpdate(req.params.id, { $inc: { 'stats.shares': 1 } });
-    res.json({ success: true });
+    const userId = (req as AuthRequest).userId!;
+    try {
+      await new ListingShare({ listingId: req.params.id, userId }).save();
+      await Listing.findByIdAndUpdate(req.params.id, { $inc: { 'stats.shares': 1 } });
+      res.json({ success: true });
+    } catch (err: any) {
+      if (err?.code === 11000) {
+        res.json({ success: true, alreadyShared: true });
+      } else {
+        throw err;
+      }
+    }
   } catch (error) {
     res.status(500).json({ message: 'Hata', error });
   }

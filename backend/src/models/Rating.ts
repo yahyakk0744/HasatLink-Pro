@@ -23,5 +23,6 @@ const RatingSchema = new Schema<IRating>({
 });
 
 RatingSchema.index({ toUserId: 1 });
+RatingSchema.index({ fromUserId: 1, toUserId: 1 }, { unique: true });
 
 export default mongoose.model<IRating>('Rating', RatingSchema);

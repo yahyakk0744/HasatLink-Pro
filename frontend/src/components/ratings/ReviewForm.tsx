@@ -23,10 +23,10 @@ export default function ReviewForm({ fromUserId, toUserId, listingId, onSuccess 
     e.preventDefault();
     if (score === 0) return;
     setLoading(true);
-    const success = await createRating({ fromUserId, toUserId, listingId, score, comment });
+    const result = await createRating({ fromUserId, toUserId, listingId, score, comment });
     setLoading(false);
-    if (success) {
-      toast.success(t('success'));
+    if (result.success) {
+      toast.success(result.updated ? t('rating.updated') : t('success'));
       setScore(0);
       setComment('');
       onSuccess?.();

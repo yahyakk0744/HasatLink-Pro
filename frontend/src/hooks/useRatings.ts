@@ -14,11 +14,11 @@ export const useRatings = () => {
     } catch {} finally { setLoading(false); }
   }, []);
 
-  const createRating = useCallback(async (rating: Partial<Rating>): Promise<boolean> => {
+  const createRating = useCallback(async (rating: Partial<Rating>): Promise<{ success: boolean; updated?: boolean }> => {
     try {
-      await api.post('/ratings', rating);
-      return true;
-    } catch { return false; }
+      const { data } = await api.post('/ratings', rating);
+      return { success: true, updated: data.updated || false };
+    } catch { return { success: false }; }
   }, []);
 
   return { ratings, loading, fetchRatings, createRating };
