@@ -227,39 +227,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── 2. Trust Badges (Stats Row) ─── */}
-      <AnimatedSection>
-        <section className="max-w-5xl mx-auto px-4 -mt-8 relative z-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCounter
-              end={platformStats.activeListings}
-              suffix=""
-              label={lang === 'tr' ? 'Toplam İlan' : 'Total Listings'}
-              icon={<Layers size={22} className="text-[#2D6A4F]" />}
-            />
-            <StatCounter
-              end={platformStats.registeredUsers}
-              suffix=""
-              label={lang === 'tr' ? 'Kayıtlı Kullanıcı' : 'Registered Users'}
-              icon={<Users size={22} className="text-[#0077B6]" />}
-            />
-            <StatCounter
-              end={platformStats.cities}
-              suffix=""
-              label={lang === 'tr' ? 'Aktif Şehir' : 'Active Cities'}
-              icon={<Building2 size={22} className="text-[#A47148]" />}
-            />
-            <StatCounter
-              end={6}
-              suffix=""
-              label={lang === 'tr' ? 'Kategori' : 'Categories'}
-              icon={<BarChart3 size={22} className="text-[#52796F]" />}
-            />
-          </div>
-        </section>
-      </AnimatedSection>
-
-      {/* ─── 3. Category Grid with Lucide Icons ─── */}
+      {/* ─── 2. Category Grid with Lucide Icons ─── */}
       <AnimatedSection>
         <section className="max-w-6xl mx-auto px-4 py-12">
           <h2 className="text-2xl font-bold tracking-tight text-center mb-8">
@@ -289,54 +257,7 @@ export default function HomePage() {
         </section>
       </AnimatedSection>
 
-      {/* ─── 4. Nasıl Çalışır (How It Works) ─── */}
-      <AnimatedSection>
-        <section className="max-w-4xl mx-auto px-4 py-12">
-          <h2 className="text-2xl font-bold tracking-tight text-center mb-10">
-            {lang === 'tr' ? 'Nasıl Çalışır?' : 'How It Works?'}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* Connecting line (desktop only) */}
-            <div className="hidden md:block absolute top-12 left-[16.67%] right-[16.67%] h-0.5 bg-[#2D6A4F]/20" />
-
-            {[
-              {
-                icon: <UserPlus size={28} />,
-                title: lang === 'tr' ? 'Ücretsiz Kayıt Ol' : 'Sign Up Free',
-                desc: lang === 'tr' ? 'Hızlıca hesap oluşturun ve platforma katılın.' : 'Quickly create an account and join the platform.',
-              },
-              {
-                icon: <Search size={28} />,
-                title: lang === 'tr' ? 'İlan Ver veya Ara' : 'Post or Search',
-                desc: lang === 'tr' ? 'Ürün, hizmet veya ekipman ilanı verin ya da arayın.' : 'Post or search for products, services, or equipment.',
-              },
-              {
-                icon: <MessageCircle size={28} />,
-                title: lang === 'tr' ? 'Doğrudan İletişime Geç' : 'Contact Directly',
-                desc: lang === 'tr' ? 'Alıcı ve satıcılarla doğrudan bağlantı kurun.' : 'Connect directly with buyers and sellers.',
-              },
-            ].map((step, i) => (
-              <div key={i} className="text-center relative">
-                <div className="w-16 h-16 rounded-full bg-[#2D6A4F] text-white flex items-center justify-center mx-auto mb-4 relative z-10">
-                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#A47148] text-white text-xs font-bold flex items-center justify-center">
-                    {i + 1}
-                  </span>
-                  {step.icon}
-                </div>
-                <h3 className="text-base font-semibold mb-2">{step.title}</h3>
-                <p className="text-sm text-[var(--text-secondary)]">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-          <p className="text-center text-xs text-[var(--text-secondary)] mt-8">
-            {lang === 'tr'
-              ? 'HasatLink alım-satım sürecine dahil olmaz, yalnızca kullanıcıları buluşturur.'
-              : 'HasatLink does not participate in transactions, it only connects users.'}
-          </p>
-        </section>
-      </AnimatedSection>
-
-      {/* ─── 5. Tarım Rehberi (Blog) ─── */}
+      {/* ─── 3. Tarım Rehberi (Blog) ─── */}
       {blogPosts.length > 0 && (
         <AnimatedSection>
           <section className="max-w-6xl mx-auto px-4 py-12">
@@ -575,6 +496,83 @@ export default function HomePage() {
                 <ListingMap listings={listings} />
               </div>
             </div>
+          </div>
+        </section>
+      </AnimatedSection>
+
+      {/* ─── 8. Nasıl Çalışır (How It Works) ─── */}
+      <AnimatedSection>
+        <section className="max-w-4xl mx-auto px-4 py-12">
+          <h2 className="text-2xl font-bold tracking-tight text-center mb-10">
+            {lang === 'tr' ? 'Nasıl Çalışır?' : 'How It Works?'}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            <div className="hidden md:block absolute top-12 left-[16.67%] right-[16.67%] h-0.5 bg-[#2D6A4F]/20" />
+            {[
+              {
+                icon: <UserPlus size={28} />,
+                title: lang === 'tr' ? 'Ücretsiz Kayıt Ol' : 'Sign Up Free',
+                desc: lang === 'tr' ? 'Hızlıca hesap oluşturun ve platforma katılın.' : 'Quickly create an account and join the platform.',
+              },
+              {
+                icon: <Search size={28} />,
+                title: lang === 'tr' ? 'İlan Ver veya Ara' : 'Post or Search',
+                desc: lang === 'tr' ? 'Ürün, hizmet veya ekipman ilanı verin ya da arayın.' : 'Post or search for products, services, or equipment.',
+              },
+              {
+                icon: <MessageCircle size={28} />,
+                title: lang === 'tr' ? 'Doğrudan İletişime Geç' : 'Contact Directly',
+                desc: lang === 'tr' ? 'Alıcı ve satıcılarla doğrudan bağlantı kurun.' : 'Connect directly with buyers and sellers.',
+              },
+            ].map((step, i) => (
+              <div key={i} className="text-center relative">
+                <div className="w-16 h-16 rounded-full bg-[#2D6A4F] text-white flex items-center justify-center mx-auto mb-4 relative z-10">
+                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#A47148] text-white text-xs font-bold flex items-center justify-center">
+                    {i + 1}
+                  </span>
+                  {step.icon}
+                </div>
+                <h3 className="text-base font-semibold mb-2">{step.title}</h3>
+                <p className="text-sm text-[var(--text-secondary)]">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs text-[var(--text-secondary)] mt-8">
+            {lang === 'tr'
+              ? 'HasatLink alım-satım sürecine dahil olmaz, yalnızca kullanıcıları buluşturur.'
+              : 'HasatLink does not participate in transactions, it only connects users.'}
+          </p>
+        </section>
+      </AnimatedSection>
+
+      {/* ─── 9. Trust Badges (Stats Row) ─── */}
+      <AnimatedSection>
+        <section className="max-w-5xl mx-auto px-4 py-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatCounter
+              end={platformStats.activeListings}
+              suffix=""
+              label={lang === 'tr' ? 'Toplam İlan' : 'Total Listings'}
+              icon={<Layers size={22} className="text-[#2D6A4F]" />}
+            />
+            <StatCounter
+              end={platformStats.registeredUsers}
+              suffix=""
+              label={lang === 'tr' ? 'Kayıtlı Kullanıcı' : 'Registered Users'}
+              icon={<Users size={22} className="text-[#0077B6]" />}
+            />
+            <StatCounter
+              end={platformStats.cities}
+              suffix=""
+              label={lang === 'tr' ? 'Aktif Şehir' : 'Active Cities'}
+              icon={<Building2 size={22} className="text-[#A47148]" />}
+            />
+            <StatCounter
+              end={6}
+              suffix=""
+              label={lang === 'tr' ? 'Kategori' : 'Categories'}
+              icon={<BarChart3 size={22} className="text-[#52796F]" />}
+            />
           </div>
         </section>
       </AnimatedSection>
