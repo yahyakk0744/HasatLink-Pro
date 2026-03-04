@@ -1,16 +1,36 @@
 import { useState } from 'react';
-import { Download, Smartphone, Zap, Bell, Wifi } from 'lucide-react';
+import { Download, Smartphone, Zap, Bell, Wifi, ExternalLink } from 'lucide-react';
 import IOSInstallGuide from '../ui/IOSInstallGuide';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
+
+function isInAppBrowser(): boolean {
+  const ua = navigator.userAgent || navigator.vendor || '';
+  return /Instagram|FBAN|FBAV|Line\/|Twitter|Snapchat|BytedanceWebview|Musical_ly/i.test(ua);
+}
+
+function openInExternalBrowser() {
+  const url = window.location.href;
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  if (isAndroid) {
+    window.location.href = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
+  } else {
+    window.open(url, '_system') || window.open(url, '_blank');
+  }
+}
 
 export default function MobileAppDownload() {
   const { canInstall, isInstalled, promptInstall } = usePWAInstall();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const inApp = isInAppBrowser();
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   const handleInstall = async () => {
+    if (inApp) {
+      openInExternalBrowser();
+      return;
+    }
     if (isIOS) {
       setShowIOSGuide(true);
       return;
@@ -68,14 +88,29 @@ export default function MobileAppDownload() {
             </div>
           </div>
 
-          {/* Install button */}
-          <button
-            onClick={handleInstall}
-            className="w-full flex items-center justify-center gap-3 py-4 bg-white text-[#1B4332] text-base font-bold rounded-2xl active:scale-[0.98] transition-transform shadow-xl relative"
-          >
-            <Download size={20} />
-            Şimdi İndir
-          </button>
+          {/* Install / Open in browser button */}
+          {inApp ? (
+            <>
+              <p className="text-white/70 text-xs text-center mb-3">
+                Uygulamayı yüklemek için önce tarayıcınızda açın
+              </p>
+              <button
+                onClick={openInExternalBrowser}
+                className="w-full flex items-center justify-center gap-3 py-4 bg-white text-[#1B4332] text-base font-bold rounded-2xl active:scale-[0.98] transition-transform shadow-xl relative"
+              >
+                <ExternalLink size={20} />
+                Tarayıcıda Aç
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleInstall}
+              className="w-full flex items-center justify-center gap-3 py-4 bg-white text-[#1B4332] text-base font-bold rounded-2xl active:scale-[0.98] transition-transform shadow-xl relative"
+            >
+              <Download size={20} />
+              Şimdi İndir
+            </button>
+          )}
 
           {/* Sub text */}
           <p className="text-center text-[10px] text-white/40 mt-3">
