@@ -1,5 +1,6 @@
 import express from 'express';
 import { createServer } from 'http';
+import path from 'path';
 import cors from 'cors';
 import compression from 'compression';
 import dotenv from 'dotenv';
@@ -21,6 +22,7 @@ import adminRoutes from './routes/adminRoutes';
 import commentRoutes from './routes/commentRoutes';
 import blogRoutes from './routes/blogRoutes';
 import dealerRoutes from './routes/dealerRoutes';
+import shareRoutes from './routes/shareRoutes';
 import { expireOutdatedDealers } from './controllers/dealerController';
 
 dotenv.config();
@@ -44,6 +46,7 @@ app.use(cors({
 }));
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Rate limiting (in-memory, endpoint-aware)
 import { rateLimit } from './middleware/rateLimit';
@@ -86,6 +89,7 @@ app.use('/api', adminRoutes);
 app.use('/api', commentRoutes);
 app.use('/api', blogRoutes);
 app.use('/api', dealerRoutes);
+app.use('/api', shareRoutes);
 
 // VAPID public key endpoint
 app.get('/api/push/vapid-key', (_req, res) => {

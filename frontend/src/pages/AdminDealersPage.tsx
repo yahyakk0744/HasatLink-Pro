@@ -41,6 +41,7 @@ const emptyDealer = (): Partial<Dealer> => ({
   coverImage: '',
   description: '',
   specialization_tags: [],
+  target_regions: [],
   ad_status: 'pending',
   is_premium_partner: false,
   start_date: new Date().toISOString().slice(0, 10),
@@ -100,7 +101,9 @@ export default function AdminDealersPage() {
       return;
     }
     const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
-    const payload = { ...form, specialization_tags: tags };
+    const regions = ((form as any).target_regions || []) as string[];
+    const payload = { ...form, specialization_tags: tags, target_regions: regions };
+    delete (payload as any).target_regions_input;
 
     try {
       if (editingId) {
@@ -263,6 +266,17 @@ export default function AdminDealersPage() {
                 </div>
               )}
 
+              {/* Target Regions */}
+              {dealer.target_regions?.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {dealer.target_regions.map((region: string, i: number) => (
+                    <span key={i} className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[11px] font-medium flex items-center gap-0.5">
+                      <MapPin size={10} /> {region}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               {/* Stats */}
               <div className="flex items-center gap-4 text-[12px] text-gray-500 mb-3">
                 <span className="flex items-center gap-1"><Eye size={13} /> {dealer.impressionCount}</span>
@@ -372,6 +386,22 @@ export default function AdminDealersPage() {
             onChange={e => setTagsInput(e.target.value)}
             placeholder="Zeytin, Narenciye, Tahıl..."
           />
+          {/* Target Regions */}
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">
+              {isTr ? 'Hedef Bolgeler (virgülle ayır)' : 'Target Regions (comma separated)'}
+            </label>
+            <input
+              type="text"
+              value={(form as any).target_regions_input || (form as any).target_regions?.join(', ') || ''}
+              onChange={e => setForm(f => ({ ...f, target_regions_input: e.target.value, target_regions: e.target.value.split(',').map((r: string) => r.trim()).filter(Boolean) } as any))}
+              placeholder="Istanbul, Ankara, Izmir, Antalya..."
+              className="w-full px-4 py-3 bg-[var(--bg-input)] border border-transparent rounded-2xl text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent-green)] focus:ring-4 focus:ring-[var(--focus-ring)] transition-all"
+            />
+            <p className="text-[10px] text-[var(--text-tertiary)] mt-1">
+              {isTr ? 'Boş bırakılırsa tüm bölgelerde gösterilir' : 'Leave empty to show in all regions'}
+            </p>
+          </div>
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
               {isTr ? 'Reklam Durumu' : 'Ad Status'}

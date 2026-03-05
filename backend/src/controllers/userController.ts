@@ -244,3 +244,55 @@ export const updateAccount = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ message: 'Hesap güncelleme hatası', error });
   }
 };
+
+// ─── Toggle Favorite ───
+export const toggleFavorite = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).userId;
+    const { listingId } = req.body;
+
+    if (!listingId) {
+      res.status(400).json({ message: 'listingId gerekli' });
+      return;
+    }
+
+    const user = await User.findOne({ userId });
+    if (!user) {
+      res.status(404).json({ message: 'Kullanici bulunamadi' });
+      return;
+    }
+
+    const index = user.favorites.indexOf(listingId);
+    if (index > -1) {
+      user.favorites.splice(index, 1);
+    } else {
+      user.favorites.push(listingId);
+    }
+    await user.save();
+
+    // Emit socket event
+    const { getIO } = require('../socket');
+    try {
+      getIO().to(`user:${userId}`).emit('favorite:toggle', {
+        listingId,
+        isFavorited: index === -1,
+        totalFavorites: user.favorites.length,
+      });
+    } catch {}
+
+    res.json({ favorites: user.favorites, isFavorited: index === -1 });
+  } catch (error) {
+    res.status(500).json({ message: 'Favori guncellenemedi', error });
+  }
+};
+
+// ─── Get Favorites ───
+export const getFavorites = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).userId;
+    const user = await User.findOne({ userId }).select('favorites');
+    res.json({ favorites: user?.favorites || [] });
+  } catch (error) {
+    res.status(500).json({ message: 'Favoriler alinamadi', error });
+  }
+};

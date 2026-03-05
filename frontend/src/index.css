@@ -468,3 +468,27 @@ html {
 .bg-accent-orange { background: var(--accent-orange-bg); }
 .bg-accent-blue { background: var(--accent-blue-bg); }
 .bg-accent-red { background: var(--accent-red-bg); }
+
+/* ═══════════════════════════════════
+   APPLE-STYLE MICRO ANIMATIONS
+   ═══════════════════════════════════ */
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+.animate-heart {
+  animation: heart-pop 0.4s ease-out;
+}

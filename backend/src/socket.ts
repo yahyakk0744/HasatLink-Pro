@@ -99,6 +99,34 @@ export function initSocket(httpServer: HttpServer) {
       callback(ids);
     });
 
+    // Favorite toggle notification to listing owner
+    socket.on('favorite:new', (data: { listingId: string; ownerId: string; userName: string }) => {
+      if (data.ownerId && data.ownerId !== userId) {
+        io.to(`user:${data.ownerId}`).emit('notification:favorite', {
+          listingId: data.listingId,
+          userName: data.userName,
+          type: 'new_favorite',
+        });
+      }
+    });
+
+    // View count update broadcast
+    socket.on('listing:view', (data: { listingId: string; viewCount: number }) => {
+      io.emit('listing:view_update', data);
+    });
+
+    // New rating notification
+    socket.on('rating:new', (data: { toUserId: string; fromUserName: string; score: number; listingId?: string }) => {
+      if (data.toUserId && data.toUserId !== userId) {
+        io.to(`user:${data.toUserId}`).emit('notification:rating', {
+          fromUserName: data.fromUserName,
+          score: data.score,
+          listingId: data.listingId,
+          type: 'new_rating',
+        });
+      }
+    });
+
     // Disconnect
     socket.on('disconnect', () => {
       if (userId) {

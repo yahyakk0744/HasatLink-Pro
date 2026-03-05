@@ -20,6 +20,7 @@ export interface IDealer extends Document {
   commission_rate: number;
   website: string;
   google_maps_url: string;
+  target_regions: string[];
   impressionCount: number;
   clickCount: number;
   contactCount: number;
@@ -53,6 +54,7 @@ const DealerSchema = new Schema<IDealer>({
   commission_rate: { type: Number, default: 0 },
   website: { type: String, default: '' },
   google_maps_url: { type: String, default: '' },
+  target_regions: [{ type: String }],
   impressionCount: { type: Number, default: 0 },
   clickCount: { type: Number, default: 0 },
   contactCount: { type: Number, default: 0 },
@@ -63,5 +65,6 @@ DealerSchema.index({ coordinates: '2dsphere' });
 DealerSchema.index({ ad_status: 1, is_active: 1, is_premium_partner: 1 });
 DealerSchema.index({ specialization_tags: 1 });
 DealerSchema.index({ end_date: 1 });
+DealerSchema.index({ target_regions: 1 });
 
 export default mongoose.model<IDealer>('Dealer', DealerSchema);

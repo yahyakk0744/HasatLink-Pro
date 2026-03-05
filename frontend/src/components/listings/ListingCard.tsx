@@ -6,6 +6,7 @@ import type { Listing } from '../../types';
 import { formatPrice, timeAgo } from '../../utils/formatters';
 import Badge from '../ui/Badge';
 import { STATUS_LABELS, CATEGORY_LABELS, LISTING_MODE_LABELS, LISTING_MODE_COLORS } from '../../utils/constants';
+import { useFavorites } from '../../hooks/useFavorites';
 
 interface ListingCardProps {
   listing: Listing;
@@ -29,7 +30,8 @@ export default function ListingCard({ listing }: ListingCardProps) {
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const statusInfo = STATUS_LABELS[listing.status] || STATUS_LABELS.active;
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const { isFavorited, toggleFavorite } = useFavorites();
+  const liked = isFavorited(listing._id);
 
   const catLabel = CATEGORY_LABELS[listing.type];
   const catColor = CATEGORY_BADGE_COLORS[listing.type] || '#2D6A4F';
@@ -81,9 +83,9 @@ export default function ListingCard({ listing }: ListingCardProps) {
               </Badge>
             )}
             <button
-              onClick={e => { e.preventDefault(); e.stopPropagation(); setLiked(!liked); }}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                liked ? 'bg-red-500 text-white' : 'bg-black/30 backdrop-blur text-white hover:bg-red-500'
+              onClick={e => { e.preventDefault(); e.stopPropagation(); toggleFavorite(listing._id); }}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                liked ? 'bg-red-500 text-white scale-110' : 'bg-black/30 backdrop-blur text-white hover:bg-red-500'
               }`}
             >
               <Heart size={14} fill={liked ? 'currentColor' : 'none'} />

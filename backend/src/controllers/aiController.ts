@@ -210,7 +210,14 @@ const CONFIDENCE_THRESHOLD = 85;
 
 export const diagnose = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.body.userId || (req as any).userId;
+    const userId = (req as any).userId;
+    const file = (req as any).file as Express.Multer.File | undefined;
+
+    if (!file) {
+      res.status(400).json({ message: 'Fotoğraf yüklenmedi' });
+      return;
+    }
+
     const settings = await SiteSettings.findOne({ key: 'main' });
 
     // Check daily AI usage limit
@@ -223,7 +230,7 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
       });
       if (todayCount >= settings.aiUsageLimit.dailyFreeCount) {
         res.status(429).json({
-          message: 'Günlük AI teşhis limitinize ulaştınız',
+          message: 'Gunluk AI teshis limitinize ulastiniz',
           limit: settings.aiUsageLimit.dailyFreeCount,
           used: todayCount,
         });
@@ -234,11 +241,16 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
     // Simulate AI processing delay
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    const randomIndex = Math.floor(Math.random() * DISEASES.length);
-    const result = DISEASES[randomIndex];
+    // Layer 1: Crop Classification (simulated)
+    const cropTypes = [...new Set(DISEASES.map(d => d.crop_type).filter(c => c !== 'Genel'))];
+    const detectedCrop = cropTypes[Math.floor(Math.random() * cropTypes.length)];
 
-    // If confidence below threshold, warn user
+    // Layer 2: Disease Diagnosis - filter by detected crop + include general diseases
+    const candidates = DISEASES.filter(d => d.crop_type === detectedCrop || d.crop_type === 'Genel');
+    const result = candidates[Math.floor(Math.random() * candidates.length)];
+
     const needsBetterPhoto = result.confidence < CONFIDENCE_THRESHOLD;
+    const imageUrl = `/uploads/${file.filename}`;
 
     const response = {
       disease: result.disease,
@@ -249,9 +261,11 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
       spread_risk: result.spread_risk,
       urgency: result.urgency,
       crop_type: result.crop_type,
+      detected_crop: detectedCrop,
+      image_url: imageUrl,
       needs_better_photo: needsBetterPhoto,
       warning: needsBetterPhoto
-        ? 'Doğruluk oranı düşük. Net sonuç için daha yakın ve iyi aydınlatılmış bir fotoğraf çekin.'
+        ? 'Dogruluk orani dusuk. Net sonuc icin daha yakin ve iyi aydinlatilmis bir fotograf cekin.'
         : null,
     };
 
@@ -267,12 +281,13 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
         spread_risk: result.spread_risk,
         urgency: result.urgency,
         crop_type: result.crop_type,
+        image_url: imageUrl,
       });
     }
 
     res.json(response);
   } catch (error) {
-    res.status(500).json({ message: 'AI teşhis hatası', error });
+    res.status(500).json({ message: 'AI teshis hatasi', error });
   }
 };
 

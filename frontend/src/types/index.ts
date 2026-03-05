@@ -16,6 +16,7 @@ export interface User {
   isBanned: boolean;
   isSuspended?: boolean;
   firebaseUid?: string;
+  favorites?: string[];
   createdAt: string;
 }
 
@@ -171,6 +172,8 @@ export interface AIDiagnosisResult {
   spread_risk: 'low' | 'medium' | 'high';
   urgency: 'low' | 'medium' | 'critical';
   crop_type: string;
+  detected_crop?: string;
+  image_url?: string;
   needs_better_photo: boolean;
   warning: string | null;
 }
@@ -202,6 +205,7 @@ export interface Dealer {
   commission_rate: number;
   website: string;
   google_maps_url: string;
+  target_regions: string[];
   impressionCount: number;
   clickCount: number;
   contactCount: number;

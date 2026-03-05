@@ -19,6 +19,7 @@ export interface IUser extends Document {
   isSuspended: boolean;
   authProvider: string;
   firebaseUid: string;
+  favorites: string[];
   createdAt: Date;
 }
 
@@ -41,6 +42,7 @@ const UserSchema = new Schema<IUser>({
   isSuspended: { type: Boolean, default: false },
   authProvider: { type: String, default: 'email', enum: ['email', 'google'] },
   firebaseUid: { type: String, default: '', sparse: true },
+  favorites: [{ type: String }],
   createdAt: { type: Date, default: Date.now },
 });
 

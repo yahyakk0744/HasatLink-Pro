@@ -6,6 +6,7 @@ import ImageGallery from './ImageGallery';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 import { STATUS_LABELS, LISTING_MODE_LABELS, LISTING_MODE_COLORS } from '../../utils/constants';
+import { useShare } from '../../hooks/useShare';
 
 interface ListingDetailViewProps {
   listing: Listing;
@@ -39,8 +40,9 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
   );
 }
 
-export default function ListingDetailView({ listing, onWaClick, onShare, isOwner, onEdit, onDelete, onMessage }: ListingDetailViewProps) {
+export default function ListingDetailView({ listing, onWaClick, onShare: _onShare, isOwner, onEdit, onDelete, onMessage }: ListingDetailViewProps) {
   const { t, i18n } = useTranslation();
+  const { shareListing, shareAsStory } = useShare();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const statusInfo = STATUS_LABELS[listing.status] || STATUS_LABELS.active;
 
@@ -217,8 +219,19 @@ export default function ListingDetailView({ listing, onWaClick, onShare, isOwner
             )}
           </>
         )}
-        <button onClick={onShare} className="flex items-center justify-center w-12 h-12 bg-[var(--bg-input)] rounded-2xl hover:bg-[var(--bg-surface-hover)] transition-colors">
+        <button
+          onClick={() => shareListing(listing._id, listing.title)}
+          className="flex items-center justify-center w-12 h-12 bg-[var(--bg-input)] rounded-2xl hover:bg-[var(--bg-surface-hover)] active:scale-95 transition-all"
+          title="Paylas"
+        >
           <Share2 size={18} />
+        </button>
+        <button
+          onClick={() => shareAsStory(listing._id)}
+          className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-2xl hover:opacity-90 active:scale-95 transition-all"
+          title="Story olarak indir"
+        >
+          <Share2 size={16} />
         </button>
       </div>
     </div>

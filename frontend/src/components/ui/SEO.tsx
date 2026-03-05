@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 interface SEOProps {
   title?: string;
   description?: string;
@@ -8,6 +10,7 @@ interface SEOProps {
   ogDescription?: string;
   ogImage?: string;
   ogUrl?: string;
+  listingId?: string;
 }
 
 function setMeta(name: string, content: string, isProperty = false) {
@@ -21,18 +24,27 @@ function setMeta(name: string, content: string, isProperty = false) {
   el.content = content;
 }
 
-export default function SEO({ title, description, keywords, ogTitle, ogDescription, ogImage, ogUrl }: SEOProps) {
+function getListingIdFromUrl(): string | null {
+  const match = window.location.pathname.match(/\/ilan\/([a-zA-Z0-9]+)/);
+  return match ? match[1] : null;
+}
+
+export default function SEO({ title, description, keywords, ogTitle, ogDescription, ogImage, ogUrl, listingId }: SEOProps) {
   useEffect(() => {
     const prev = document.title;
     if (title) document.title = `${title} | HasatLink`;
     if (description) setMeta('description', description);
     if (keywords) setMeta('keywords', keywords);
 
+    // Resolve OG image: explicit prop > API OG service > none
+    const resolvedListingId = listingId || getListingIdFromUrl();
+    const resolvedOgImage = ogImage || (resolvedListingId ? `${API_BASE}/api/og/${resolvedListingId}` : undefined);
+
     // Open Graph
     setMeta('og:type', 'website', true);
     if (ogTitle || title) setMeta('og:title', ogTitle || title || 'HasatLink', true);
     if (ogDescription || description) setMeta('og:description', (ogDescription || description)!, true);
-    if (ogImage) setMeta('og:image', ogImage, true);
+    if (resolvedOgImage) setMeta('og:image', resolvedOgImage, true);
     if (ogUrl) setMeta('og:url', ogUrl, true);
     setMeta('og:site_name', 'HasatLink', true);
 
@@ -40,10 +52,10 @@ export default function SEO({ title, description, keywords, ogTitle, ogDescripti
     setMeta('twitter:card', 'summary_large_image');
     if (ogTitle || title) setMeta('twitter:title', ogTitle || title || 'HasatLink');
     if (ogDescription || description) setMeta('twitter:description', (ogDescription || description)!);
-    if (ogImage) setMeta('twitter:image', ogImage);
+    if (resolvedOgImage) setMeta('twitter:image', resolvedOgImage);
 
     return () => { document.title = prev; };
-  }, [title, description, keywords, ogTitle, ogDescription, ogImage, ogUrl]);
+  }, [title, description, keywords, ogTitle, ogDescription, ogImage, ogUrl, listingId]);
 
   return null;
 }

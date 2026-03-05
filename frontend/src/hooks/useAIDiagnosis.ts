@@ -7,11 +7,15 @@ export const useAIDiagnosis = () => {
   const [history, setHistory] = useState<AIDiagnosisHistory[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const diagnose = useCallback(async (image: string, userId?: string): Promise<AIDiagnosisResult | null> => {
+  const diagnose = useCallback(async (file: File): Promise<AIDiagnosisResult | null> => {
     setLoading(true);
     setResult(null);
     try {
-      const { data } = await api.post<AIDiagnosisResult>('/ai/diagnose', { image, userId });
+      const formData = new FormData();
+      formData.append('image', file);
+      const { data } = await api.post<AIDiagnosisResult>('/ai/diagnose', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       setResult(data);
       return data;
     } catch { return null; } finally { setLoading(false); }

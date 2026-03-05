@@ -5,7 +5,7 @@ import { haversineDistance } from '../utils/haversine';
 // ─── PUBLIC: Get nearby approved dealers with contextual matching ───
 export const getNearbyDealers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { lat, lng, radius = 50, disease_code, limit = 20, page = 1 } = req.query;
+    const { lat, lng, radius = 50, disease_code, region, limit = 20, page = 1 } = req.query;
 
     if (!lat || !lng) {
       res.status(400).json({ message: 'lat ve lng parametreleri zorunlu' });
@@ -21,7 +21,7 @@ export const getNearbyDealers = async (req: Request, res: Response): Promise<voi
 
     // Only approved dealers: is_premium_partner=true OR ad_status='active'
     // AND is_active=true AND within date range
-    const dealers = await Dealer.find({
+    const filter: any = {
       $or: [
         { is_premium_partner: true },
         { ad_status: 'active' },
@@ -29,7 +29,22 @@ export const getNearbyDealers = async (req: Request, res: Response): Promise<voi
       is_active: true,
       start_date: { $lte: now },
       end_date: { $gte: now },
-    }).select('-__v');
+    };
+
+    // Region-based targeting
+    if (region) {
+      const regionStr = (region as string).toLowerCase();
+      filter.$and = [
+        {
+          $or: [
+            { target_regions: { $size: 0 } }, // No region restriction = show everywhere
+            { target_regions: { $elemMatch: { $regex: new RegExp(regionStr, 'i') } } },
+          ],
+        },
+      ];
+    }
+
+    const dealers = await Dealer.find(filter).select('-__v');
 
     // Filter by haversine distance and calculate distance for each
     let nearby = dealers
