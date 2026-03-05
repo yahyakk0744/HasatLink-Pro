@@ -110,6 +110,8 @@ export interface Listing {
   has24Access: boolean;
   isFeatured?: boolean;
   is_negotiable?: boolean;
+  needsTransport?: boolean;
+  hasTransportCapacity?: boolean;
   // Stats
   stats: { views: number; whatsappClicks: number; shares: number };
   // Populated seller info

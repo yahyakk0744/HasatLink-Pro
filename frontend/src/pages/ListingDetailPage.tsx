@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Bell, HandCoins, ShieldCheck, Star, Package, Calendar, MessageCircle, Store, Layers, Zap, Award, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Bell, HandCoins, ShieldCheck, Star, Package, Calendar, MessageCircle, Store, Layers, Zap, Award, CheckCircle2, Truck } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useRatings } from '../hooks/useRatings';
 import { useMessages } from '../hooks/useMessages';
@@ -205,6 +205,7 @@ export default function ListingDetailPage() {
   const [offerMessage, setOfferMessage] = useState('');
   const [offerSending, setOfferSending] = useState(false);
   const [similarListings, setSimilarListings] = useState<Listing[]>([]);
+  const [logisticsPool, setLogisticsPool] = useState<Listing[]>([]);
 
   const isOwner = !!(user && listing && user.userId === listing.userId);
 
@@ -221,6 +222,13 @@ export default function ListingDetailPage() {
             .then(res => {
               setSimilarListings(res.data.listings.filter(l => l._id !== id).slice(0, 4));
             })
+            .catch(() => {});
+        }
+        // Fetch logistics pool if listing needs transport
+        if (data?.needsTransport && data.location) {
+          const city = data.location.split(',').pop()?.trim() || '';
+          api.get<{ listings: Listing[] }>('/listings', { params: { type: 'lojistik', city, limit: '4' } })
+            .then(res => setLogisticsPool(res.data.listings))
             .catch(() => {});
         }
       });
@@ -354,6 +362,28 @@ export default function ListingDetailPage() {
 
           {/* Comments */}
           <CommentSection listingId={listing._id} />
+
+          {/* Logistics Pool */}
+          {logisticsPool.length > 0 && listing?.needsTransport && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-xl bg-[#0077B6]/10 flex items-center justify-center">
+                  <Truck size={16} strokeWidth={1.5} className="text-[#0077B6]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold tracking-tight">Lojistik Havuzu</h3>
+                  <p className="text-[10px] text-[var(--text-secondary)]">Bölgenizdeki uygun nakliyeciler</p>
+                </div>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
+                {logisticsPool.map(ll => (
+                  <div key={ll._id} className="w-[260px] flex-shrink-0 snap-start">
+                    <ListingCard listing={ll} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Similar Listings */}
           {similarListings.length > 0 && (

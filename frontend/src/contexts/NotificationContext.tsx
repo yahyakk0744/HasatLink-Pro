@@ -50,7 +50,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user?.userId, fetchNotifications]);
 
-  // Play a short D5 notification sound via Web Audio API
+  // Play a short D5 notification sound via Web Audio API (messages)
   const playNotificationSound = useCallback(() => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -64,9 +64,36 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.3);
-    } catch {
-      // Audio playback failed — non-critical
-    }
+    } catch {}
+  }, []);
+
+  // Play Apple Chime (two-tone E5→G5) for offers/transactions
+  const playChimeSound = useCallback(() => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // First note: E5
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.frequency.value = 659.25; // E5
+      osc1.type = 'sine';
+      gain1.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      osc1.start(ctx.currentTime);
+      osc1.stop(ctx.currentTime + 0.15);
+      // Second note: G5
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.frequency.value = 783.99; // G5
+      osc2.type = 'sine';
+      gain2.gain.setValueAtTime(0.25, ctx.currentTime + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc2.start(ctx.currentTime + 0.12);
+      osc2.stop(ctx.currentTime + 0.4);
+    } catch {}
   }, []);
 
   // Socket.IO real-time notifications
@@ -77,9 +104,45 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       setNotifications(prev => [notification, ...prev]);
       setUnreadCount(prev => prev + 1);
 
-      // Play notification sound for messages and offers
-      if (notification.type === 'mesaj' || notification.type === 'teklif') {
+      // Play different sounds: D5 note for messages, chime for offers
+      if (notification.type === 'mesaj') {
         playNotificationSound();
+      } else if (notification.type === 'teklif') {
+        playChimeSound();
+      }
+
+      // Show receipt toast for accepted offers
+      if (notification.type === 'teklif' && (notification as any).receipt) {
+        const r = (notification as any).receipt;
+        toast.custom(
+          (t) => (
+            <div
+              className={`${t.visible ? 'animate-slide-up' : 'opacity-0'} max-w-sm w-full bg-gradient-to-br from-[#1A1A1A] to-[#2D2D2D] shadow-2xl rounded-3xl border border-white/10 p-5 cursor-pointer transition-opacity duration-300`}
+              onClick={() => { toast.dismiss(t.id); window.location.href = `/ilan/${r.listingId}`; }}
+            >
+              <div className="text-center mb-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#2D6A4F]">Islem Onaylandi</p>
+                <p className="text-white text-sm font-semibold mt-1 truncate">{r.listingTitle}</p>
+              </div>
+              <div className="bg-white/5 rounded-2xl p-3 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-white/50">Alici</span>
+                  <span className="text-white font-medium">{r.buyerName}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-white/50">Satici</span>
+                  <span className="text-white font-medium">{r.sellerName}</span>
+                </div>
+                <div className="h-px bg-white/10" />
+                <div className="flex justify-between text-xs">
+                  <span className="text-white/50">Tutar</span>
+                  <span className="text-[#2D6A4F] font-bold">{Number(r.offerPrice).toLocaleString('tr-TR')} TL</span>
+                </div>
+              </div>
+            </div>
+          ),
+          { duration: 5000, position: 'top-right' }
+        );
       }
 
       // Show visual toast for messages when user is NOT on the messages page
@@ -117,7 +180,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
     socket.on('notification:new', handleNewNotification);
     return () => { socket.off('notification:new', handleNewNotification); };
-  }, [socket, playNotificationSound]);
+  }, [socket, playNotificationSound, playChimeSound]);
 
   useEffect(() => {
     if (user?.userId) {

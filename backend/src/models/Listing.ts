@@ -62,6 +62,8 @@ export interface IListing extends Document {
   hasSecurity: boolean;
   has24Access: boolean;
   is_negotiable: boolean;
+  needsTransport: boolean;
+  hasTransportCapacity: boolean;
   // Stats
   stats: { views: number; whatsappClicks: number; shares: number };
   createdAt: Date;
@@ -132,6 +134,8 @@ const ListingSchema = new Schema<IListing>({
   hasSecurity: { type: Boolean, default: false },
   has24Access: { type: Boolean, default: false },
   is_negotiable: { type: Boolean, default: false },
+  needsTransport: { type: Boolean, default: false },
+  hasTransportCapacity: { type: Boolean, default: false },
   // Stats
   stats: {
     views: { type: Number, default: 0 },

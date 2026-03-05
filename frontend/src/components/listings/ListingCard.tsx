@@ -200,6 +200,20 @@ export default function ListingCard({ listing }: ListingCardProps) {
             )}
           </div>
 
+          {/* Transport status */}
+          {listing.needsTransport && (
+            <div className="flex items-center gap-1.5 mb-2 px-2.5 py-1 bg-[#0077B6]/8 rounded-lg w-fit">
+              <Truck size={10} className="text-[#0077B6]" />
+              <span className="text-[9px] font-semibold text-[#0077B6] uppercase tracking-wide">Nakliye Arıyor</span>
+            </div>
+          )}
+          {listing.hasTransportCapacity && (
+            <div className="flex items-center gap-1.5 mb-2 px-2.5 py-1 bg-[#2D6A4F]/8 rounded-lg w-fit">
+              <Truck size={10} className="text-[#2D6A4F]" />
+              <span className="text-[9px] font-semibold text-[#2D6A4F] uppercase tracking-wide">Boş Kapasite</span>
+            </div>
+          )}
+
           {/* Location + date row */}
           <div className="flex items-center justify-between text-[10px] text-[var(--text-secondary)] mb-2">
             <span className="flex items-center gap-1">

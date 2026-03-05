@@ -102,14 +102,44 @@ export const updateOfferStatus = async (req: Request, res: Response): Promise<vo
 
     // Notify the offer sender
     const statusText = status === 'accepted' ? 'kabul edildi' : 'reddedildi';
+    const toUser = await User.findOne({ userId: offer.toUserId }).select('name').lean();
     const notif = await Notification.create({
       userId: offer.fromUserId,
-      type: 'ilan',
+      type: 'teklif',
       title: `Teklif ${status === 'accepted' ? 'Kabul Edildi' : 'Reddedildi'}`,
       message: `"${offer.listingTitle}" için teklifiniz ${statusText}`,
       relatedId: offer.listingId,
     });
     sendSocketNotification(offer.fromUserId, { ...notif.toObject(), playSound: true });
+
+    // Send push to buyer
+    sendPushToUser(offer.fromUserId, {
+      title: notif.title,
+      body: notif.message,
+      url: `/ilan/${offer.listingId}`,
+    }, notif);
+
+    // If accepted, build receipt data and send to both parties
+    if (status === 'accepted') {
+      const receipt = {
+        listingTitle: offer.listingTitle,
+        listingId: offer.listingId,
+        offerPrice: offer.offerPrice,
+        buyerName: offer.fromUserName,
+        sellerName: toUser?.name || '',
+        date: new Date().toISOString(),
+      };
+      // Notify seller too
+      const sellerNotif = await Notification.create({
+        userId: offer.toUserId,
+        type: 'teklif',
+        title: 'Islem Onaylandi',
+        message: `"${offer.listingTitle}" - ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(offer.offerPrice)}`,
+        relatedId: offer.listingId,
+      });
+      sendSocketNotification(offer.toUserId, { ...sellerNotif.toObject(), receipt, playSound: true });
+      sendSocketNotification(offer.fromUserId, { ...notif.toObject(), receipt, playSound: true });
+    }
 
     res.json(offer);
   } catch (error) {

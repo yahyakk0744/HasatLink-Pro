@@ -167,6 +167,8 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const [hasSecurity, setHasSecurity] = useState(initialData?.hasSecurity || false);
   const [has24Access, setHas24Access] = useState(initialData?.has24Access || false);
   const [isNegotiable, setIsNegotiable] = useState(initialData?.is_negotiable || false);
+  const [needsTransport, setNeedsTransport] = useState(initialData?.needsTransport || false);
+  const [hasTransportCapacity, setHasTransportCapacity] = useState(initialData?.hasTransportCapacity || false);
 
   const subCategories = CATEGORIES[type as keyof typeof CATEGORIES]?.filter(c => c !== 'HEPSİ') || [];
   const productOptions = type === 'pazar' && subCategory ? (PAZAR_SUBCATEGORIES[subCategory] || []) : [];
@@ -204,6 +206,8 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         unit, location, phone, images,
         coordinates: coordLat && coordLng ? { lat: coordLat, lng: coordLng } : undefined,
         is_negotiable: isNegotiable,
+        needsTransport,
+        hasTransportCapacity,
       };
 
       if (type === 'pazar') {
@@ -591,6 +595,22 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
           <CheckboxField label="Pazarlığa Açık" checked={isNegotiable} onChange={setIsNegotiable} />
           <span className="text-[10px] text-[#E76F00]">Alıcılar fiyat teklifi gönderebilir</span>
         </div>
+
+        {/* Transport Options */}
+        {type !== 'lojistik' && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 py-2 px-3 bg-[#0077B6]/5 rounded-2xl border border-[#0077B6]/10">
+              <CheckboxField label="Nakliye Arıyorum" checked={needsTransport} onChange={(v) => { setNeedsTransport(v); if (v) setHasTransportCapacity(false); }} />
+              <span className="text-[10px] text-[#0077B6]">Ürünüm için nakliye desteği arıyorum</span>
+            </div>
+          </div>
+        )}
+        {type === 'lojistik' && (
+          <div className="flex items-center gap-3 py-2 px-3 bg-[#0077B6]/5 rounded-2xl border border-[#0077B6]/10">
+            <CheckboxField label="Boş Kapasitem Var" checked={hasTransportCapacity} onChange={(v) => { setHasTransportCapacity(v); if (v) setNeedsTransport(false); }} />
+            <span className="text-[10px] text-[#0077B6]">Boş dönüş veya ekstra kapasite mevcut</span>
+          </div>
+        )}
 
         {/* Common: Location & Phone */}
         <SectionTitle>{t('listing.contactInfo')}</SectionTitle>
