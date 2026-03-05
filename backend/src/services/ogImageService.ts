@@ -13,6 +13,19 @@ function formatPrice(price: number): string {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(price);
 }
 
+// Parse "District / City" or "City" from location string
+function parseLocation(location: string): { district: string; city: string; display: string } {
+  if (!location) return { district: '', city: '', display: '' };
+  const parts = location.split(/[\/,]/).map(s => s.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    return { district: parts[0], city: parts[1], display: `${parts[0]} / ${parts[1]}` };
+  }
+  return { district: '', city: parts[0] || '', display: parts[0] || '' };
+}
+
+// SVG pin icon path (Apple Maps style minimal pin)
+const PIN_SVG = `<g fill="none"><circle cx="0" cy="0" r="8" fill="#52B788" opacity="0.2"/><path d="M0-7 C3.9-7 7-3.9 7 0 7 4-3 8-7 12-7 12-11 8-7 4-7 0-3.9-7 0-7Z" fill="#52B788"/><circle cx="0" cy="0" r="2.5" fill="white"/></g>`;
+
 export const getOgImage = async (req: Request, res: Response): Promise<void> => {
   try {
     const listing = await Listing.findById(req.params.id);
@@ -22,7 +35,8 @@ export const getOgImage = async (req: Request, res: Response): Promise<void> => 
     }
 
     const title = escapeXml(truncate(listing.title, 60));
-    const location = escapeXml(truncate(listing.location || '', 40));
+    const loc = parseLocation(listing.location || '');
+    const locationDisplay = escapeXml(loc.display);
     const price = escapeXml(formatPrice(listing.price));
     const category = escapeXml(listing.type.toUpperCase());
 
@@ -39,18 +53,26 @@ export const getOgImage = async (req: Request, res: Response): Promise<void> => 
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
   <rect x="60" y="60" width="1080" height="510" rx="32" fill="rgba(255,255,255,0.08)"/>
+  <!-- Category badge -->
   <rect x="80" y="80" width="160" height="40" rx="20" fill="url(#accent)"/>
   <text x="160" y="106" font-family="system-ui,-apple-system,sans-serif" font-size="18" font-weight="700" fill="white" text-anchor="middle">${category}</text>
+  <!-- Title -->
   <text x="100" y="200" font-family="system-ui,-apple-system,sans-serif" font-size="48" font-weight="800" fill="white" letter-spacing="-1">${title}</text>
+  <!-- Price -->
   <text x="100" y="300" font-family="system-ui,-apple-system,sans-serif" font-size="64" font-weight="800" fill="#52B788">${price}</text>
-  <text x="100" y="370" font-family="system-ui,-apple-system,sans-serif" font-size="24" fill="rgba(255,255,255,0.6)">${location}</text>
-  <rect x="80" y="460" width="300" height="60" rx="16" fill="rgba(255,255,255,0.1)"/>
-  <text x="230" y="498" font-family="system-ui,-apple-system,sans-serif" font-size="22" font-weight="700" fill="#52B788" text-anchor="middle">HasatLink</text>
+  <!-- Dynamic location with pin icon -->
+  <g transform="translate(100, 365)">
+    <g transform="translate(10, -5)">${PIN_SVG}</g>
+    <text x="28" y="0" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="600" fill="rgba(255,255,255,0.7)">${locationDisplay}</text>
+  </g>
+  <!-- Slogan -->
+  <text x="100" y="430" font-family="system-ui,-apple-system,sans-serif" font-size="16" font-weight="500" fill="rgba(255,255,255,0.35)" font-style="italic">Profesyonel Hasat Ekosistemi</text>
   <!-- Logo stamp bottom-right -->
-  <rect x="1000" y="470" width="120" height="60" rx="16" fill="rgba(45,106,79,0.9)"/>
-  <circle cx="1030" cy="500" r="14" fill="#52B788"/>
-  <text x="1030" y="506" font-family="system-ui,-apple-system,sans-serif" font-size="16" font-weight="800" fill="white" text-anchor="middle">H</text>
-  <text x="1080" y="506" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="700" fill="white" text-anchor="middle">asatLink</text>
+  <rect x="980" y="470" width="140" height="60" rx="16" fill="rgba(45,106,79,0.9)"/>
+  <circle cx="1014" cy="500" r="14" fill="#52B788"/>
+  <text x="1014" y="506" font-family="system-ui,-apple-system,sans-serif" font-size="16" font-weight="800" fill="white" text-anchor="middle">H</text>
+  <text x="1074" y="496" font-family="system-ui,-apple-system,sans-serif" font-size="13" font-weight="700" fill="white" text-anchor="middle">asat</text>
+  <text x="1074" y="512" font-family="system-ui,-apple-system,sans-serif" font-size="13" font-weight="700" fill="#52B788" text-anchor="middle">Link</text>
 </svg>`;
 
     res.setHeader('Content-Type', 'image/svg+xml');
@@ -71,7 +93,8 @@ export const getStoryImage = async (req: Request, res: Response): Promise<void> 
     }
 
     const title = escapeXml(truncate(listing.title, 50));
-    const location = escapeXml(truncate(listing.location || '', 35));
+    const loc = parseLocation(listing.location || '');
+    const locationDisplay = escapeXml(loc.display);
     const price = escapeXml(formatPrice(listing.price));
     const category = escapeXml(listing.type.toUpperCase());
 
@@ -84,27 +107,39 @@ export const getStoryImage = async (req: Request, res: Response): Promise<void> 
     </linearGradient>
   </defs>
   <rect width="1080" height="1920" fill="url(#bg)"/>
+  <!-- Logo circle -->
   <circle cx="540" cy="400" r="200" fill="rgba(82,183,136,0.1)"/>
   <circle cx="540" cy="400" r="120" fill="rgba(82,183,136,0.15)"/>
   <text x="540" y="420" font-family="system-ui,-apple-system,sans-serif" font-size="72" font-weight="800" fill="#52B788" text-anchor="middle">H</text>
   <text x="540" y="520" font-family="system-ui,-apple-system,sans-serif" font-size="28" font-weight="600" fill="rgba(255,255,255,0.5)" text-anchor="middle" letter-spacing="8">HASATLINK</text>
-  <rect x="80" y="700" width="920" height="600" rx="40" fill="rgba(255,255,255,0.06)"/>
+  <!-- Card -->
+  <rect x="80" y="700" width="920" height="620" rx="40" fill="rgba(255,255,255,0.06)"/>
   <rect x="80" y="700" width="920" height="8" rx="4" fill="#52B788"/>
+  <!-- Category badge -->
   <rect x="120" y="760" width="180" height="44" rx="22" fill="rgba(82,183,136,0.2)"/>
   <text x="210" y="790" font-family="system-ui,-apple-system,sans-serif" font-size="20" font-weight="700" fill="#52B788" text-anchor="middle">${category}</text>
+  <!-- Title -->
   <text x="120" y="890" font-family="system-ui,-apple-system,sans-serif" font-size="44" font-weight="800" fill="white" letter-spacing="-1">${title}</text>
+  <!-- Price -->
   <text x="120" y="1020" font-family="system-ui,-apple-system,sans-serif" font-size="72" font-weight="800" fill="#52B788">${price}</text>
-  <text x="120" y="1100" font-family="system-ui,-apple-system,sans-serif" font-size="28" fill="rgba(255,255,255,0.5)">${location}</text>
+  <!-- Dynamic location with pin -->
+  <g transform="translate(120, 1095)">
+    <g transform="translate(12, -6) scale(1.2)">${PIN_SVG}</g>
+    <text x="32" y="0" font-family="system-ui,-apple-system,sans-serif" font-size="28" font-weight="600" fill="rgba(255,255,255,0.6)">${locationDisplay}</text>
+  </g>
   <!-- Slogan -->
-  <text x="540" y="1180" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="600" fill="rgba(255,255,255,0.4)" text-anchor="middle" font-style="italic">Mut'un En Taze Urunleri</text>
-  <rect x="120" y="1220" width="840" height="70" rx="35" fill="#52B788"/>
-  <text x="540" y="1265" font-family="system-ui,-apple-system,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">hasatlink.com'da incele</text>
+  <text x="540" y="1200" font-family="system-ui,-apple-system,sans-serif" font-size="22" font-weight="500" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-style="italic">Profesyonel Hasat Ekosistemi</text>
+  <!-- CTA button -->
+  <rect x="120" y="1240" width="840" height="70" rx="35" fill="#52B788"/>
+  <text x="540" y="1285" font-family="system-ui,-apple-system,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">hasatlink.com'da incele</text>
   <!-- Logo stamp bottom-right -->
-  <rect x="820" y="1700" width="180" height="70" rx="20" fill="rgba(45,106,79,0.9)"/>
-  <circle cx="860" cy="1735" r="18" fill="#52B788"/>
-  <text x="860" y="1742" font-family="system-ui,-apple-system,sans-serif" font-size="20" font-weight="800" fill="white" text-anchor="middle">H</text>
-  <text x="940" y="1742" font-family="system-ui,-apple-system,sans-serif" font-size="16" font-weight="700" fill="white" text-anchor="middle">asatLink</text>
-  <text x="540" y="1840" font-family="system-ui,-apple-system,sans-serif" font-size="20" fill="rgba(255,255,255,0.3)" text-anchor="middle">hasatlink.com</text>
+  <rect x="820" y="1720" width="180" height="70" rx="20" fill="rgba(45,106,79,0.9)"/>
+  <circle cx="860" cy="1755" r="18" fill="#52B788"/>
+  <text x="860" y="1762" font-family="system-ui,-apple-system,sans-serif" font-size="20" font-weight="800" fill="white" text-anchor="middle">H</text>
+  <text x="940" y="1748" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="700" fill="white" text-anchor="middle">asat</text>
+  <text x="940" y="1766" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="700" fill="#52B788" text-anchor="middle">Link</text>
+  <!-- Footer -->
+  <text x="540" y="1860" font-family="system-ui,-apple-system,sans-serif" font-size="20" fill="rgba(255,255,255,0.3)" text-anchor="middle">hasatlink.com</text>
 </svg>`;
 
     res.setHeader('Content-Type', 'image/svg+xml');

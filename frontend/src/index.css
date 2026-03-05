@@ -508,16 +508,18 @@ html {
   animation: progress 2s ease-out forwards;
 }
 
-/* Heart haptic pop (Apple Watch style) */
+/* Heart haptic pop — Apple Watch spring physics */
 @keyframes haptic-pop {
   0% { transform: scale(1); }
-  15% { transform: scale(1.25); }
-  30% { transform: scale(0.92); }
-  45% { transform: scale(1.08); }
-  60% { transform: scale(0.98); }
+  10% { transform: scale(1.28); }
+  22% { transform: scale(0.88); }
+  36% { transform: scale(1.12); }
+  50% { transform: scale(0.95); }
+  65% { transform: scale(1.04); }
+  80% { transform: scale(0.99); }
   100% { transform: scale(1); }
 }
 
 .animate-haptic {
-  animation: haptic-pop 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  animation: haptic-pop 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }

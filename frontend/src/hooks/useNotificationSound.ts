@@ -3,32 +3,43 @@ import { useCallback } from 'react';
 export const useNotificationSound = () => {
   const playSound = useCallback(() => {
     try {
-      // iPhone Tri-tone inspired chime using Web Audio API
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const now = audioCtx.currentTime;
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const now = ctx.currentTime;
 
-      // Three-note sequence mimicking iPhone tri-tone
+      // Crystal-clear iPhone Tri-tone: three ascending pure tones
+      // Using dual oscillators (sine + soft triangle) for richer, bell-like clarity
       const notes = [
-        { freq: 1174.66, start: 0, duration: 0.08 },     // D6
-        { freq: 1396.91, start: 0.1, duration: 0.08 },    // F6
-        { freq: 1760.00, start: 0.2, duration: 0.12 },    // A6
+        { freq: 1174.66, start: 0.00, dur: 0.10 },   // D6
+        { freq: 1396.91, start: 0.12, dur: 0.10 },   // F6
+        { freq: 1760.00, start: 0.24, dur: 0.16 },   // A6 (held slightly longer)
       ];
 
-      notes.forEach(({ freq, start, duration }) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+      notes.forEach(({ freq, start, dur }) => {
+        // Primary: pure sine for clarity
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(freq, now + start);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        gain1.gain.setValueAtTime(0, now + start);
+        gain1.gain.linearRampToValueAtTime(0.22, now + start + 0.008);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + start + dur + 0.18);
+        osc1.start(now + start);
+        osc1.stop(now + start + dur + 0.25);
 
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now + start);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        gain.gain.setValueAtTime(0, now + start);
-        gain.gain.linearRampToValueAtTime(0.25, now + start + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + start + duration + 0.15);
-
-        osc.start(now + start);
-        osc.stop(now + start + duration + 0.2);
+        // Secondary: soft harmonic overtone for sparkle
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(freq * 2, now + start); // octave above
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        gain2.gain.setValueAtTime(0, now + start);
+        gain2.gain.linearRampToValueAtTime(0.06, now + start + 0.008);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + start + dur + 0.12);
+        osc2.start(now + start);
+        osc2.stop(now + start + dur + 0.2);
       });
     } catch {}
   }, []);
