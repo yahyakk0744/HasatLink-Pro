@@ -1,7 +1,77 @@
 import { Request, Response } from 'express';
+import axios from 'axios';
+import fs from 'fs';
 import AIDiagnosis from '../models/AIDiagnosis';
 import SiteSettings from '../models/SiteSettings';
 import Listing from '../models/Listing';
+
+const HF_TOKEN = () => process.env.HF_ACCESS_TOKEN || '';
+const HF_MODEL = 'nateraw/vit-base-patch16-224-plant-village';
+const HF_API_URL = `https://api-inference.huggingface.co/models/${HF_MODEL}`;
+
+// ─── PlantVillage label → Turkish localization mapping ───
+const PLANTVILLAGE_TR: Record<string, { disease_tr: string; crop_tr: string; crop_code: string; disease_code: string; is_healthy: boolean }> = {
+  'Apple___Apple_scab': { disease_tr: 'Elma Kara Lekesi', crop_tr: 'Elma', crop_code: 'Elma', disease_code: 'elma_karaleke', is_healthy: false },
+  'Apple___Black_rot': { disease_tr: 'Elma Siyah Curuklugu', crop_tr: 'Elma', crop_code: 'Elma', disease_code: 'elma_karaleke', is_healthy: false },
+  'Apple___Cedar_apple_rust': { disease_tr: 'Elma Pasi', crop_tr: 'Elma', crop_code: 'Elma', disease_code: 'elma_karaleke', is_healthy: false },
+  'Apple___healthy': { disease_tr: 'Saglikli Bitki', crop_tr: 'Elma', crop_code: 'Elma', disease_code: 'saglikli', is_healthy: true },
+  'Cherry_(including_sour)___Powdery_mildew': { disease_tr: 'Kiraz Kullemesi', crop_tr: 'Kiraz', crop_code: 'Genel', disease_code: 'kulleme', is_healthy: false },
+  'Cherry_(including_sour)___healthy': { disease_tr: 'Saglikli Bitki', crop_tr: 'Kiraz', crop_code: 'Genel', disease_code: 'saglikli', is_healthy: true },
+  'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot': { disease_tr: 'Misir Yaprak Lekesi', crop_tr: 'Misir', crop_code: 'Misir', disease_code: 'misir_kocan_kurdu', is_healthy: false },
+  'Corn_(maize)___Common_rust_': { disease_tr: 'Misir Pasi', crop_tr: 'Misir', crop_code: 'Misir', disease_code: 'misir_kocan_kurdu', is_healthy: false },
+  'Corn_(maize)___Northern_Leaf_Blight': { disease_tr: 'Misir Kuzey Yaprak Yaniklioi', crop_tr: 'Misir', crop_code: 'Misir', disease_code: 'yaprak_yanikligi', is_healthy: false },
+  'Corn_(maize)___healthy': { disease_tr: 'Saglikli Bitki', crop_tr: 'Misir', crop_code: 'Misir', disease_code: 'saglikli', is_healthy: true },
+  'Grape___Black_rot': { disease_tr: 'Uzum Siyah Curuklugu', crop_tr: 'Uzum', crop_code: 'Uzum', disease_code: 'bag_mildiyo', is_healthy: false },
+  'Grape___Esca_(Black_Measles)': { disease_tr: 'Uzum Esca Hastaligi', crop_tr: 'Uzum', crop_code: 'Uzum', disease_code: 'bag_mildiyo', is_healthy: false },
+  'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)': { disease_tr: 'Uzum Yaprak Lekesi', crop_tr: 'Uzum', crop_code: 'Uzum', disease_code: 'bag_kulleme', is_healthy: false },
+  'Grape___healthy': { disease_tr: 'Saglikli Bitki', crop_tr: 'Uzum', crop_code: 'Uzum', disease_code: 'saglikli', is_healthy: true },
+  'Orange___Haunglongbing_(Citrus_greening)': { disease_tr: 'Narenciye Yesilleme Hastaligi', crop_tr: 'Narenciye', crop_code: 'Narenciye', disease_code: 'narenciye_tristeza', is_healthy: false },
+  'Peach___Bacterial_spot': { disease_tr: 'Seftali Bakteriyel Leke', crop_tr: 'Seftali/Kayisi', crop_code: 'Genel', disease_code: 'yaprak_yanikligi', is_healthy: false },
+  'Peach___healthy': { disease_tr: 'Saglikli Bitki', crop_tr: 'Seftali/Kayisi', crop_code: 'Genel', disease_code: 'saglikli', is_healthy: true },
+  'Pepper,_bell___Bacterial_spot': { disease_tr: 'Biber Bakteriyel Leke', crop_tr: 'Biber', crop_code: 'Domates', disease_code: 'domates_yaprak_lekesi', is_healthy: false },
+  'Pepper,_bell___healthy': { disease_tr: 'Saglikli Bitki', crop_tr: 'Biber', crop_code: 'Domates', disease_code: 'saglikli', is_healthy: true },
+  'Potato___Early_blight': { disease_tr: 'Patates Erken Yaniklik', crop_tr: 'Patates', crop_code: 'Genel', disease_code: 'yaprak_yanikligi', is_healthy: false },
+  'Potato___Late_blight': { disease_tr: 'Patates Mildiyo', crop_tr: 'Patates', crop_code: 'Domates', disease_code: 'domates_mildiyo', is_healthy: false },
+  'Potato___healthy': { disease_tr: 'Saglikli Bitki', crop_tr: 'Patates', crop_code: 'Genel', disease_code: 'saglikli', is_healthy: true },
+  'Squash___Powdery_mildew': { disease_tr: 'Kabak Kullemesi', crop_tr: 'Kabak', crop_code: 'Genel', disease_code: 'kulleme', is_healthy: false },
+  'Strawberry___Leaf_scorch': { disease_tr: 'Cilek Yaprak Yaniklioi', crop_tr: 'Cilek', crop_code: 'Genel', disease_code: 'yaprak_yanikligi', is_healthy: false },
+  'Strawberry___healthy': { disease_tr: 'Saglikli Bitki', crop_tr: 'Cilek', crop_code: 'Genel', disease_code: 'saglikli', is_healthy: true },
+  'Tomato___Bacterial_spot': { disease_tr: 'Domates Bakteriyel Leke', crop_tr: 'Domates', crop_code: 'Domates', disease_code: 'domates_yaprak_lekesi', is_healthy: false },
+  'Tomato___Early_blight': { disease_tr: 'Domates Erken Yaniklik', crop_tr: 'Domates', crop_code: 'Domates', disease_code: 'domates_yaprak_lekesi', is_healthy: false },
+  'Tomato___Late_blight': { disease_tr: 'Domates Mildiyo', crop_tr: 'Domates', crop_code: 'Domates', disease_code: 'domates_mildiyo', is_healthy: false },
+  'Tomato___Leaf_Mold': { disease_tr: 'Domates Yaprak Kufu', crop_tr: 'Domates', crop_code: 'Domates', disease_code: 'domates_mildiyo', is_healthy: false },
+  'Tomato___Septoria_leaf_spot': { disease_tr: 'Domates Septoria Lekesi', crop_tr: 'Domates', crop_code: 'Domates', disease_code: 'domates_yaprak_lekesi', is_healthy: false },
+  'Tomato___Spider_mites Two-spotted_spider_mite': { disease_tr: 'Domates Kirmizi Orumcek', crop_tr: 'Domates', crop_code: 'Domates', disease_code: 'domates_beyazsinek', is_healthy: false },
+  'Tomato___Target_Spot': { disease_tr: 'Domates Hedef Leke', crop_tr: 'Domates', crop_code: 'Domates', disease_code: 'domates_yaprak_lekesi', is_healthy: false },
+  'Tomato___Tomato_Yellow_Leaf_Curl_Virus': { disease_tr: 'Domates Sari Yaprak Kivirma Virusu', crop_tr: 'Domates', crop_code: 'Domates', disease_code: 'domates_beyazsinek', is_healthy: false },
+  'Tomato___Tomato_mosaic_virus': { disease_tr: 'Domates Mozaik Virusu', crop_tr: 'Domates', crop_code: 'Domates', disease_code: 'domates_mildiyo', is_healthy: false },
+  'Tomato___healthy': { disease_tr: 'Saglikli Bitki', crop_tr: 'Domates', crop_code: 'Domates', disease_code: 'saglikli', is_healthy: true },
+};
+
+/**
+ * Call Hugging Face Inference API with the uploaded image.
+ * Returns array of { label, score } sorted by confidence desc.
+ */
+async function classifyWithHF(imagePath: string): Promise<Array<{ label: string; score: number }> | null> {
+  try {
+    const imageBuffer = fs.readFileSync(imagePath);
+    const { data } = await axios.post(HF_API_URL, imageBuffer, {
+      headers: {
+        'Authorization': `Bearer ${HF_TOKEN()}`,
+        'Content-Type': 'application/octet-stream',
+      },
+      timeout: 30000,
+    });
+    // HF returns array of { label, score } or error object
+    if (Array.isArray(data)) {
+      return data.sort((a: any, b: any) => b.score - a.score);
+    }
+    return null;
+  } catch (err: any) {
+    console.error('[HF] Inference error:', err.response?.data || err.message);
+    return null;
+  }
+}
 
 // ─── COMPREHENSIVE DISEASE DATABASE ───
 // Mut/Mersin bölgesi + Türkiye genel tarım hastalıkları
@@ -524,7 +594,7 @@ function getRegionalAlerts(region?: string): Array<{ disease: string; crop_type:
 
 const CONFIDENCE_THRESHOLD = 85;
 
-// ─── DIAGNOSE ENDPOINT ───
+// ─── DIAGNOSE ENDPOINT (Real HF Inference + Fallback) ───
 export const diagnose = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).userId;
@@ -555,34 +625,73 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Layer 1: Crop Classification (simulated)
-    const cropTypes = [...new Set(DISEASES.map(d => d.crop_type).filter(c => c !== 'Genel'))];
-    const detectedCrop = cropTypes[Math.floor(Math.random() * cropTypes.length)];
-
-    // Layer 2: Disease Diagnosis - filter by detected crop + include general diseases
-    const candidates = DISEASES.filter(d => d.crop_type === detectedCrop || d.crop_type === 'Genel');
-    const result = candidates[Math.floor(Math.random() * candidates.length)];
-
-    const needsBetterPhoto = result.confidence < CONFIDENCE_THRESHOLD;
     const imageUrl = `/uploads/${file.filename}`;
+    const imagePath = file.path;
 
-    // Layer 3: Regional alerts
-    const alerts = getRegionalAlerts('Mersin');
+    // ─── LAYER 1: Hugging Face PlantVillage Classification ───
+    let hfLabel = '';
+    let hfConfidence = 0;
+    let hfResults: Array<{ label: string; score: number }> | null = null;
+    let usedRealAI = false;
 
-    // Layer 4: Harvest prediction
+    if (HF_TOKEN()) {
+      hfResults = await classifyWithHF(imagePath);
+      if (hfResults && hfResults.length > 0) {
+        hfLabel = hfResults[0].label;
+        hfConfidence = Math.round(hfResults[0].score * 100);
+        usedRealAI = true;
+      }
+    }
+
+    // ─── LAYER 2: Map HF result to local disease DB ───
+    let detectedCrop = '';
+    let diseaseTr = '';
+    let matchedDisease: typeof DISEASES[0] | null = null;
+
+    if (usedRealAI && hfLabel) {
+      const mapping = PLANTVILLAGE_TR[hfLabel];
+      if (mapping) {
+        detectedCrop = mapping.crop_tr;
+        diseaseTr = mapping.disease_tr;
+        // Find matching disease in our comprehensive DB
+        matchedDisease = DISEASES.find(d => d.disease_code === mapping.disease_code) || null;
+      } else {
+        // Unknown label — try to extract crop name from label
+        const parts = hfLabel.split('___');
+        detectedCrop = parts[0]?.replace(/_/g, ' ') || 'Bilinmeyen';
+        const isHealthy = hfLabel.toLowerCase().includes('healthy');
+        diseaseTr = isHealthy ? 'Sağlıklı Bitki' : hfLabel.replace(/___/g, ' - ').replace(/_/g, ' ');
+        matchedDisease = isHealthy
+          ? DISEASES.find(d => d.disease_code === 'saglikli')!
+          : DISEASES.find(d => d.disease_code === 'yaprak_yanikligi')!;
+      }
+    }
+
+    // ─── FALLBACK: If HF fails, use local simulation ───
+    if (!usedRealAI || !matchedDisease) {
+      const cropTypes = [...new Set(DISEASES.map(d => d.crop_type).filter(c => c !== 'Genel'))];
+      detectedCrop = detectedCrop || cropTypes[Math.floor(Math.random() * cropTypes.length)];
+      const candidates = DISEASES.filter(d => d.crop_type === detectedCrop || d.crop_type === 'Genel');
+      matchedDisease = candidates[Math.floor(Math.random() * candidates.length)];
+      hfConfidence = matchedDisease.confidence;
+      diseaseTr = matchedDisease.disease;
+    }
+
+    const result = matchedDisease!;
+    const confidence = usedRealAI ? hfConfidence : result.confidence;
+    const needsBetterPhoto = confidence < CONFIDENCE_THRESHOLD;
+
+    // ─── LAYER 3: Harvest prediction ───
     const harvestInfo = HARVEST_DATA[result.crop_type] || HARVEST_DATA['Genel'];
     const estimatedDays = Math.floor(Math.random() * (harvestInfo.max_days - harvestInfo.min_days) + harvestInfo.min_days);
     const qualityScore = result.disease_code === 'saglikli'
-      ? Math.floor(Math.random() * 15 + 85) // 85-100 for healthy
-      : Math.floor(Math.random() * 30 + 40); // 40-70 for diseased
+      ? Math.floor(Math.random() * 15 + 85)
+      : Math.floor(Math.random() * 30 + 40);
 
     const response = {
-      disease: result.disease,
+      disease: usedRealAI ? `${diseaseTr} (${hfLabel})` : result.disease,
       disease_code: result.disease_code,
-      confidence: result.confidence,
+      confidence,
       treatment: result.treatment,
       stage: result.stage,
       spread_risk: result.spread_risk,
@@ -594,11 +703,10 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
       warning: needsBetterPhoto
         ? 'Doğruluk oranı düşük. Net sonuç için daha yakın ve iyi aydınlatılmış bir fotoğraf çekin.'
         : null,
-      // NEW: Extended fields
       recommended_products: result.recommended_products,
       prevention: result.prevention,
       seasonal_alert: result.season.includes(getCurrentSeason()),
-      regional_alerts: alerts.filter(a => a.crop_type === result.crop_type || a.crop_type === detectedCrop).slice(0, 2),
+      regional_alerts: [],
       harvest_prediction: {
         estimated_days: estimatedDays,
         quality_score: qualityScore,
@@ -606,15 +714,22 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
         quality_factors: harvestInfo.quality_factors,
         optimal_conditions: harvestInfo.optimal_conditions,
       },
+      // Extra: AI engine info
+      ai_engine: usedRealAI ? 'huggingface' : 'local',
+      hf_top3: usedRealAI && hfResults ? hfResults.slice(0, 3).map(r => ({
+        label: r.label,
+        label_tr: PLANTVILLAGE_TR[r.label]?.disease_tr || r.label.replace(/___/g, ' ').replace(/_/g, ' '),
+        score: Math.round(r.score * 100),
+      })) : [],
     };
 
     // Save to history
     if (userId) {
       await AIDiagnosis.create({
         userId,
-        disease: result.disease,
+        disease: response.disease,
         disease_code: result.disease_code,
-        confidence: result.confidence,
+        confidence,
         treatment: result.treatment,
         stage: result.stage,
         spread_risk: result.spread_risk,

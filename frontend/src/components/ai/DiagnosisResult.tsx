@@ -4,7 +4,7 @@ import {
   AlertTriangle, CheckCircle, Pill, Activity,
   TrendingUp, AlertOctagon, Leaf, Camera, Sprout, Bug,
   Sun, ZoomIn, ImageOff, ShieldAlert, Timer, Star,
-  Package, ShoppingBag, Wrench,
+  Package, ShoppingBag, Wrench, Cpu, Search,
 } from 'lucide-react';
 import type { AIDiagnosisResult, Listing } from '../../types';
 
@@ -71,7 +71,41 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
             {isTr ? 'Mevsimsel Risk' : 'Seasonal Risk'}
           </span>
         )}
+        {result.ai_engine === 'huggingface' && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-200/50 text-indigo-700 text-[12px] font-semibold">
+            <Cpu size={13} />
+            AI Model
+          </span>
+        )}
       </div>
+
+      {/* HF Top 3 Predictions */}
+      {result.hf_top3 && result.hf_top3.length > 1 && (
+        <div className="rounded-2xl p-4 bg-indigo-50/50 backdrop-blur-md border border-indigo-200/30">
+          <div className="flex items-center gap-2 mb-2.5">
+            <Search size={14} className="text-indigo-600" />
+            <p className="text-[11px] font-semibold text-indigo-800 uppercase tracking-wider">
+              {isTr ? 'AI Analiz Sonuçları' : 'AI Analysis Results'}
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            {result.hf_top3.map((pred, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  i === 0 ? 'bg-indigo-500 text-white' : 'bg-indigo-100 text-indigo-600'
+                }`}>{i + 1}</span>
+                <span className="flex-1 text-[12px] text-indigo-900 font-medium truncate">{pred.label_tr}</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-16 h-1.5 bg-indigo-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${pred.score}%` }} />
+                  </div>
+                  <span className="text-[10px] font-bold text-indigo-700 w-8 text-right">%{pred.score}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Low confidence warning */}
       {result.needs_better_photo && (

@@ -206,6 +206,12 @@ export interface DiseaseLibraryItem {
   active_regions: string[];
 }
 
+export interface HFClassification {
+  label: string;
+  label_tr: string;
+  score: number;
+}
+
 export interface AIDiagnosisResult {
   disease: string;
   disease_code: string;
@@ -224,6 +230,8 @@ export interface AIDiagnosisResult {
   seasonal_alert?: boolean;
   regional_alerts?: RegionalAlert[];
   harvest_prediction?: HarvestPrediction;
+  ai_engine?: 'huggingface' | 'local';
+  hf_top3?: HFClassification[];
 }
 
 export interface AIDiagnosisHistory extends AIDiagnosisResult {

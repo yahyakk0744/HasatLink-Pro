@@ -137,6 +137,9 @@ export default function AIDiagnosisPanel() {
             </div>
 
             {/* Progress steps */}
+            <p className="text-[14px] font-semibold text-[var(--text-primary)] mb-1">
+              {isTr ? 'Yapay Zeka taranıyor...' : 'AI Scanning...'}
+            </p>
             <div className="space-y-2 max-w-xs mx-auto">
               {[
                 isTr ? 'Görsel analiz ediliyor...' : 'Analyzing image...',
