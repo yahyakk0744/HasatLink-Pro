@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { MapPin, Eye, Phone, Share2, MessageCircle, MessageSquare, Truck, Leaf, Star, Calendar, Weight, Box, Shield, Users, Clock, Wrench, Pencil, Trash2, Droplets, Zap, FileText, Landmark, Thermometer, Clock3, Ruler, ShieldCheck, HandCoins } from 'lucide-react';
+import { MapPin, Eye, Phone, Share2, MessageCircle, MessageSquare, Truck, Leaf, Star, Calendar, Weight, Box, Shield, Users, Clock, Wrench, Pencil, Trash2, Droplets, Zap, FileText, Landmark, Thermometer, Clock3, Ruler, ShieldCheck, HandCoins, Navigation } from 'lucide-react';
 import type { Listing } from '../../types';
 import { formatPrice, formatDate } from '../../utils/formatters';
 import ImageGallery from './ImageGallery';
@@ -281,6 +281,21 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
                   <HandCoins size={16} />
                   Teklif
                 </button>
+              )}
+              {listing.coordinates?.lat && listing.coordinates?.lng && (
+                <a
+                  href={
+                    /iPad|iPhone|iPod|Mac/.test(navigator.userAgent)
+                      ? `https://maps.apple.com/?daddr=${listing.coordinates.lat},${listing.coordinates.lng}`
+                      : `https://www.google.com/maps/dir/?api=1&destination=${listing.coordinates.lat},${listing.coordinates.lng}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-12 h-12 bg-[#0077B6] text-white rounded-2xl hover:opacity-90 active:scale-95 transition-all"
+                  title="Konum Al"
+                >
+                  <Navigation size={18} />
+                </a>
               )}
             </>
           )}

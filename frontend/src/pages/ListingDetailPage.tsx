@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Bell, HandCoins, ShieldCheck, Star, Package, Calendar, MessageCircle, Store, Layers, Zap, Award, CheckCircle2, Truck } from 'lucide-react';
+import { ArrowLeft, Bell, HandCoins, ShieldCheck, Star, Package, Calendar, MessageCircle, Store, Layers, Zap, Award, CheckCircle2, Truck, BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useRatings } from '../hooks/useRatings';
 import { useMessages } from '../hooks/useMessages';
@@ -206,6 +206,7 @@ export default function ListingDetailPage() {
   const [offerSending, setOfferSending] = useState(false);
   const [similarListings, setSimilarListings] = useState<Listing[]>([]);
   const [logisticsPool, setLogisticsPool] = useState<Listing[]>([]);
+  const [marketAnalytics, setMarketAnalytics] = useState<{ avgPrice: number; minPrice: number; maxPrice: number; count: number; trend: number; city: string } | null>(null);
 
   const isOwner = !!(user && listing && user.userId === listing.userId);
 
@@ -222,6 +223,13 @@ export default function ListingDetailPage() {
             .then(res => {
               setSimilarListings(res.data.listings.filter(l => l._id !== id).slice(0, 4));
             })
+            .catch(() => {});
+        }
+        // Fetch market analytics
+        if (data?.type) {
+          const city = data.location?.split(',').pop()?.trim() || '';
+          api.get('/stats/market-analytics', { params: { type: data.type, city, subCategory: data.subCategory || '' } })
+            .then(res => setMarketAnalytics(res.data))
             .catch(() => {});
         }
         // Fetch logistics pool if listing needs transport
@@ -419,6 +427,68 @@ export default function ListingDetailPage() {
               zoom={13}
             />
           </div>
+
+          {/* Market Analytics */}
+          {marketAnalytics && marketAnalytics.count > 1 && (
+            <div className="surface-card rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-xl bg-[#7C3AED]/10 flex items-center justify-center">
+                  <BarChart3 size={16} strokeWidth={1.5} className="text-[#7C3AED]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold tracking-tight">Piyasa Analizi</h3>
+                  {marketAnalytics.city && (
+                    <p className="text-[10px] text-[var(--text-secondary)]">{marketAnalytics.city} bolgesi</p>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="text-center p-2.5 rounded-xl bg-[var(--bg-input)]">
+                  <p className="text-[9px] font-medium text-[var(--text-secondary)] uppercase">Min</p>
+                  <p className="text-xs font-bold text-[#2D6A4F]">{marketAnalytics.minPrice.toLocaleString('tr-TR')} TL</p>
+                </div>
+                <div className="text-center p-2.5 rounded-xl bg-[var(--bg-input)]">
+                  <p className="text-[9px] font-medium text-[var(--text-secondary)] uppercase">Ort</p>
+                  <p className="text-xs font-bold text-[var(--text-primary)]">{marketAnalytics.avgPrice.toLocaleString('tr-TR')} TL</p>
+                </div>
+                <div className="text-center p-2.5 rounded-xl bg-[var(--bg-input)]">
+                  <p className="text-[9px] font-medium text-[var(--text-secondary)] uppercase">Max</p>
+                  <p className="text-xs font-bold text-[#C1341B]">{marketAnalytics.maxPrice.toLocaleString('tr-TR')} TL</p>
+                </div>
+              </div>
+              {/* Price position bar */}
+              <div className="mb-3">
+                <div className="flex items-center justify-between text-[10px] text-[var(--text-secondary)] mb-1">
+                  <span>Bu ilan</span>
+                  <span className={listing.price <= marketAnalytics.avgPrice ? 'text-[#2D6A4F] font-semibold' : 'text-[#C1341B] font-semibold'}>
+                    {listing.price <= marketAnalytics.avgPrice ? 'Ortalamanin altinda' : 'Ortalamanin ustunde'}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-gradient-to-r from-[#2D6A4F] via-[#F59E0B] to-[#C1341B] relative">
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-2 border-[var(--text-primary)] rounded-full shadow-sm"
+                    style={{
+                      left: `${Math.min(100, Math.max(0, ((listing.price - marketAnalytics.minPrice) / (marketAnalytics.maxPrice - marketAnalytics.minPrice || 1)) * 100))}%`,
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                  />
+                </div>
+              </div>
+              {/* Trend */}
+              <div className="flex items-center justify-between px-2.5 py-2 rounded-xl bg-[var(--bg-input)]">
+                <span className="text-[10px] text-[var(--text-secondary)]">30 gunluk trend</span>
+                <span className={`flex items-center gap-1 text-xs font-semibold ${
+                  marketAnalytics.trend > 0 ? 'text-[#C1341B]' : marketAnalytics.trend < 0 ? 'text-[#2D6A4F]' : 'text-[var(--text-secondary)]'
+                }`}>
+                  {marketAnalytics.trend > 0 ? <TrendingUp size={12} /> : marketAnalytics.trend < 0 ? <TrendingDown size={12} /> : <Minus size={12} />}
+                  {marketAnalytics.trend > 0 ? '+' : ''}{marketAnalytics.trend}%
+                </span>
+              </div>
+              <p className="text-[9px] text-[var(--text-secondary)] mt-2 text-center">
+                {marketAnalytics.count} aktif ilan uzerinden hesaplandi
+              </p>
+            </div>
+          )}
 
           {/* Price Alert */}
           {user && !isOwner && (

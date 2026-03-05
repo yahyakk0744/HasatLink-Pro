@@ -261,6 +261,65 @@ export const shareListing = async (req: Request, res: Response): Promise<void> =
   }
 };
 
+export const getMarketAnalytics = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { type, city, subCategory } = req.query;
+    if (!type) { res.status(400).json({ message: 'type is required' }); return; }
+
+    const filter: any = { type, status: 'active' };
+    if (city) {
+      const escapedCity = (city as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.location = { $regex: escapedCity, $options: 'i' };
+    }
+    if (subCategory) filter.subCategory = subCategory;
+
+    const result = await Listing.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: null,
+          avgPrice: { $avg: '$price' },
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Get recent price trend (last 30 days vs previous 30 days)
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+    const [recentAvg, olderAvg] = await Promise.all([
+      Listing.aggregate([
+        { $match: { ...filter, createdAt: { $gte: thirtyDaysAgo } } },
+        { $group: { _id: null, avg: { $avg: '$price' } } },
+      ]),
+      Listing.aggregate([
+        { $match: { ...filter, createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo } } },
+        { $group: { _id: null, avg: { $avg: '$price' } } },
+      ]),
+    ]);
+
+    const recentPrice = recentAvg[0]?.avg || 0;
+    const olderPrice = olderAvg[0]?.avg || 0;
+    const trend = olderPrice > 0 ? ((recentPrice - olderPrice) / olderPrice) * 100 : 0;
+
+    const stats = result[0] || { avgPrice: 0, minPrice: 0, maxPrice: 0, count: 0 };
+    res.json({
+      avgPrice: Math.round(stats.avgPrice),
+      minPrice: stats.minPrice,
+      maxPrice: stats.maxPrice,
+      count: stats.count,
+      trend: Math.round(trend * 10) / 10,
+      city: city || '',
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Market analytics hatasi', error });
+  }
+};
+
 export const getPlatformStats = async (_req: Request, res: Response): Promise<void> => {
   try {
     const [activeListings, registeredUsers, aiDiagnoses, citiesResult, categoryAgg] = await Promise.all([

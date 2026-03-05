@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import { getListings, getListing, createListing, updateListing, deleteListing, waClick, shareListing, getPlatformStats } from '../controllers/listingController';
+import { getListings, getListing, createListing, updateListing, deleteListing, waClick, shareListing, getPlatformStats, getMarketAnalytics } from '../controllers/listingController';
 import auth from '../middleware/auth';
 import optionalAuth from '../middleware/optionalAuth';
 
 const router = Router();
 
 router.get('/stats/platform', getPlatformStats);
+router.get('/stats/market-analytics', getMarketAnalytics);
 router.get('/listings', getListings);
 router.get('/listings/:id', optionalAuth, getListing);
 router.post('/listings', auth, createListing);

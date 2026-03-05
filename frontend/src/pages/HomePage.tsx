@@ -18,6 +18,8 @@ import { useCountUp } from '../hooks/useCountUp';
 import ListingCard from '../components/listings/ListingCard';
 import AIDiagnosisPanel from '../components/ai/AIDiagnosisPanel';
 import ListingMap from '../components/map/ListingMap';
+import StoriesSection from '../components/social/StoriesSection';
+import BannerCarousel from '../components/ads/BannerCarousel';
 import { CATEGORY_LABELS } from '../utils/constants';
 import SEO from '../components/ui/SEO';
 import api from '../config/api';
@@ -150,6 +152,16 @@ export default function HomePage() {
         keywords={lang === 'tr' ? 'tarım, pazar, çiftçi, hasatlink, ürün, lojistik, ekipman, arazi' : 'agriculture, marketplace, farmer, hasatlink, products, logistics, equipment, land'}
         ogImage="/icons/icon.svg"
       />
+
+      {/* ─── 0. Stories ─── */}
+      <section className="max-w-7xl mx-auto px-3 md:px-4 pt-4 md:pt-6">
+        <StoriesSection />
+      </section>
+
+      {/* ─── 0b. Banner Carousel ─── */}
+      <section className="max-w-7xl mx-auto px-3 md:px-4 pt-2 md:pt-4">
+        <BannerCarousel />
+      </section>
 
       {/* ─── 1. Hero Banner ─── */}
       <section className="relative bg-gradient-to-b from-[#0A0A0A] via-[#111111] to-[#1A1A1A] text-white py-8 md:py-32 overflow-hidden">
