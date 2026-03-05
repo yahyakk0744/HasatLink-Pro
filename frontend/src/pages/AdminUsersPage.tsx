@@ -160,10 +160,18 @@ export default function AdminUsersPage() {
         <button
           onClick={() => fetchUserDetail(u.userId)}
           className={btnClass(false, '')}
-          title="Görüntüle"
+          title="Detay"
         >
           <Eye size={14} />
-          {!compact && <span className="hidden sm:inline">Görüntüle</span>}
+          {!compact && <span className="hidden sm:inline">Detay</span>}
+        </button>
+        <button
+          onClick={() => window.open(`/profil/${u.userId}`, '_blank', 'noreferrer')}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-[#2D6A4F]/10 text-[#2D6A4F] transition-all duration-200"
+          title="Profili Gör"
+        >
+          <ExternalLink size={14} />
+          {!compact && <span className="hidden sm:inline">Profil</span>}
         </button>
         {u.role !== 'admin' && (
           <>
@@ -500,21 +508,11 @@ export default function AdminUsersPage() {
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--border-default)]">
               {renderActions(detailUser, false)}
               <button
-                onClick={() => {
-                  setDetailModalOpen(false);
-                  window.location.href = `/profil/${detailUser.userId}`;
-                }}
+                onClick={() => window.open(`/profil/${detailUser.userId}`, '_blank', 'noreferrer')}
                 className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#2D6A4F]/10 text-[#2D6A4F] hover:bg-[#2D6A4F]/20 transition-colors"
               >
-                <Eye size={14} />
-                Profili Gör
-              </button>
-              <button
-                onClick={() => window.open(`/profil/${detailUser.userId}`, '_blank')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0077B6]/10 text-[#0077B6] hover:bg-[#0077B6]/20 transition-colors"
-              >
                 <ExternalLink size={14} />
-                Yeni Sekmede Aç
+                Profili Gör
               </button>
             </div>
           </div>

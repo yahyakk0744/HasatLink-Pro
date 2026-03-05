@@ -47,8 +47,9 @@ export default function ProfilePage() {
   // Only redirect to login if viewing own profile without auth (not a :userId param route)
   if (!paramUserId && !authLoading && !authUser) return <Navigate to="/giris" replace />;
 
-  // Show spinner only during initial load, not forever
-  if (authLoading || (loading && !profileUser && !fetchFailed)) {
+  // Admin bypass: skip loading spinner, render immediately when data arrives
+  // Non-admin: show spinner during initial load
+  if (!isAdmin && (authLoading || (loading && !profileUser && !fetchFailed))) {
     return <LoadingSpinner size="lg" className="py-20" />;
   }
 
