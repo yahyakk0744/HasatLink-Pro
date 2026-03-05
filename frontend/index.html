@@ -31,9 +31,6 @@
     <meta name="apple-mobile-web-app-title" content="HasatLink" />
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
 
-    <!-- iOS Splash Screen (logo-only) -->
-    <link rel="apple-touch-startup-image" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1170' height='2532' viewBox='0 0 1170 2532'%3E%3Crect width='1170' height='2532' fill='%23FAFAF8'/%3E%3Crect x='521' y='1182' width='128' height='128' rx='32' fill='%232D6A4F'/%3E%3Cpath d='M545 1270v-32c0-13.3 10.7-24 24-24s24 10.7 24 24v32' stroke='white' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M557 1270v-24a12 12 0 0 1 24 0v24' stroke='white' stroke-width='6' stroke-linecap='round'/%3E%3Ccircle cx='585' cy='1242' r='6' fill='%234ADE80'/%3E%3C/svg%3E" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />
-
     <!-- Dark mode flash prevention -->
     <script>
       (function() {
@@ -51,32 +48,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   </head>
   <body>
-    <!-- Splash Screen — disappears when React mounts -->
-    <div id="splash" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#FAFAF8;transition:opacity .4s ease">
-      <svg width="72" height="72" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="64" height="64" rx="16" fill="#2D6A4F"/>
-        <path d="M20 44V28c0-6.627 5.373-12 12-12s12 5.373 12 12v16" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-        <path d="M26 44V32a6 6 0 0 1 12 0v12" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-        <circle cx="32" cy="26" r="3" fill="#4ADE80"/>
-      </svg>
-    </div>
-    <script>
-      // Hide splash once React app renders
-      var splashEl = document.getElementById('splash');
-      if (splashEl) {
-        var observer = new MutationObserver(function() {
-          var root = document.getElementById('root');
-          if (root && root.children.length > 0) {
-            splashEl.style.opacity = '0';
-            setTimeout(function() { splashEl.remove(); }, 400);
-            observer.disconnect();
-          }
-        });
-        observer.observe(document.getElementById('root'), { childList: true });
-        // Fallback: remove splash after 4 seconds max
-        setTimeout(function() { if (splashEl.parentNode) { splashEl.style.opacity = '0'; setTimeout(function() { splashEl.remove(); }, 400); } }, 4000);
-      }
-    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
