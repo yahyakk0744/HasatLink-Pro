@@ -85,16 +85,16 @@ export default function AIDiagnosisPanel() {
               </div>
 
               <p className="text-[15px] font-semibold text-[var(--text-primary)] mb-1">
-                {isTr ? 'Bitki Fotografini Yukle' : 'Upload Plant Photo'}
+                {isTr ? 'Bitki Fotoğrafını Yükle' : 'Upload Plant Photo'}
               </p>
               <p className="text-[12px] text-[var(--text-tertiary)] mb-3">
-                {isTr ? 'Hastalik teshisi, hasat tahmini ve akilli yonlendirme' : 'Disease diagnosis, harvest prediction & smart matching'}
+                {isTr ? 'Hastalık teşhisi, hasat tahmini ve akıllı yönlendirme' : 'Disease diagnosis, harvest prediction & smart matching'}
               </p>
 
               {/* Feature pills */}
               <div className="flex flex-wrap justify-center gap-2">
                 {[
-                  { icon: Leaf, label: isTr ? 'Hastalik Teshisi' : 'Disease Detection' },
+                  { icon: Leaf, label: isTr ? 'Hastalık Teşhisi' : 'Disease Detection' },
                   { icon: Camera, label: isTr ? 'Hasat Tahmini' : 'Harvest Forecast' },
                 ].map(({ icon: Icon, label }) => (
                   <span key={label} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--bg-input)] text-[10px] font-medium text-[var(--text-secondary)] border border-[var(--border-default)]/50">
@@ -139,9 +139,9 @@ export default function AIDiagnosisPanel() {
             {/* Progress steps */}
             <div className="space-y-2 max-w-xs mx-auto">
               {[
-                isTr ? 'Gorsel analiz ediliyor...' : 'Analyzing image...',
-                isTr ? 'Bitki turu tanimlaniyor...' : 'Identifying crop type...',
-                isTr ? 'Hastalik tespiti yapiliyor...' : 'Detecting diseases...',
+                isTr ? 'Görsel analiz ediliyor...' : 'Analyzing image...',
+                isTr ? 'Bitki türü tanımlanıyor...' : 'Identifying crop type...',
+                isTr ? 'Hastalık tespiti yapılıyor...' : 'Detecting diseases...',
               ].map((step, i) => (
                 <div
                   key={step}

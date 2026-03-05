@@ -20,16 +20,16 @@ export default function AIDiagnosisPage() {
 
   const tabs: { key: Tab; icon: typeof Sparkles; label: string }[] = [
     { key: 'doctor', icon: Sparkles, label: isTr ? 'Bitki Doktoru' : 'Plant Doctor' },
-    { key: 'library', icon: BookOpen, label: isTr ? 'Hastalik Kutuphanesi' : 'Disease Library' },
-    { key: 'history', icon: Clock, label: isTr ? 'Gecmis' : 'History' },
+    { key: 'library', icon: BookOpen, label: isTr ? 'Hastalık Kütüphanesi' : 'Disease Library' },
+    { key: 'history', icon: Clock, label: isTr ? 'Geçmiş' : 'History' },
   ];
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 animate-fade-in">
       <SEO
         title="HasatAI - Bitki Doktoru"
-        description="Yapay zeka destekli bitki hastaligi teshisi, hasat tahmini ve akilli yonlendirme."
-        keywords="ai, yapay zeka, bitki hastaligi, teshis, tarim, hasat tahmini"
+        description="Yapay zeka destekli bitki hastalığı teşhisi, hasat tahmini ve akıllı yönlendirme."
+        keywords="ai, yapay zeka, bitki hastalığı, teşhis, tarım, hasat tahmini"
       />
 
       {/* Page header */}
@@ -40,7 +40,7 @@ export default function AIDiagnosisPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">HasatAI</h1>
           <p className="text-[13px] text-[var(--text-secondary)]">
-            {isTr ? 'Yapay Zeka Destekli Tarim Asistani' : 'AI-Powered Agriculture Assistant'}
+            {isTr ? 'Yapay Zeka Destekli Tarım Asistanı' : 'AI-Powered Agriculture Assistant'}
           </p>
         </div>
       </div>

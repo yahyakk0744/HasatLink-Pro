@@ -49,7 +49,7 @@ export default function DiseaseLibrary() {
             <div className="flex items-center gap-2 mb-3">
               <ShieldAlert size={18} className="text-red-600" />
               <p className="text-[13px] font-bold text-red-800">
-                {isTr ? 'Bolgesel Uyarilar' : 'Regional Alerts'}
+                {isTr ? 'Bölgesel Uyarılar' : 'Regional Alerts'}
               </p>
               <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold">
                 {alerts.length}
@@ -77,10 +77,10 @@ export default function DiseaseLibrary() {
         </div>
         <div>
           <h3 className="text-[17px] font-bold text-[var(--text-primary)] tracking-tight">
-            {isTr ? 'Hastalik Kutuphanesi' : 'Disease Library'}
+            {isTr ? 'Hastalık Kütüphanesi' : 'Disease Library'}
           </h3>
           <p className="text-[12px] text-[var(--text-secondary)]">
-            {isTr ? `${diseases.length} hastalik kayitli` : `${diseases.length} diseases registered`}
+            {isTr ? `${diseases.length} hastalık kayıtlı` : `${diseases.length} diseases registered`}
           </p>
         </div>
       </div>
@@ -93,7 +93,7 @@ export default function DiseaseLibrary() {
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder={isTr ? 'Hastalik ara...' : 'Search disease...'}
+            placeholder={isTr ? 'Hastalık ara...' : 'Search disease...'}
             className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-[var(--bg-input)] border border-[var(--border-default)] text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50"
           />
         </div>
@@ -109,7 +109,7 @@ export default function DiseaseLibrary() {
               : 'bg-[var(--bg-input)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-[var(--bg-surface-hover)]'
           }`}
         >
-          {isTr ? 'Tumunu Goster' : 'Show All'}
+          {isTr ? 'Tümünü Göster' : 'Show All'}
         </button>
         {cropTypes.map(crop => (
           <button
@@ -158,9 +158,9 @@ export default function DiseaseLibrary() {
                       </span>
                     )}
                     <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${style.bg} ${style.text}`}>
-                      {d.urgency === 'critical' ? (isTr ? 'KRiTiK' : 'CRITICAL')
+                      {d.urgency === 'critical' ? (isTr ? 'KRİTİK' : 'CRITICAL')
                         : d.urgency === 'medium' ? (isTr ? 'ORTA' : 'MEDIUM')
-                        : (isTr ? 'DUSUK' : 'LOW')}
+                        : (isTr ? 'DÜŞÜK' : 'LOW')}
                     </span>
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export default function DiseaseLibrary() {
                   <div className="flex items-start gap-2.5">
                     <Shield size={14} className="text-violet-600 mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase mb-0.5">{isTr ? 'Onleme' : 'Prevention'}</p>
+                      <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase mb-0.5">{isTr ? 'Önleme' : 'Prevention'}</p>
                       <p className="text-[12px] text-[var(--text-primary)] leading-relaxed">{d.prevention}</p>
                     </div>
                   </div>
@@ -191,7 +191,7 @@ export default function DiseaseLibrary() {
                   {/* Recommended products */}
                   {d.recommended_products.length > 0 && (
                     <div>
-                      <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase mb-1.5">{isTr ? 'Onerilen Urunler' : 'Products'}</p>
+                      <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase mb-1.5">{isTr ? 'Önerilen Ürünler' : 'Products'}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {d.recommended_products.map(p => (
                           <span key={p} className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-medium border border-blue-200/40">
@@ -205,7 +205,7 @@ export default function DiseaseLibrary() {
                   {/* Active regions */}
                   {d.active_regions.length > 0 && (
                     <div>
-                      <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase mb-1.5">{isTr ? 'Yaygin Bolgeler' : 'Active Regions'}</p>
+                      <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase mb-1.5">{isTr ? 'Yaygın Bölgeler' : 'Active Regions'}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {d.active_regions.map(r => (
                           <span key={r} className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-medium border border-amber-200/40">
@@ -226,7 +226,7 @@ export default function DiseaseLibrary() {
         <div className="flex flex-col items-center py-12 gap-3">
           <Leaf size={32} className="text-[var(--text-tertiary)]" />
           <p className="text-[13px] text-[var(--text-secondary)]">
-            {isTr ? 'Sonuc bulunamadi' : 'No results found'}
+            {isTr ? 'Sonuç bulunamadı' : 'No results found'}
           </p>
         </div>
       )}

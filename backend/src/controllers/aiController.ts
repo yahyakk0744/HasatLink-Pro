@@ -488,6 +488,7 @@ const HARVEST_DATA: Record<string, {
   'Elma': { min_days: 100, max_days: 180, quality_factors: ['Renk gelişimi', 'Sertlik', 'Şeker/asit dengesi'], optimal_conditions: 'Serin gece, güneşli gündüz' },
   'Avokado': { min_days: 200, max_days: 365, quality_factors: ['Meyve ağırlığı', 'Yağ oranı', 'Kabuk rengi'], optimal_conditions: 'Ilıman iklim, kışın donmayan' },
   'Genel': { min_days: 90, max_days: 180, quality_factors: ['Genel görünüm', 'Büyüklük', 'Olgunluk belirtileri'], optimal_conditions: 'Ürüne göre değişir' },
+  'Çay': { min_days: 90, max_days: 120, quality_factors: ['Yaprak tazeliği', 'Renk', 'Koku yoğunluğu'], optimal_conditions: 'Nemli iklim, 600-2000m yükseklik' },
 };
 
 // ─── REGIONAL ALERT SYSTEM ───
@@ -513,7 +514,7 @@ function getRegionalAlerts(region?: string): Array<{ disease: string; crop_type:
         disease: d.disease,
         crop_type: d.crop_type,
         risk_level: d.urgency === 'critical' ? 'high' : 'medium',
-        message: `${d.crop_type} ureticileri dikkat: ${d.disease.split('(')[0].trim()} su an bolgenizde yaygin. ${d.prevention}`,
+        message: `${d.crop_type} üreticileri dikkat: ${d.disease.split('(')[0].trim()} şu an bölgenizde yaygın. ${d.prevention}`,
       });
     }
   }
@@ -530,7 +531,7 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
     const file = (req as any).file as Express.Multer.File | undefined;
 
     if (!file) {
-      res.status(400).json({ message: 'Fotograf yuklenmedi' });
+      res.status(400).json({ message: 'Fotoğraf yüklenmedi' });
       return;
     }
 
@@ -546,7 +547,7 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
       });
       if (todayCount >= settings.aiUsageLimit.dailyFreeCount) {
         res.status(429).json({
-          message: 'Gunluk AI teshis limitinize ulastiniz',
+          message: 'Günlük AI teşhis limitinize ulaştınız',
           limit: settings.aiUsageLimit.dailyFreeCount,
           used: todayCount,
         });
@@ -591,7 +592,7 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
       image_url: imageUrl,
       needs_better_photo: needsBetterPhoto,
       warning: needsBetterPhoto
-        ? 'Dogruluk orani dusuk. Net sonuc icin daha yakin ve iyi aydinlatilmis bir fotograf cekin.'
+        ? 'Doğruluk oranı düşük. Net sonuç için daha yakın ve iyi aydınlatılmış bir fotoğraf çekin.'
         : null,
       // NEW: Extended fields
       recommended_products: result.recommended_products,
@@ -601,7 +602,7 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
       harvest_prediction: {
         estimated_days: estimatedDays,
         quality_score: qualityScore,
-        quality_label: qualityScore >= 80 ? 'Yuksek' : qualityScore >= 50 ? 'Orta' : 'Dusuk',
+        quality_label: qualityScore >= 80 ? 'Yüksek' : qualityScore >= 50 ? 'Orta' : 'Düşük',
         quality_factors: harvestInfo.quality_factors,
         optimal_conditions: harvestInfo.optimal_conditions,
       },
@@ -625,7 +626,7 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
 
     res.json(response);
   } catch (error) {
-    res.status(500).json({ message: 'AI teshis hatasi', error });
+    res.status(500).json({ message: 'AI teşhis hatası', error });
   }
 };
 
@@ -637,7 +638,7 @@ export const getDiagnosisHistory = async (req: Request, res: Response): Promise<
       .limit(20);
     res.json(history);
   } catch (error) {
-    res.status(500).json({ message: 'Gecmis hatasi', error });
+    res.status(500).json({ message: 'Geçmiş hatası', error });
   }
 };
 
@@ -662,7 +663,7 @@ export const getDiseaseLibrary = async (_req: Request, res: Response): Promise<v
 
     res.json({ diseases: library, season, total: library.length });
   } catch (error) {
-    res.status(500).json({ message: 'Kutuphane hatasi', error });
+    res.status(500).json({ message: 'Kütüphane hatası', error });
   }
 };
 
@@ -673,7 +674,7 @@ export const getRegionalAlertsEndpoint = async (req: Request, res: Response): Pr
     const alerts = getRegionalAlerts(region);
     res.json({ alerts, region, season: getCurrentSeason() });
   } catch (error) {
-    res.status(500).json({ message: 'Uyari hatasi', error });
+    res.status(500).json({ message: 'Uyarı hatası', error });
   }
 };
 
@@ -721,7 +722,7 @@ export const getSmartMatches = async (req: Request, res: Response): Promise<void
 
     res.json({ listings, professionals, disease_name: disease.disease, crop_type: disease.crop_type });
   } catch (error) {
-    res.status(500).json({ message: 'Eslestirme hatasi', error });
+    res.status(500).json({ message: 'Eşleştirme hatası', error });
   }
 };
 
@@ -738,12 +739,12 @@ export const getHarvestPrediction = async (req: Request, res: Response): Promise
       estimated_days: estimatedDays,
       estimated_date: new Date(Date.now() + estimatedDays * 86400000).toISOString().split('T')[0],
       quality_score: qualityScore,
-      quality_label: qualityScore >= 80 ? 'Yuksek' : qualityScore >= 50 ? 'Orta' : 'Dusuk',
+      quality_label: qualityScore >= 80 ? 'Yüksek' : qualityScore >= 50 ? 'Orta' : 'Düşük',
       quality_factors: harvestInfo.quality_factors,
       optimal_conditions: harvestInfo.optimal_conditions,
       season: getCurrentSeason(),
     });
   } catch (error) {
-    res.status(500).json({ message: 'Hasat tahmini hatasi', error });
+    res.status(500).json({ message: 'Hasat tahmini hatası', error });
   }
 };

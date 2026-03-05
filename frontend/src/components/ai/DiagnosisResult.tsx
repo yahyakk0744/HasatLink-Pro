@@ -17,17 +17,17 @@ interface DiagnosisResultProps {
 const STAGE_MAP = {
   early: { tr: 'Erken Evre', en: 'Early Stage', color: 'text-emerald-600', bg: 'bg-emerald-50' },
   mid: { tr: 'Orta Evre', en: 'Mid Stage', color: 'text-amber-600', bg: 'bg-amber-50' },
-  advanced: { tr: 'Ileri Evre', en: 'Advanced Stage', color: 'text-red-600', bg: 'bg-red-50' },
+  advanced: { tr: 'İleri Evre', en: 'Advanced Stage', color: 'text-red-600', bg: 'bg-red-50' },
 };
 
 const RISK_MAP = {
-  low: { tr: 'Dusuk', en: 'Low', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  low: { tr: 'Düşük', en: 'Low', color: 'text-emerald-600', bg: 'bg-emerald-50' },
   medium: { tr: 'Orta', en: 'Medium', color: 'text-amber-600', bg: 'bg-amber-50' },
-  high: { tr: 'Yuksek', en: 'High', color: 'text-red-600', bg: 'bg-red-50' },
+  high: { tr: 'Yüksek', en: 'High', color: 'text-red-600', bg: 'bg-red-50' },
 };
 
 const URGENCY_MAP = {
-  low: { tr: 'Dusuk', en: 'Low', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
+  low: { tr: 'Düşük', en: 'Low', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
   medium: { tr: 'Orta', en: 'Medium', color: 'text-amber-600', bg: 'bg-amber-50', icon: AlertTriangle },
   critical: { tr: 'Kritik', en: 'Critical', color: 'text-red-600', bg: 'bg-red-50', icon: AlertOctagon },
 };
@@ -62,7 +62,7 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
         {isHealthy && (
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/50 text-emerald-700 text-[12px] font-semibold">
             <CheckCircle size={13} />
-            {isTr ? 'Saglikli' : 'Healthy'}
+            {isTr ? 'Sağlıklı' : 'Healthy'}
           </span>
         )}
         {result.seasonal_alert && !isHealthy && (
@@ -84,13 +84,13 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
           </div>
           <div className="px-4 pb-4 pt-0">
             <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider mb-2">
-              {isTr ? 'Olasi Nedenler' : 'Possible Reasons'}
+              {isTr ? 'Olası Nedenler' : 'Possible Reasons'}
             </p>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { icon: Sun, label: isTr ? 'Isik yetersiz' : 'Low light' },
+                { icon: Sun, label: isTr ? 'Işık yetersiz' : 'Low light' },
                 { icon: ZoomIn, label: isTr ? 'Bitki uzakta' : 'Too far' },
-                { icon: ImageOff, label: isTr ? 'Bulanik gorsel' : 'Blurry image' },
+                { icon: ImageOff, label: isTr ? 'Bulanık görsel' : 'Blurry image' },
               ].map(({ icon: Icon, label }) => (
                 <div key={label} className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-amber-100/50">
                   <Icon size={16} className="text-amber-600" />
@@ -119,7 +119,7 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
           </div>
           <div className="flex-1">
             <p className="text-[11px] text-gray-500 uppercase font-semibold tracking-wider mb-0.5">
-              {isTr ? 'Teshis' : 'Diagnosis'}
+              {isTr ? 'TESPİT' : 'Diagnosis'}
             </p>
             <p className="text-[15px] font-semibold text-gray-900 tracking-tight">
               {result.disease}
@@ -165,7 +165,7 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
           <div className={`rounded-xl p-3.5 ${riskInfo.bg} border border-black/5`}>
             <TrendingUp size={16} className={`${riskInfo.color} mb-1.5`} />
             <p className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">
-              {isTr ? 'Yayilma' : 'Spread'}
+              {isTr ? 'Yayılma' : 'Spread'}
             </p>
             <p className={`text-[13px] font-semibold ${riskInfo.color}`}>
               {riskInfo[lang]}
@@ -191,7 +191,7 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
           </div>
           <div>
             <p className="text-[11px] text-gray-500 uppercase font-semibold tracking-wider mb-1">
-              {isTr ? 'Tedavi Onerisi' : 'Treatment'}
+              {isTr ? 'ÇÖZÜM' : 'Treatment'}
             </p>
             <p className="text-[13px] text-gray-700 leading-relaxed">{result.treatment}</p>
           </div>
@@ -204,7 +204,7 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
           <div className="flex items-center gap-2 mb-3">
             <Package size={16} className="text-blue-600" />
             <p className="text-[12px] font-semibold text-blue-800 uppercase tracking-wider">
-              {isTr ? 'Onerilen Urunler' : 'Recommended Products'}
+              {isTr ? 'Önerilen Ürünler' : 'Recommended Products'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -226,7 +226,7 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
             </div>
             <div>
               <p className="text-[11px] text-violet-700 uppercase font-semibold tracking-wider mb-1">
-                {isTr ? 'Onleme' : 'Prevention'}
+                {isTr ? 'Önleme' : 'Prevention'}
               </p>
               <p className="text-[12px] text-violet-800 leading-relaxed">{result.prevention}</p>
             </div>
@@ -253,7 +253,7 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
               {/* Days to harvest */}
               <div className="rounded-xl bg-white/60 p-3 text-center border border-emerald-200/30">
                 <p className="text-[24px] font-bold text-emerald-700">{result.harvest_prediction.estimated_days}</p>
-                <p className="text-[10px] text-gray-500 font-medium uppercase">{isTr ? 'Gun Kaldi' : 'Days Left'}</p>
+                <p className="text-[10px] text-gray-500 font-medium uppercase">{isTr ? 'Gün Kaldı' : 'Days Left'}</p>
               </div>
               {/* Quality score */}
               <div className="rounded-xl bg-white/60 p-3 text-center border border-emerald-200/30">
@@ -280,7 +280,7 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
           {/* Optimal conditions footer */}
           <div className="px-4 py-2.5 bg-emerald-100/40 border-t border-emerald-200/30">
             <p className="text-[10px] text-emerald-700">
-              <span className="font-semibold">{isTr ? 'Ideal Kosullar:' : 'Optimal:'}</span>{' '}
+              <span className="font-semibold">{isTr ? 'İdeal Koşullar:' : 'Optimal:'}</span>{' '}
               {result.harvest_prediction.optimal_conditions}
             </p>
           </div>
@@ -296,7 +296,7 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
                 <ShieldAlert size={16} className="text-red-600" />
               </div>
               <p className="text-[12px] font-semibold text-red-800 uppercase tracking-wider">
-                {isTr ? 'Bolgesel Uyari' : 'Regional Alert'}
+                {isTr ? 'Bölgesel Uyarı' : 'Regional Alert'}
               </p>
             </div>
             <div className="space-y-2">
@@ -320,10 +320,10 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
               </div>
               <div>
                 <p className="text-[12px] font-semibold text-[var(--text-primary)] uppercase tracking-wider">
-                  {isTr ? 'Ilgili Urunler' : 'Related Products'}
+                  {isTr ? 'İlgili Ürünler' : 'Related Products'}
                 </p>
                 <p className="text-[10px] text-[var(--text-tertiary)]">
-                  {isTr ? 'Tedavi icin onerilen ilanlar' : 'Suggested listings for treatment'}
+                  {isTr ? 'Tedavi için önerilen ilanlar' : 'Suggested listings for treatment'}
                 </p>
               </div>
             </div>
@@ -358,10 +358,10 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
               </div>
               <div>
                 <p className="text-[12px] font-semibold text-[var(--text-primary)] uppercase tracking-wider">
-                  {isTr ? 'Uzman Yardimi' : 'Expert Help'}
+                  {isTr ? 'UZMAN ÖNERİSİ' : 'Expert Help'}
                 </p>
                 <p className="text-[10px] text-[var(--text-tertiary)]">
-                  {isTr ? 'Bolgenizde ziraat uzmanlari' : 'Agricultural experts in your area'}
+                  {isTr ? 'Bölgenizde ziraat uzmanları' : 'Agricultural experts in your area'}
                 </p>
               </div>
             </div>
