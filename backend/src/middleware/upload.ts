@@ -22,5 +22,19 @@ const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterC
 export const uploadDiagnosis = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 10 * 1024 * 1024 },
+}).single('image');
+
+const adStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadDir),
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `ad-${uniqueSuffix}${path.extname(file.originalname)}`);
+  },
+});
+
+export const uploadAdImage = multer({
+  storage: adStorage,
+  fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 },
 }).single('image');

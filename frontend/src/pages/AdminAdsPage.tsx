@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Megaphone, Plus, Trash2, Edit3, Eye, MousePointer } from 'lucide-react';
+import { Megaphone, Plus, Trash2, Edit3, Eye, MousePointer, Upload, Monitor, Smartphone, Info, X, Image as ImageIcon } from 'lucide-react';
 import AdminLayout from '../components/admin/AdminLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -19,14 +19,115 @@ const SLOT_LABELS: Record<string, Record<SlotType, string>> = {
   en: { header: 'Header', sidebar: 'Sidebar', footer: 'Footer', 'between-listings': 'Between Listings' },
 };
 
+const PIXEL_GUIDES: Record<SlotType, { desktop: string; mobile: string }> = {
+  header: { desktop: '1280 × 400 px', mobile: '400 × 600 px' },
+  sidebar: { desktop: '300 × 600 px', mobile: '400 × 300 px' },
+  footer: { desktop: '1280 × 300 px', mobile: '400 × 400 px' },
+  'between-listings': { desktop: '1280 × 250 px', mobile: '400 × 500 px' },
+};
+
 const emptyAd = (): Omit<Ad, '_id' | 'clickCount' | 'impressionCount' | 'createdAt'> => ({
   slot: 'header',
   enabled: false,
   imageUrl: '',
+  mobileImageUrl: '',
   clickUrl: '',
   startDate: new Date().toISOString().slice(0, 10),
   endDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
 });
+
+function ImageDropZone({
+  label,
+  pixelGuide,
+  icon: Icon,
+  imageUrl,
+  onUpload,
+  onClear,
+  uploading,
+}: {
+  label: string;
+  pixelGuide: string;
+  icon: typeof Monitor;
+  imageUrl: string;
+  onUpload: (file: File) => void;
+  onClear: () => void;
+  uploading: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) onUpload(file);
+  }, [onUpload]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onUpload(file);
+    e.target.value = '';
+  };
+
+  if (imageUrl) {
+    return (
+      <div className="relative group">
+        <div className="flex items-center gap-2 mb-2">
+          <Icon size={14} className="text-[var(--text-secondary)]" />
+          <span className="text-xs font-medium text-[var(--text-secondary)]">{label}</span>
+          <span className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2D6A4F]/10 text-[10px] font-semibold text-[#2D6A4F]">
+            <Info size={10} />{pixelGuide}
+          </span>
+        </div>
+        <div className="relative rounded-xl overflow-hidden bg-[var(--bg-input)] border border-[var(--border-default)]">
+          <img src={imageUrl.startsWith('/uploads') ? `${api.defaults.baseURL?.replace('/api', '')}${imageUrl}` : imageUrl} alt="" className="w-full h-32 object-cover" onError={e => (e.currentTarget.src = '')} />
+          <button
+            onClick={onClear}
+            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <Icon size={14} className="text-[var(--text-secondary)]" />
+        <span className="text-xs font-medium text-[var(--text-secondary)]">{label}</span>
+        <span className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2D6A4F]/10 text-[10px] font-semibold text-[#2D6A4F]">
+          <Info size={10} />{pixelGuide}
+        </span>
+      </div>
+      <div
+        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => inputRef.current?.click()}
+        className={`
+          w-full h-32 rounded-xl border-2 border-dashed cursor-pointer
+          flex flex-col items-center justify-center gap-2 transition-all
+          ${dragOver
+            ? 'border-[#2D6A4F] bg-[#2D6A4F]/5'
+            : 'border-[var(--border-default)] bg-[var(--bg-input)] hover:border-[#2D6A4F]/50 hover:bg-[var(--bg-surface-hover)]'
+          }
+        `}
+      >
+        {uploading ? (
+          <LoadingSpinner size="sm" />
+        ) : (
+          <>
+            <Upload size={20} className="text-[var(--text-secondary)]" />
+            <span className="text-xs text-[var(--text-secondary)]">Sürükle & bırak veya tıkla</span>
+          </>
+        )}
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
+      </div>
+    </div>
+  );
+}
 
 export default function AdminAdsPage() {
   const { i18n } = useTranslation();
@@ -38,6 +139,8 @@ export default function AdminAdsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adForm, setAdForm] = useState(emptyAd());
+  const [uploadingDesktop, setUploadingDesktop] = useState(false);
+  const [uploadingMobile, setUploadingMobile] = useState(false);
 
   const fetchAds = async () => {
     try {
@@ -59,6 +162,7 @@ export default function AdminAdsPage() {
         slot: ad.slot,
         enabled: ad.enabled,
         imageUrl: ad.imageUrl,
+        mobileImageUrl: ad.mobileImageUrl || '',
         clickUrl: ad.clickUrl,
         startDate: ad.startDate.slice(0, 10),
         endDate: ad.endDate.slice(0, 10),
@@ -70,9 +174,32 @@ export default function AdminAdsPage() {
     setModalOpen(true);
   };
 
+  const uploadImage = async (file: File, target: 'desktop' | 'mobile') => {
+    const setter = target === 'desktop' ? setUploadingDesktop : setUploadingMobile;
+    setter(true);
+    try {
+      // Client-side compression
+      const compressed = await compressImage(file, 1200);
+      const formData = new FormData();
+      formData.append('image', compressed);
+      const { data } = await api.post<{ url: string }>('/upload/ad-image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setAdForm(f => ({
+        ...f,
+        [target === 'desktop' ? 'imageUrl' : 'mobileImageUrl']: data.url,
+      }));
+      toast.success(isTr ? 'Görsel yüklendi' : 'Image uploaded');
+    } catch {
+      toast.error(isTr ? 'Yükleme başarısız' : 'Upload failed');
+    } finally {
+      setter(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!adForm.imageUrl || !adForm.clickUrl) {
-      toast.error(isTr ? 'Görsel ve tıklama URL gerekli' : 'Image and click URL required');
+      toast.error(isTr ? 'Desktop görsel ve tıklama URL gerekli' : 'Desktop image and click URL required');
       return;
     }
     try {
@@ -155,8 +282,25 @@ export default function AdminAdsPage() {
           {filtered.map(ad => (
             <div key={ad._id} className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-4 shadow-sm">
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <div className="w-full h-32 sm:w-32 sm:h-20 rounded-xl overflow-hidden bg-[var(--bg-input)] shrink-0">
-                  <img src={ad.imageUrl} alt="" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
+                <div className="flex gap-2 shrink-0">
+                  <div className="relative">
+                    <div className="w-24 h-16 sm:w-28 sm:h-20 rounded-xl overflow-hidden bg-[var(--bg-input)]">
+                      <img src={ad.imageUrl.startsWith('/uploads') ? `${api.defaults.baseURL?.replace('/api', '')}${ad.imageUrl}` : ad.imageUrl} alt="" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
+                    </div>
+                    <span className="absolute -top-1 -left-1 px-1.5 py-0.5 rounded-md bg-[#0077B6] text-white text-[8px] font-bold flex items-center gap-0.5">
+                      <Monitor size={8} />D
+                    </span>
+                  </div>
+                  {ad.mobileImageUrl && (
+                    <div className="relative">
+                      <div className="w-16 h-16 sm:w-16 sm:h-20 rounded-xl overflow-hidden bg-[var(--bg-input)]">
+                        <img src={ad.mobileImageUrl.startsWith('/uploads') ? `${api.defaults.baseURL?.replace('/api', '')}${ad.mobileImageUrl}` : ad.mobileImageUrl} alt="" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
+                      </div>
+                      <span className="absolute -top-1 -left-1 px-1.5 py-0.5 rounded-md bg-[#E76F00] text-white text-[8px] font-bold flex items-center gap-0.5">
+                        <Smartphone size={8} />M
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -166,6 +310,15 @@ export default function AdminAdsPage() {
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ad.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                       {ad.enabled ? (isTr ? 'Aktif' : 'Active') : (isTr ? 'Pasif' : 'Inactive')}
                     </span>
+                    {ad.mobileImageUrl ? (
+                      <span className="px-2 py-0.5 rounded-full bg-[#0077B6]/10 text-[#0077B6] text-[10px] font-semibold flex items-center gap-0.5">
+                        <ImageIcon size={10} /> Dual
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-[#E76F00]/10 text-[#E76F00] text-[10px] font-semibold">
+                        Tek Görsel
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-[var(--text-secondary)] truncate">{ad.clickUrl}</p>
                   <p className="text-xs text-[var(--text-secondary)] mt-1">
@@ -213,17 +366,38 @@ export default function AdminAdsPage() {
               ))}
             </div>
           </div>
-          <Input
-            label={isTr ? 'Görsel URL' : 'Image URL'}
-            value={adForm.imageUrl}
-            onChange={e => setAdForm(f => ({ ...f, imageUrl: e.target.value }))}
-            placeholder="https://..."
+
+          {/* Desktop Image Upload */}
+          <ImageDropZone
+            label={isTr ? 'Desktop Görsel' : 'Desktop Image'}
+            pixelGuide={PIXEL_GUIDES[adForm.slot].desktop}
+            icon={Monitor}
+            imageUrl={adForm.imageUrl}
+            onUpload={file => uploadImage(file, 'desktop')}
+            onClear={() => setAdForm(f => ({ ...f, imageUrl: '' }))}
+            uploading={uploadingDesktop}
           />
-          {adForm.imageUrl && (
-            <div className="w-full h-32 rounded-xl overflow-hidden bg-[var(--bg-input)]">
-              <img src={adForm.imageUrl} alt="preview" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
-            </div>
-          )}
+
+          {/* Mobile Image Upload */}
+          <ImageDropZone
+            label={isTr ? 'Mobil Görsel' : 'Mobile Image'}
+            pixelGuide={PIXEL_GUIDES[adForm.slot].mobile}
+            icon={Smartphone}
+            imageUrl={adForm.mobileImageUrl || ''}
+            onUpload={file => uploadImage(file, 'mobile')}
+            onClear={() => setAdForm(f => ({ ...f, mobileImageUrl: '' }))}
+            uploading={uploadingMobile}
+          />
+
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-[#0077B6]/5 border border-[#0077B6]/10">
+            <Info size={14} className="text-[#0077B6] mt-0.5 shrink-0" />
+            <p className="text-[11px] text-[#0077B6]">
+              {isTr
+                ? 'Mobil görsel opsiyoneldir. Yüklenmezse desktop görseli her cihazda kullanılır. Dual görsel ile her cihaza özel boyut sunulur.'
+                : 'Mobile image is optional. If not uploaded, desktop image will be used on all devices. Dual image serves optimized sizes per device.'}
+            </p>
+          </div>
+
           <Input
             label={isTr ? 'Tıklama URL' : 'Click URL'}
             value={adForm.clickUrl}
@@ -256,4 +430,33 @@ export default function AdminAdsPage() {
       </Modal>
     </AdminLayout>
   );
+}
+
+// Client-side image compression utility
+function compressImage(file: File, maxWidth: number): Promise<File> {
+  return new Promise((resolve) => {
+    if (file.size < 200 * 1024) { resolve(file); return; }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > maxWidth) { h = (h * maxWidth) / w; w = maxWidth; }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        blob => {
+          if (blob) resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+          else resolve(file);
+        },
+        'image/jpeg',
+        0.85
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
 }

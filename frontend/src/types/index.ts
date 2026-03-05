@@ -343,6 +343,7 @@ export interface Ad {
   slot: 'header' | 'sidebar' | 'footer' | 'between-listings';
   enabled: boolean;
   imageUrl: string;
+  mobileImageUrl?: string;
   clickUrl: string;
   startDate: string;
   endDate: string;

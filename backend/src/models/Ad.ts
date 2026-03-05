@@ -4,6 +4,7 @@ export interface IAd extends Document {
   slot: 'header' | 'sidebar' | 'footer' | 'between-listings';
   enabled: boolean;
   imageUrl: string;
+  mobileImageUrl: string;
   clickUrl: string;
   startDate: Date;
   endDate: Date;
@@ -20,6 +21,7 @@ const AdSchema = new Schema<IAd>({
   },
   enabled: { type: Boolean, default: false },
   imageUrl: { type: String, required: true },
+  mobileImageUrl: { type: String, default: '' },
   clickUrl: { type: String, required: true },
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },

@@ -7,8 +7,23 @@ interface BannerAdProps {
   className?: string;
 }
 
+function getImageSrc(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('/uploads')) {
+    return `${api.defaults.baseURL?.replace('/api', '')}${url}`;
+  }
+  return url;
+}
+
 export default function BannerAd({ slot, className = '' }: BannerAdProps) {
   const [ad, setAd] = useState<Ad | null>(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -31,6 +46,10 @@ export default function BannerAd({ slot, className = '' }: BannerAdProps) {
     window.open(ad.clickUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const imageSrc = isMobile && ad.mobileImageUrl
+    ? getImageSrc(ad.mobileImageUrl)
+    : getImageSrc(ad.imageUrl);
+
   return (
     <div
       className={`
@@ -44,7 +63,7 @@ export default function BannerAd({ slot, className = '' }: BannerAdProps) {
       `}
       onClick={handleClick}
     >
-      <img src={ad.imageUrl} alt="" className="w-full h-auto object-cover" />
+      <img src={imageSrc} alt="" className="w-full h-auto object-cover" />
     </div>
   );
 }
