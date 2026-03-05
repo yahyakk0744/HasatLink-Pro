@@ -39,7 +39,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
   return (
     <Link to={`/ilan/${listing._id}`} className="group">
-      <div className="surface-card-hover rounded-2xl overflow-hidden">
+      <div className="surface-card-hover rounded-3xl overflow-hidden spring-tap">
         {/* Image */}
         <div className="relative aspect-[4/3] bg-[var(--bg-input)] overflow-hidden">
           {listing.images?.[0] ? (
@@ -61,6 +61,13 @@ export default function ListingCard({ listing }: ListingCardProps) {
           <div className="absolute bottom-3 right-3 w-8 h-8 bg-[var(--glass-surface)] backdrop-blur rounded-full flex items-center justify-center opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
             <ArrowRight size={14} className="text-[var(--accent-green)]" />
           </div>
+
+          {/* Glassmorphism price tag on image */}
+          {listing.type === 'pazar' && (
+            <div className="absolute bottom-3 left-3 px-3 py-1.5 rounded-xl bg-black/30 backdrop-blur-md border border-white/10">
+              <span className="text-sm font-bold text-white">{formatPrice(listing.price)}</span>
+            </div>
+          )}
 
           {/* Top-left badges */}
           <div className="absolute top-3 left-3 flex gap-1">
@@ -120,7 +127,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
           <h3 className="text-sm font-semibold tracking-tight line-clamp-1 mb-1">{listing.title}</h3>
 
           {/* Price — large and bold */}
-          <p className={`text-lg font-bold tracking-tight mb-2 ${listing.listingMode === 'buy' ? 'text-[#0077B6]' : 'text-[#2D6A4F]'}`}>
+          <p className={`text-lg font-bold tracking-tight mb-2 ${listing.listingMode === 'buy' ? 'text-[#0077B6]' : 'text-[var(--accent-green)]'}`}>
             {listing.listingMode === 'buy' && <span className="text-[10px] font-medium mr-1">{lang === 'tr' ? 'Bütçe:' : 'Budget:'}</span>}
             {formatPrice(listing.price)}
           </p>
@@ -139,7 +146,13 @@ export default function ListingCard({ listing }: ListingCardProps) {
               </span>
             )}
             {listing.type === 'lojistik' && listing.routeFrom && listing.routeTo && (
-              <span className="text-[9px] font-medium px-2 py-0.5 bg-[var(--bg-input)] text-[var(--text-secondary)] rounded-full">{listing.routeFrom} → {listing.routeTo}</span>
+              <span className="text-[9px] font-medium px-2 py-0.5 bg-[var(--bg-input)] text-[var(--text-secondary)] rounded-full flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)]" />
+                {listing.routeFrom}
+                <span className="w-3 h-px bg-[var(--text-secondary)]/50" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-red)]" />
+                {listing.routeTo}
+              </span>
             )}
             {listing.type === 'isgucu' && listing.workerCount > 1 && (
               <span className="text-[9px] font-medium px-2 py-0.5 bg-[#A47148]/10 text-[#A47148] rounded-full flex items-center gap-0.5">

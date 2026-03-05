@@ -72,12 +72,12 @@ function SkeletonCard() {
 }
 
 const CATEGORY_ICONS: Record<string, ReactNode> = {
-  pazar: <Wheat size={28} />,
-  lojistik: <Truck size={28} />,
-  isgucu: <HardHat size={28} />,
-  ekipman: <Tractor size={28} />,
-  arazi: <Mountain size={28} />,
-  depolama: <Warehouse size={28} />,
+  pazar: <Wheat size={24} strokeWidth={1.5} />,
+  lojistik: <Truck size={24} strokeWidth={1.5} />,
+  isgucu: <HardHat size={24} strokeWidth={1.5} />,
+  ekipman: <Tractor size={24} strokeWidth={1.5} />,
+  arazi: <Mountain size={24} strokeWidth={1.5} />,
+  depolama: <Warehouse size={24} strokeWidth={1.5} />,
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -227,13 +227,37 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── 2. Category Grid with Lucide Icons ─── */}
+      {/* ─── Welcome Dashboard Banner ─── */}
+      {user && (
+        <AnimatedSection>
+          <section className="max-w-6xl mx-auto px-3 md:px-4 pt-8 md:pt-12 pb-2">
+            <div className="surface-card rounded-2xl p-5 md:p-8 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-[var(--accent-green)]/5 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/4" />
+              <div className="relative">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-green)] mb-1">
+                  {lang === 'tr' ? 'HOŞ GELDİN' : 'WELCOME BACK'}
+                </p>
+                <h2 className="text-xl md:text-3xl font-bold tracking-tight mb-2">
+                  {lang === 'tr' ? `Merhaba, ${user.name?.split(' ')[0]}` : `Hello, ${user.name?.split(' ')[0]}`} 👋
+                </h2>
+                <p className="text-sm text-[var(--text-secondary)] max-w-lg">
+                  {lang === 'tr'
+                    ? 'Bugün tarım dünyasında neler oluyor? İlanlarını yönet, fiyatları takip et, yeni fırsatları keşfet.'
+                    : 'What\'s happening in agriculture today? Manage your listings, track prices, discover new opportunities.'}
+                </p>
+              </div>
+            </div>
+          </section>
+        </AnimatedSection>
+      )}
+
+      {/* ─── 2. Category Dashboard Grid ─── */}
       <AnimatedSection>
-        <section className="max-w-6xl mx-auto px-3 md:px-4 py-8 md:py-12">
+        <section className="max-w-6xl mx-auto px-3 md:px-4 py-6 md:py-10">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight text-center mb-5 md:mb-8">
             {lang === 'tr' ? 'Kategoriler' : 'Categories'}
           </h2>
-          <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
+          <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
             {Object.entries(CATEGORY_LABELS).map(([key, cat]) => {
               const count = platformStats.categoryCounts[key] || 0;
               const color = CATEGORY_COLORS[key] || '#2D6A4F';
@@ -241,12 +265,17 @@ export default function HomePage() {
                 <Link
                   key={key}
                   to={`/${key}`}
-                  className="surface-card-hover rounded-xl md:rounded-2xl p-3 md:p-6 group text-center"
+                  className="group relative rounded-2xl p-4 md:p-6 text-center transition-all duration-300 hover:-translate-y-1 active:scale-[0.97] bg-[var(--bg-surface)] border border-[var(--border-default)] hover:shadow-[var(--shadow-card-hover)]"
+                  style={{ '--cat-color': color } as React.CSSProperties}
                 >
-                  <div className="flex justify-center mb-1.5 md:mb-3 [&_svg]:w-5 [&_svg]:h-5 md:[&_svg]:w-7 md:[&_svg]:h-7" style={{ color }}>
-                    {CATEGORY_ICONS[key]}
+                  {/* Glassmorphism icon circle */}
+                  <div
+                    className="w-12 h-12 md:w-14 md:h-14 mx-auto mb-2 md:mb-3 rounded-full flex items-center justify-center backdrop-blur-sm transition-transform duration-300 group-hover:scale-110"
+                    style={{ background: `${color}12`, border: `1.5px solid ${color}25` }}
+                  >
+                    <div style={{ color }}>{CATEGORY_ICONS[key]}</div>
                   </div>
-                  <h3 className="text-[11px] md:text-sm font-semibold tracking-tight mb-0.5 md:mb-1">{cat[lang]}</h3>
+                  <h3 className="text-[11px] md:text-sm font-semibold tracking-tight mb-0.5">{cat[lang]}</h3>
                   <p className="text-[10px] md:text-xs text-[var(--text-secondary)]">
                     {count} {lang === 'tr' ? 'ilan' : 'listings'}
                   </p>
@@ -510,17 +539,17 @@ export default function HomePage() {
             <div className="hidden md:block absolute top-12 left-[16.67%] right-[16.67%] h-0.5 bg-[#2D6A4F]/20" />
             {[
               {
-                icon: <UserPlus className="w-4 h-4 md:w-7 md:h-7" />,
+                icon: <UserPlus className="w-4 h-4 md:w-7 md:h-7" strokeWidth={1.5} />,
                 title: lang === 'tr' ? 'Ücretsiz Kayıt Ol' : 'Sign Up Free',
                 desc: lang === 'tr' ? 'Hızlıca hesap oluşturun ve platforma katılın.' : 'Quickly create an account and join the platform.',
               },
               {
-                icon: <Search className="w-4 h-4 md:w-7 md:h-7" />,
+                icon: <Search className="w-4 h-4 md:w-7 md:h-7" strokeWidth={1.5} />,
                 title: lang === 'tr' ? 'İlan Ver veya Ara' : 'Post or Search',
                 desc: lang === 'tr' ? 'Ürün, hizmet veya ekipman ilanı verin ya da arayın.' : 'Post or search for products, services, or equipment.',
               },
               {
-                icon: <MessageCircle className="w-4 h-4 md:w-7 md:h-7" />,
+                icon: <MessageCircle className="w-4 h-4 md:w-7 md:h-7" strokeWidth={1.5} />,
                 title: lang === 'tr' ? 'Doğrudan İletişime Geç' : 'Contact Directly',
                 desc: lang === 'tr' ? 'Alıcı ve satıcılarla doğrudan bağlantı kurun.' : 'Connect directly with buyers and sellers.',
               },
