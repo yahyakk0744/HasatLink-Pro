@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { MapPin, CheckCircle, Calendar, MessageSquare } from 'lucide-react';
+import { MapPin, CheckCircle, Calendar, MessageSquare, Trophy } from 'lucide-react';
 import RatingStars from '../ratings/RatingStars';
 import { formatDate } from '../../utils/formatters';
+import { getLoyaltyBadge, getProgressToNext } from '../../utils/loyalty';
 import type { User } from '../../types';
 
 interface ProfileCardProps {
@@ -12,7 +13,11 @@ interface ProfileCardProps {
 }
 
 export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
+  const points = user.points || 0;
+  const badge = getLoyaltyBadge(points);
+  const progress = getProgressToNext(points);
 
   return (
     <div className="surface-card-lg p-6">
@@ -73,6 +78,41 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
           </div>
         </div>
       </div>
+      {/* Loyalty Progress Bar */}
+      <div className="mt-4 pt-4 border-t border-[var(--bg-input)]">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg" style={{ background: badge.bgColor }}>
+            {badge.icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold" style={{ color: badge.color }}>{badge.label[lang]}</span>
+              {badge.rank === 'gold' && (
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#B8860B]/20 to-[#DAA520]/20 text-[#B8860B]">MAX</span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <Trophy size={10} className="text-[var(--text-secondary)]" />
+              <span className="text-[10px] text-[var(--text-secondary)]">{points.toLocaleString('tr-TR')} {lang === 'tr' ? 'puan' : 'points'}</span>
+            </div>
+          </div>
+        </div>
+        {progress && (
+          <div>
+            <div className="h-2 rounded-full bg-[var(--bg-input)] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${progress.percent}%`, background: `linear-gradient(90deg, ${badge.color}, ${badge.color}cc)` }}
+              />
+            </div>
+            <div className="flex justify-between mt-1">
+              <span className="text-[9px] text-[var(--text-secondary)]">{progress.current} / {progress.next}</span>
+              <span className="text-[9px] font-medium" style={{ color: badge.color }}>{progress.percent}%</span>
+            </div>
+          </div>
+        )}
+      </div>
+
       {user.bio && (
         <div className="mt-4 pt-4 border-t border-[var(--bg-input)]">
           <p className="text-xs font-medium uppercase text-[var(--text-secondary)] mb-1">{t('profileInfo.bio')}</p>

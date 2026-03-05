@@ -15,6 +15,7 @@ export interface User {
   bio: string;
   isBanned: boolean;
   trust_score?: number;
+  points?: number;
   isSuspended?: boolean;
   firebaseUid?: string;
   favorites?: string[];
@@ -121,6 +122,7 @@ export interface Listing {
   sellerTotalRatings?: number;
   sellerVerified?: boolean;
   sellerTrustScore?: number;
+  sellerPoints?: number;
   sellerListingCount?: number;
   sellerJoinDate?: string;
   createdAt: string;

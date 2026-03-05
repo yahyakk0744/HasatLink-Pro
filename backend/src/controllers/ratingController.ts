@@ -5,6 +5,7 @@ import Notification from '../models/Notification';
 import { sendPushToUser } from '../utils/pushNotification';
 import { recalculateTrustScore } from './userController';
 import { sendSocketNotification } from '../socket';
+import { awardPoints, POINT_VALUES } from '../utils/pointsService';
 
 export const getUserRatings = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -52,6 +53,11 @@ export const createRating = async (req: Request, res: Response): Promise<void> =
         body: `${fromUser?.name || 'Bir kullanıcı'} size ${score} yıldız verdi`,
         url: '/profil',
       }, notif);
+    }
+
+    // Award points for 5-star review (only on new ratings, not updates)
+    if (!updated && score === 5) {
+      awardPoints(toUserId, POINT_VALUES.FIVE_STAR_REVIEW);
     }
 
     // Recalculate average rating

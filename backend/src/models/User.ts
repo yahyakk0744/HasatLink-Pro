@@ -20,6 +20,7 @@ export interface IUser extends Document {
   authProvider: string;
   firebaseUid: string;
   trust_score: number;
+  points: number;
   favorites: string[];
   createdAt: Date;
 }
@@ -44,6 +45,7 @@ const UserSchema = new Schema<IUser>({
   authProvider: { type: String, default: 'email', enum: ['email', 'google'] },
   firebaseUid: { type: String, default: '', sparse: true },
   trust_score: { type: Number, default: 0 },
+  points: { type: Number, default: 0 },
   favorites: [{ type: String }],
   createdAt: { type: Date, default: Date.now },
 });

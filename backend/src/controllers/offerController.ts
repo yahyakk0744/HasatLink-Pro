@@ -5,6 +5,7 @@ import User from '../models/User';
 import Notification from '../models/Notification';
 import { sendPushToUser } from '../utils/pushNotification';
 import { sendSocketNotification } from '../socket';
+import { awardPoints, POINT_VALUES } from '../utils/pointsService';
 
 export const createOffer = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -119,8 +120,10 @@ export const updateOfferStatus = async (req: Request, res: Response): Promise<vo
       url: `/ilan/${offer.listingId}`,
     }, notif);
 
-    // If accepted, build receipt data and send to both parties
+    // If accepted, award points and build receipt data
     if (status === 'accepted') {
+      awardPoints(offer.fromUserId, POINT_VALUES.ACCEPTED_OFFER);
+      awardPoints(offer.toUserId, POINT_VALUES.ACCEPTED_OFFER);
       const receipt = {
         listingTitle: offer.listingTitle,
         listingId: offer.listingId,

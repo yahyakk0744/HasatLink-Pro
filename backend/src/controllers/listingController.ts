@@ -8,6 +8,7 @@ import ListingView from '../models/ListingView';
 import ListingShare from '../models/ListingShare';
 import { checkFieldsForProfanity } from '../utils/profanityFilter';
 import ProfanityLog from '../models/ProfanityLog';
+import { awardPoints, POINT_VALUES } from '../utils/pointsService';
 
 export const getListings = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -48,11 +49,11 @@ export const getListings = async (req: Request, res: Response): Promise<void> =>
 
     // Populate seller info
     const userIds = [...new Set(listings.map((l: any) => l.userId))];
-    const users = await User.find({ userId: { $in: userIds } }).select('userId name profileImage averageRating isVerified trust_score').lean();
+    const users = await User.find({ userId: { $in: userIds } }).select('userId name profileImage averageRating isVerified trust_score points').lean();
     const userMap = new Map(users.map((u: any) => [u.userId, u]));
     const enriched = listings.map((l: any) => {
       const seller = userMap.get(l.userId);
-      return { ...l, sellerName: seller?.name || '', sellerImage: seller?.profileImage || '', sellerRating: seller?.averageRating || 0, sellerVerified: (seller as any)?.isVerified || false, sellerTrustScore: (seller as any)?.trust_score || 0 };
+      return { ...l, sellerName: seller?.name || '', sellerImage: seller?.profileImage || '', sellerRating: seller?.averageRating || 0, sellerVerified: (seller as any)?.isVerified || false, sellerTrustScore: (seller as any)?.trust_score || 0, sellerPoints: (seller as any)?.points || 0 };
     });
 
     res.json({ listings: enriched, total, page: parseInt(page as string), totalPages: Math.ceil(total / parseInt(limit as string)) });
@@ -81,7 +82,7 @@ export const getListing = async (req: Request, res: Response): Promise<void> => 
 
     // Attach seller info
     const [seller, sellerListingCount] = await Promise.all([
-      User.findOne({ userId: listing.userId }).select('name profileImage averageRating totalRatings isVerified trust_score createdAt').lean(),
+      User.findOne({ userId: listing.userId }).select('name profileImage averageRating totalRatings isVerified trust_score points createdAt').lean(),
       Listing.countDocuments({ userId: listing.userId, status: 'active' }),
     ]);
     const listingObj = listing.toObject();
@@ -93,6 +94,7 @@ export const getListing = async (req: Request, res: Response): Promise<void> => 
       sellerTotalRatings: seller?.totalRatings || 0,
       sellerVerified: seller?.isVerified || false,
       sellerTrustScore: seller?.trust_score || 0,
+      sellerPoints: (seller as any)?.points || 0,
       sellerListingCount,
       sellerJoinDate: seller?.createdAt || '',
     });
@@ -110,6 +112,9 @@ export const createListing = async (req: Request, res: Response): Promise<void> 
       return;
     }
     const listing = await Listing.create({ ...req.body, userId: (req as any).userId || req.body.userId });
+
+    // Award points for new listing
+    awardPoints(listing.userId, POINT_VALUES.NEW_LISTING);
 
     // Check price alerts
     try {

@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../components/admin/AdminLayout';
-import { Users, Search, Ban, ShieldCheck, Trash2, ChevronLeft, ChevronRight, Eye, Pause, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Users, Search, Ban, ShieldCheck, Trash2, ChevronLeft, ChevronRight, Eye, Pause, AlertTriangle, ExternalLink, Trophy, Plus, Minus } from 'lucide-react';
 import api from '../config/api';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
 import type { User } from '../types';
+import { getLoyaltyBadge } from '../utils/loyalty';
 
 interface UserDetail extends User {
   isSuspended?: boolean;
@@ -31,6 +32,8 @@ export default function AdminUsersPage() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailUser, setDetailUser] = useState<UserDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [pointsModalUserId, setPointsModalUserId] = useState<string | null>(null);
+  const [pointsAmount, setPointsAmount] = useState('');
 
   // Fetch users list
   const fetchUsers = useCallback(async () => {
@@ -128,6 +131,22 @@ export default function AdminUsersPage() {
     } finally {
       setDeleting(false);
       setDeleteUserId(null);
+    }
+  };
+
+  const handleAdjustPoints = async (amount: number) => {
+    if (!pointsModalUserId || amount === 0) return;
+    try {
+      const { data } = await api.put(`/admin/users/${pointsModalUserId}/points`, { amount });
+      setUsers(prev => prev.map(u => u.userId === pointsModalUserId ? { ...u, points: data.points } : u));
+      if (detailUser && detailUser.userId === pointsModalUserId) {
+        setDetailUser(prev => prev ? { ...prev, points: data.points } : prev);
+      }
+      toast.success(`${amount > 0 ? '+' : ''}${amount} puan uyguland\u0131`);
+      setPointsModalUserId(null);
+      setPointsAmount('');
+    } catch {
+      toast.error('Puan g\u00fcncelleme ba\u015far\u0131s\u0131z');
     }
   };
 
@@ -370,6 +389,10 @@ export default function AdminUsersPage() {
                         )}
                         <span>•</span>
                         <span>{new Date(u.createdAt).toLocaleDateString('tr-TR')}</span>
+                        <span>•</span>
+                        <span className="inline-flex items-center gap-0.5 font-semibold" style={{ color: getLoyaltyBadge(u.points || 0).color }}>
+                          {getLoyaltyBadge(u.points || 0).icon} {u.points || 0}
+                        </span>
                       </div>
                     </div>
 
@@ -494,6 +517,23 @@ export default function AdminUsersPage() {
                   <p className="text-sm text-[var(--text-primary)]">{detailUser.commentCount}</p>
                 </div>
               )}
+              <div className="bg-[var(--bg-input)] rounded-xl px-4 py-3">
+                <p className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] font-semibold mb-0.5">Hasat Puan</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold" style={{ color: getLoyaltyBadge(detailUser.points || 0).color }}>
+                    {getLoyaltyBadge(detailUser.points || 0).icon} {detailUser.points || 0}
+                  </span>
+                  <span className="text-[10px] text-[var(--text-secondary)]">
+                    ({getLoyaltyBadge(detailUser.points || 0).label.tr})
+                  </span>
+                  <button
+                    onClick={() => { setPointsModalUserId(detailUser.userId); setPointsAmount(''); }}
+                    className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] hover:bg-[#7C3AED]/20 transition-colors"
+                  >
+                    Düzenle
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Bio */}
@@ -541,6 +581,68 @@ export default function AdminUsersPage() {
             <Button variant="danger" onClick={handleDelete} loading={deleting} className="flex-1">
               Sil
             </Button>
+          </div>
+        </div>
+      </Modal>
+      {/* Points Adjustment Modal */}
+      <Modal
+        isOpen={!!pointsModalUserId}
+        onClose={() => { setPointsModalUserId(null); setPointsAmount(''); }}
+        title="Puan Düzenle"
+        size="sm"
+      >
+        <div className="space-y-4 py-2">
+          <div className="flex items-center justify-center gap-3">
+            <Trophy size={24} className="text-[#7C3AED]" />
+            <p className="text-sm text-[var(--text-secondary)]">
+              Pozitif veya negatif puan girin
+            </p>
+          </div>
+          <input
+            type="number"
+            value={pointsAmount}
+            onChange={e => setPointsAmount(e.target.value)}
+            placeholder="ör. 50 veya -20"
+            className="w-full px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-default)] rounded-xl text-sm text-center font-semibold outline-none focus:border-[#7C3AED] transition-colors"
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleAdjustPoints(-50)}
+              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+            >
+              <Minus size={12} />50
+            </button>
+            <button
+              onClick={() => handleAdjustPoints(-10)}
+              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+            >
+              <Minus size={12} />10
+            </button>
+            <button
+              onClick={() => handleAdjustPoints(10)}
+              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+            >
+              <Plus size={12} />10
+            </button>
+            <button
+              onClick={() => handleAdjustPoints(50)}
+              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+            >
+              <Plus size={12} />50
+            </button>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => { setPointsModalUserId(null); setPointsAmount(''); }} className="flex-1">
+              İptal
+            </Button>
+            <button
+              onClick={() => handleAdjustPoints(Number(pointsAmount))}
+              disabled={!pointsAmount || Number(pointsAmount) === 0}
+              className="flex-1 px-4 py-2.5 text-sm font-semibold bg-[#7C3AED] text-white rounded-xl hover:opacity-90 transition-colors disabled:opacity-40"
+            >
+              Uygula
+            </button>
           </div>
         </div>
       </Modal>

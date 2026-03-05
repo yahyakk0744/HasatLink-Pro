@@ -27,6 +27,7 @@ import {
   deleteReport,
   getProfanityLogs,
   getAdminRatings,
+  adjustUserPoints,
 } from '../controllers/adminController';
 import { adminHardDeleteRating } from '../controllers/ratingController';
 
@@ -50,6 +51,7 @@ router.put('/admin/users/:userId/ban', auth, admin, toggleBanUser);
 router.put('/admin/users/:userId/verify', auth, admin, toggleVerifyUser);
 router.put('/admin/users/:userId/suspend', auth, admin, toggleSuspendUser);
 router.delete('/admin/users/:userId', auth, admin, deleteAdminUser);
+router.put('/admin/users/:userId/points', auth, admin, adjustUserPoints);
 
 // Market Prices (Hal Fiyatları)
 router.get('/admin/market-prices', auth, admin, getAdminMarketPrices);

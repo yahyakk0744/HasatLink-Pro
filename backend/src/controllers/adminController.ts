@@ -10,6 +10,7 @@ import Report from '../models/Report';
 import ProfanityLog from '../models/ProfanityLog';
 import Rating from '../models/Rating';
 import { sendPushToUser } from '../utils/pushNotification';
+import { awardPoints, POINT_VALUES } from '../utils/pointsService';
 
 // GET /api/admin/stats — dashboard stats
 export const getDashboardStats = async (_req: Request, res: Response): Promise<void> => {
@@ -218,8 +219,15 @@ export const toggleVerifyUser = async (req: Request, res: Response): Promise<voi
       res.status(404).json({ message: 'Kullanıcı bulunamadı' });
       return;
     }
+    const wasVerified = user.isVerified;
     user.isVerified = !user.isVerified;
     await user.save();
+    // Award/revoke points for verification
+    if (!wasVerified && user.isVerified) {
+      awardPoints(user.userId, POINT_VALUES.PROFILE_VERIFIED);
+    } else if (wasVerified && !user.isVerified) {
+      awardPoints(user.userId, -POINT_VALUES.PROFILE_VERIFIED);
+    }
     res.json({ userId: user.userId, isVerified: user.isVerified });
   } catch (error) {
     res.status(500).json({ message: 'İşlem başarısız', error });
@@ -648,6 +656,27 @@ export const getNotificationHistory = async (_req: Request, res: Response): Prom
 };
 
 // GET /api/admin/ratings — list all ratings for moderation
+// PUT /api/admin/users/:userId/points — manual point adjustment
+export const adjustUserPoints = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { amount } = req.body;
+    if (typeof amount !== 'number' || amount === 0) {
+      res.status(400).json({ message: 'Gecerli bir puan miktari girin' });
+      return;
+    }
+    const user = await User.findOne({ userId: req.params.userId });
+    if (!user) {
+      res.status(404).json({ message: 'Kullanici bulunamadi' });
+      return;
+    }
+    user.points = Math.max(0, (user.points || 0) + amount);
+    await user.save();
+    res.json({ userId: user.userId, points: user.points });
+  } catch (error) {
+    res.status(500).json({ message: 'Puan guncelleme hatasi', error });
+  }
+};
+
 export const getAdminRatings = async (req: Request, res: Response): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;

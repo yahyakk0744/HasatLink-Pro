@@ -7,6 +7,7 @@ import { formatPrice, timeAgo } from '../../utils/formatters';
 import Badge from '../ui/Badge';
 import { STATUS_LABELS, CATEGORY_LABELS, LISTING_MODE_LABELS, LISTING_MODE_COLORS } from '../../utils/constants';
 import { useFavorites } from '../../hooks/useFavorites';
+import { getLoyaltyBadge } from '../../utils/loyalty';
 
 interface ListingCardProps {
   listing: Listing;
@@ -242,7 +243,14 @@ export default function ListingCard({ listing }: ListingCardProps) {
                   {listing.sellerName[0]}
                 </div>
               )}
-              <span className="text-xs font-medium text-[var(--text-primary)] truncate flex-1">{listing.sellerName}</span>
+              <span className={`text-xs font-medium truncate flex-1 ${(listing.sellerPoints || 0) >= 2001 ? 'bg-gradient-to-r from-[#B8860B] to-[#DAA520] bg-clip-text text-transparent font-semibold' : 'text-[var(--text-primary)]'}`}>
+                {listing.sellerName}
+              </span>
+              {(listing.sellerPoints ?? 0) > 0 && (
+                <span className="text-xs" title={getLoyaltyBadge(listing.sellerPoints || 0).label.tr}>
+                  {getLoyaltyBadge(listing.sellerPoints || 0).icon}
+                </span>
+              )}
               {listing.sellerVerified && (
                 <span className="flex items-center gap-0.5 text-[10px] font-semibold text-[#2D6A4F]" title="Onaylı Satıcı">
                   <ShieldCheck size={12} fill="#2D6A4F" stroke="white" />
