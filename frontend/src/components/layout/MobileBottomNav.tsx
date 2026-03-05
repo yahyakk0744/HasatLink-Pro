@@ -11,7 +11,7 @@ export default function MobileBottomNav() {
   const isAdmin = user?.role === 'admin';
 
   const navClass = ({ isActive }: { isActive: boolean }) =>
-    `flex flex-col items-center gap-0.5 px-2 py-1 relative transition-colors min-w-0 min-h-0 ${isActive ? 'text-[#2D6A4F]' : 'text-[#6B6560]'}`;
+    `flex flex-col items-center gap-0.5 px-2 py-1 relative transition-colors min-w-0 min-h-0 ${isActive ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--glass-surface)] backdrop-blur-lg border-t border-[var(--border-subtle)] md:hidden">
@@ -22,7 +22,7 @@ export default function MobileBottomNav() {
             <>
               <Home size={20} />
               <span className="text-[9px] font-medium uppercase">{t('welcome').split("'")[0] || 'Ana Sayfa'}</span>
-              {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[#2D6A4F]" />}
+              {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[var(--accent-green)]" />}
             </>
           )}
         </NavLink>
@@ -33,7 +33,7 @@ export default function MobileBottomNav() {
             <>
               <ShoppingBag size={20} />
               <span className="text-[9px] font-medium uppercase">{t('categories.pazar')}</span>
-              {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[#2D6A4F]" />}
+              {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[var(--accent-green)]" />}
             </>
           )}
         </NavLink>
@@ -44,7 +44,7 @@ export default function MobileBottomNav() {
             <>
               <Map size={20} />
               <span className="text-[9px] font-medium uppercase">{t('map.title')}</span>
-              {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[#2D6A4F]" />}
+              {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[var(--accent-green)]" />}
             </>
           )}
         </NavLink>
@@ -58,13 +58,13 @@ export default function MobileBottomNav() {
                   <div className="relative">
                     <MessageSquare size={20} />
                     {unreadCount > 0 && (
-                      <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-[#2D6A4F] text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                      <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-[var(--accent-green)] text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                         {unreadCount > 9 ? '9+' : unreadCount}
                       </span>
                     )}
                   </div>
                   <span className="text-[9px] font-medium uppercase">{t('messages.title')}</span>
-                  {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[#2D6A4F]" />}
+                  {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[var(--accent-green)]" />}
                 </>
               )}
             </NavLink>
@@ -76,7 +76,7 @@ export default function MobileBottomNav() {
                   <>
                     <Shield size={20} />
                     <span className="text-[9px] font-medium uppercase">Admin</span>
-                    {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[#2D6A4F]" />}
+                    {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[var(--accent-green)]" />}
                   </>
                 )}
               </NavLink>
@@ -86,7 +86,7 @@ export default function MobileBottomNav() {
                   <>
                     <User size={20} />
                     <span className="text-[9px] font-medium uppercase">{t('profile')}</span>
-                    {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[#2D6A4F]" />}
+                    {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[var(--accent-green)]" />}
                   </>
                 )}
               </NavLink>
@@ -99,7 +99,7 @@ export default function MobileBottomNav() {
               <>
                 <LogIn size={20} />
                 <span className="text-[9px] font-medium uppercase">{t('login')}</span>
-                {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[#2D6A4F]" />}
+                {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[var(--accent-green)]" />}
               </>
             )}
           </NavLink>

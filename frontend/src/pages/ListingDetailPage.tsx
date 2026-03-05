@@ -155,7 +155,7 @@ export default function ListingDetailPage() {
 
         <div className="space-y-6">
           {/* Mini Map */}
-          <div className="bg-[var(--bg-surface)] rounded-2xl overflow-hidden shadow-sm h-[200px]">
+          <div className="surface-card rounded-2xl overflow-hidden h-[200px]">
             <ListingMap
               listings={[listing]}
               center={[listing.coordinates.lat, listing.coordinates.lng]}
@@ -177,7 +177,7 @@ export default function ListingDetailPage() {
             {ratings.length > 0 ? (
               ratings.map(r => <ReviewCard key={r._id} rating={r} />)
             ) : (
-              <p className="text-xs text-[#6B6560]">{t('rating.noReviews')}</p>
+              <p className="text-xs text-[var(--text-secondary)]">{t('rating.noReviews')}</p>
             )}
           </div>
         </div>
@@ -194,7 +194,7 @@ export default function ListingDetailPage() {
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowDeleteConfirm(false)}>
-          <div className="bg-[var(--bg-surface)] rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="surface-card rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-semibold">{t('listing.deleteConfirmTitle')}</h3>
             <p className="text-sm text-[var(--text-secondary)]">{t('listing.deleteConfirmMessage')}</p>
             <div className="flex gap-3">
@@ -206,7 +206,7 @@ export default function ListingDetailPage() {
               </button>
               <button
                 onClick={handleDelete}
-                className="flex-1 px-4 py-2.5 text-sm font-medium bg-[#C1341B] text-white rounded-xl hover:bg-[#a02b16] transition-colors"
+                className="flex-1 px-4 py-2.5 text-sm font-medium bg-[var(--accent-red)] text-white rounded-xl hover:opacity-90 transition-colors"
               >
                 {t('delete')}
               </button>

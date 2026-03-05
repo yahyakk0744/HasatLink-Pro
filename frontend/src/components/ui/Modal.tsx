@@ -30,7 +30,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <div
-        className={`relative w-full ${sizeClasses[size]} max-h-[90vh] bg-[var(--bg-surface)] rounded-[2rem] shadow-2xl overflow-hidden animate-fade-in`}
+        className={`relative w-full ${sizeClasses[size]} max-h-[90vh] bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-default)] shadow-2xl overflow-hidden animate-fade-in`}
         onClick={e => e.stopPropagation()}
       >
         {title && (

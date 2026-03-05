@@ -47,7 +47,7 @@ export default function MessagesPage() {
   if (!user || !firebaseUid) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-        <p className="text-sm text-[#6B6560]">{t('login')}</p>
+        <p className="text-sm text-[var(--text-secondary)]">{t('login')}</p>
       </div>
     );
   }
@@ -107,7 +107,7 @@ export default function MessagesPage() {
   return (
     <div className="max-w-5xl mx-auto animate-fade-in">
       <SEO title={t('messages.title')} description="HasatLink mesajlarınız." />
-      <div className="bg-[var(--bg-surface)] rounded-2xl overflow-hidden shadow-sm md:my-6" style={{ height: 'calc(100vh - 140px)' }}>
+      <div className="surface-card rounded-2xl overflow-hidden md:my-6" style={{ height: 'calc(100vh - 140px)' }}>
         <div className="flex h-full">
           {/* Conversation List — hidden on mobile when chat is active */}
           <div
@@ -121,11 +121,11 @@ export default function MessagesPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleSelectAll}
-                      className="text-xs font-medium text-[#2D6A4F] hover:text-[#245a42] transition-colors"
+                      className="text-xs font-medium text-[var(--accent-green)] hover:text-[#245a42] transition-colors"
                     >
                       {selectedIds.size === conversations.length ? 'Seçimi Kaldır' : 'Tümünü Seç'}
                     </button>
-                    <span className="text-xs text-[#6B6560]">
+                    <span className="text-xs text-[var(--text-secondary)]">
                       {selectedIds.size} seçildi
                     </span>
                   </div>
@@ -133,14 +133,14 @@ export default function MessagesPage() {
                     {selectedIds.size > 0 && (
                       <button
                         onClick={() => setShowDeleteConfirm(true)}
-                        className="p-1.5 text-[#C1341B] hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-1.5 text-[var(--accent-red)] hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <Trash2 size={18} />
                       </button>
                     )}
                     <button
                       onClick={toggleSelectionMode}
-                      className="p-1.5 text-[#6B6560] hover:bg-[var(--bg-input)] rounded-lg transition-colors"
+                      className="p-1.5 text-[var(--text-secondary)] hover:bg-[var(--bg-input)] rounded-lg transition-colors"
                     >
                       <X size={18} />
                     </button>
@@ -149,13 +149,13 @@ export default function MessagesPage() {
               ) : (
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold tracking-tight flex items-center gap-2">
-                    <MessageSquare size={20} className="text-[#2D6A4F]" />
+                    <MessageSquare size={20} className="text-[var(--accent-green)]" />
                     {t('messages.title')}
                   </h2>
                   {conversations.length > 0 && (
                     <button
                       onClick={toggleSelectionMode}
-                      className="text-xs font-medium text-[#6B6560] hover:text-[#2D6A4F] transition-colors flex items-center gap-1"
+                      className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors flex items-center gap-1"
                     >
                       <CheckSquare size={14} />
                       Seç
@@ -205,11 +205,11 @@ export default function MessagesPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-[var(--bg-surface)] rounded-2xl p-6 max-w-sm w-full shadow-xl">
+          <div className="surface-card rounded-2xl p-6 max-w-sm w-full shadow-xl">
             <h3 className="text-base font-semibold text-[var(--text-primary)] mb-2">
               Konuşmaları Sil
             </h3>
-            <p className="text-sm text-[#6B6560] mb-5">
+            <p className="text-sm text-[var(--text-secondary)] mb-5">
               {selectedIds.size} konuşmayı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
             </p>
             <div className="flex gap-3">
@@ -223,7 +223,7 @@ export default function MessagesPage() {
               <button
                 onClick={handleDeleteSelected}
                 disabled={deleting}
-                className="flex-1 py-2.5 text-sm font-medium rounded-xl bg-[#C1341B] text-white hover:bg-[#a82d17] transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 text-sm font-medium rounded-xl bg-[var(--accent-red)] text-white hover:opacity-90 transition-colors disabled:opacity-50"
               >
                 {deleting ? 'Siliniyor...' : 'Sil'}
               </button>

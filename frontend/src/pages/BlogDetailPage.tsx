@@ -24,7 +24,7 @@ export default function BlogDetailPage() {
   if (!blog) return (
     <div className="max-w-3xl mx-auto px-4 py-20 text-center">
       <h1 className="text-2xl font-bold mb-4">{lang === 'tr' ? 'Yazı bulunamadı' : 'Post not found'}</h1>
-      <Link to="/blog" className="text-[#2D6A4F] font-medium">{lang === 'tr' ? '← Blog\'a dön' : '← Back to blog'}</Link>
+      <Link to="/blog" className="text-[var(--accent-green)] font-medium">{lang === 'tr' ? '← Blog\'a dön' : '← Back to blog'}</Link>
     </div>
   );
 
@@ -32,7 +32,7 @@ export default function BlogDetailPage() {
     <div className="max-w-3xl mx-auto px-4 py-8 animate-fade-in">
       <SEO title={blog.title} description={blog.content.slice(0, 160)} ogImage={blog.coverImage} />
 
-      <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm text-[#2D6A4F] font-medium mb-6 hover:gap-2.5 transition-all">
+      <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm text-[var(--accent-green)] font-medium mb-6 hover:gap-2.5 transition-all">
         <ArrowLeft size={14} /> {lang === 'tr' ? 'Tarım Rehberi' : 'Agriculture Guide'}
       </Link>
 
@@ -41,7 +41,7 @@ export default function BlogDetailPage() {
       )}
 
       {blog.category && (
-        <span className="inline-block text-[10px] font-medium uppercase tracking-wider text-[#2D6A4F] bg-[#2D6A4F]/10 px-2.5 py-0.5 rounded-full mb-3">
+        <span className="inline-block text-[10px] font-medium uppercase tracking-wider text-[var(--accent-green)] bg-[color-mix(in_srgb,var(--accent-green)_10%,transparent)] px-2.5 py-0.5 rounded-full mb-3">
           {blog.category}
         </span>
       )}
@@ -54,7 +54,7 @@ export default function BlogDetailPage() {
       </div>
 
       <article
-        className="prose prose-sm max-w-none text-[var(--text-primary)] [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-8 [&_h2]:mb-4 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mt-6 [&_h3]:mb-3 [&_p]:mb-4 [&_p]:leading-relaxed [&_ul]:mb-4 [&_ul]:ml-4 [&_li]:mb-1 [&_img]:rounded-xl [&_img]:my-6 [&_a]:text-[#2D6A4F] [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-[#2D6A4F] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-[var(--text-secondary)]"
+        className="prose prose-sm max-w-none text-[var(--text-primary)] [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-8 [&_h2]:mb-4 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mt-6 [&_h3]:mb-3 [&_p]:mb-4 [&_p]:leading-relaxed [&_ul]:mb-4 [&_ul]:ml-4 [&_li]:mb-1 [&_img]:rounded-xl [&_img]:my-6 [&_a]:text-[var(--accent-green)] [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-[var(--accent-green)] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-[var(--text-secondary)]"
         dangerouslySetInnerHTML={{ __html: blog.content }}
       />
     </div>

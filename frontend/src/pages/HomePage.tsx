@@ -38,7 +38,7 @@ function StatCounter({ end, suffix, label, icon }: { end: number; suffix: string
   const { ref, inView } = useInView(0.3);
   const value = useCountUp(end, 2000, inView);
   return (
-    <div ref={ref} className="bg-[var(--bg-surface)] rounded-2xl p-3 md:p-5 shadow-sm border border-[var(--border-default)] text-center">
+    <div ref={ref} className="surface-card-hover rounded-2xl p-3 md:p-5 text-center">
       <div className="flex justify-center mb-1 md:mb-2">{icon}</div>
       <p className="text-xl md:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
         {value.toLocaleString()}{suffix}
@@ -162,7 +162,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto px-3 md:px-4 relative text-center">
           {/* Üst yazı */}
           <p
-            className="text-xs md:text-sm font-semibold tracking-[0.3em] uppercase text-[#A47148] mb-4 animate-slide-up"
+            className="text-xs md:text-sm font-semibold tracking-[0.3em] uppercase text-[var(--accent-orange)] mb-4 animate-slide-up"
             style={{ animationDelay: '0ms', animationFillMode: 'both' }}
           >
             {lang === 'tr' ? 'TARIM PAZARININ DİJİTAL GÜCÜ' : 'THE DIGITAL POWER OF AGRICULTURE'}
@@ -241,7 +241,7 @@ export default function HomePage() {
                 <Link
                   key={key}
                   to={`/${key}`}
-                  className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl md:rounded-2xl p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-200 group text-center"
+                  className="surface-card-hover rounded-xl md:rounded-2xl p-3 md:p-6 group text-center"
                 >
                   <div className="flex justify-center mb-1.5 md:mb-3 [&_svg]:w-5 [&_svg]:h-5 md:[&_svg]:w-7 md:[&_svg]:h-7" style={{ color }}>
                     {CATEGORY_ICONS[key]}
@@ -265,7 +265,7 @@ export default function HomePage() {
               <h2 className="text-xl md:text-2xl font-bold tracking-tight">
                 {lang === 'tr' ? 'Tarım Rehberi' : 'Agriculture Guide'}
               </h2>
-              <Link to="/blog" className="text-xs font-medium uppercase text-[#2D6A4F] flex items-center gap-1 hover:gap-2 transition-all">
+              <Link to="/blog" className="text-xs font-medium uppercase text-[var(--accent-green)] flex items-center gap-1 hover:gap-2 transition-all">
                 {lang === 'tr' ? 'Tümünü Gör' : 'View All'} <ArrowRight size={12} />
               </Link>
             </div>
@@ -274,7 +274,7 @@ export default function HomePage() {
                 <Link
                   key={blog._id}
                   to={`/blog/${blog.slug}`}
-                  className="group bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                  className="group surface-card-hover rounded-2xl overflow-hidden"
                 >
                   {blog.coverImage ? (
                     <img src={blog.coverImage} alt={blog.title} className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
@@ -285,11 +285,11 @@ export default function HomePage() {
                   )}
                   <div className="p-4">
                     {blog.category && (
-                      <span className="inline-block text-[10px] font-medium uppercase tracking-wider text-[#2D6A4F] bg-[#2D6A4F]/10 px-2.5 py-0.5 rounded-full mb-2">
+                      <span className="inline-block text-[10px] font-medium uppercase tracking-wider text-[var(--accent-green)] bg-[#2D6A4F]/10 px-2.5 py-0.5 rounded-full mb-2">
                         {blog.category}
                       </span>
                     )}
-                    <h3 className="text-sm font-semibold tracking-tight line-clamp-2 mb-2 group-hover:text-[#2D6A4F] transition-colors">{blog.title}</h3>
+                    <h3 className="text-sm font-semibold tracking-tight line-clamp-2 mb-2 group-hover:text-[var(--accent-green)] transition-colors">{blog.title}</h3>
                     <div className="flex items-center gap-3 text-[10px] text-[var(--text-secondary)]">
                       <span className="flex items-center gap-1"><UserIcon size={10} />{blog.author}</span>
                       <span className="flex items-center gap-1"><Calendar size={10} />{formatDate(blog.createdAt)}</span>
@@ -307,7 +307,7 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-3 md:px-4 py-6 md:py-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
             {/* Hava Durumu */}
-            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-3 md:p-4 shadow-sm">
+            <div className="surface-card rounded-2xl p-3 md:p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Cloud size={14} className="text-[#0077B6]" />
                 <h3 className="text-xs font-semibold tracking-tight">{t('weather.title')}</h3>
@@ -333,15 +333,15 @@ export default function HomePage() {
             </div>
 
             {/* Hal Fiyatları */}
-            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-3 md:p-5 shadow-sm">
+            <div className="surface-card rounded-2xl p-3 md:p-5">
               <div className="flex items-center justify-between mb-3 md:mb-4">
                 <div className="flex items-center gap-2">
-                  <BarChart3 size={16} className="text-[#2D6A4F]" />
+                  <BarChart3 size={16} className="text-[var(--accent-green)]" />
                   <h3 className="text-sm font-semibold tracking-tight">
                     {lang === 'tr' ? 'Hal Fiyatları' : 'Market Hall'}
                   </h3>
                 </div>
-                <Link to="/hal-fiyatlari" className="text-[10px] font-medium text-[#2D6A4F] uppercase hover:text-[#40916C]">
+                <Link to="/hal-fiyatlari" className="text-[10px] font-medium text-[var(--accent-green)] uppercase hover:text-[#40916C]">
                   {t('all')} →
                 </Link>
               </div>
@@ -360,14 +360,14 @@ export default function HomePage() {
                       className="w-full flex items-center py-1.5 hover:bg-[var(--bg-surface-hover,rgba(0,0,0,0.03))] rounded-lg transition-colors px-1 -mx-1"
                     >
                       <span className="flex-1 text-sm text-[var(--text-primary)] text-left truncate">{p.name}</span>
-                      <span className="w-14 text-right text-xs text-[#2D6A4F] font-medium">
+                      <span className="w-14 text-right text-xs text-[var(--accent-green)] font-medium">
                         {p.minPrice?.toFixed(1)}₺
                       </span>
                       <span className="w-14 text-right text-xs text-[#C1341B] font-medium">
                         {p.maxPrice?.toFixed(1)}₺
                       </span>
                       <span className={`w-12 text-right flex items-center justify-end gap-0.5 text-xs font-medium ${
-                        p.change >= 0 ? 'text-[#2D6A4F]' : 'text-[#C1341B]'
+                        p.change >= 0 ? 'text-[var(--accent-green)]' : 'text-[#C1341B]'
                       }`}>
                         {p.change >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                         {p.change >= 0 ? '+' : ''}{p.change.toFixed(1)}%
@@ -385,15 +385,15 @@ export default function HomePage() {
             </div>
 
             {/* HasatLink Pazarı */}
-            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-3 md:p-5 shadow-sm">
+            <div className="surface-card rounded-2xl p-3 md:p-5">
               <div className="flex items-center justify-between mb-3 md:mb-4">
                 <div className="flex items-center gap-2">
-                  <ShoppingBag size={16} className="text-[#A47148]" />
+                  <ShoppingBag size={16} className="text-[var(--accent-orange)]" />
                   <h3 className="text-sm font-semibold tracking-tight">
                     {lang === 'tr' ? 'HasatLink Pazarı' : 'HasatLink Market'}
                   </h3>
                 </div>
-                <Link to="/hasatlink-pazari" className="text-[10px] font-medium text-[#A47148] uppercase hover:text-[#C4863A]">
+                <Link to="/hasatlink-pazari" className="text-[10px] font-medium text-[var(--accent-orange)] uppercase hover:text-[#C4863A]">
                   {t('all')} →
                 </Link>
               </div>
@@ -412,14 +412,14 @@ export default function HomePage() {
                       className="w-full flex items-center py-1.5 hover:bg-[var(--bg-surface-hover,rgba(0,0,0,0.03))] rounded-lg transition-colors px-1 -mx-1"
                     >
                       <span className="flex-1 text-sm text-[var(--text-primary)] text-left truncate">{p.name}</span>
-                      <span className="w-14 text-right text-xs text-[#2D6A4F] font-medium">
+                      <span className="w-14 text-right text-xs text-[var(--accent-green)] font-medium">
                         {p.minPrice.toFixed(1)}₺
                       </span>
                       <span className="w-14 text-right text-xs text-[#C1341B] font-medium">
                         {p.maxPrice.toFixed(1)}₺
                       </span>
                       <span className={`w-12 text-right flex items-center justify-end gap-0.5 text-xs font-medium ${
-                        p.change >= 0 ? 'text-[#2D6A4F]' : 'text-[#C1341B]'
+                        p.change >= 0 ? 'text-[var(--accent-green)]' : 'text-[#C1341B]'
                       }`}>
                         {p.change >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                         {p.change >= 0 ? '+' : ''}{p.change.toFixed(1)}%
@@ -445,7 +445,7 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-3 md:px-4 py-8 md:py-12">
           <div className="flex items-center justify-between mb-4 md:mb-6">
             <h2 className="text-xl md:text-2xl font-semibold tracking-tight">{lang === 'tr' ? 'Öne Çıkan İlanlar' : 'Featured Listings'}</h2>
-            <Link to="/pazar" className="text-xs font-medium uppercase text-[#2D6A4F] flex items-center gap-1 hover:gap-2 transition-all">
+            <Link to="/pazar" className="text-xs font-medium uppercase text-[var(--accent-green)] flex items-center gap-1 hover:gap-2 transition-all">
               {t('all')} <ArrowRight size={12} />
             </Link>
           </div>
@@ -456,7 +456,7 @@ export default function HomePage() {
               ))}
             </div>
           ) : listings.length === 0 ? (
-            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-12 text-center">
+            <div className="surface-card rounded-2xl p-12 text-center">
               <PackageOpen size={48} className="text-[var(--text-secondary)] mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-semibold mb-2">{lang === 'tr' ? 'Henüz ilan eklenmedi' : 'No listings yet'}</h3>
               <p className="text-sm text-[var(--text-secondary)]">
@@ -484,11 +484,11 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-3 md:px-4 py-6 md:py-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <AIDiagnosisPanel />
-            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[2.5rem] p-4 shadow-sm overflow-hidden">
+            <div className="surface-card-lg p-4 overflow-hidden">
               <div className="flex items-center gap-2 mb-3 px-2">
-                <MapPin size={16} className="text-[#2D6A4F]" />
+                <MapPin size={16} className="text-[var(--accent-green)]" />
                 <h3 className="text-lg font-semibold tracking-tight">{t('map.title')}</h3>
-                <Link to="/harita" className="ml-auto text-[10px] font-medium text-[#2D6A4F] uppercase">
+                <Link to="/harita" className="ml-auto text-[10px] font-medium text-[var(--accent-green)] uppercase">
                   {t('all')} &rarr;
                 </Link>
               </div>
@@ -553,7 +553,7 @@ export default function HomePage() {
               end={platformStats.activeListings}
               suffix=""
               label={lang === 'tr' ? 'Toplam İlan' : 'Total Listings'}
-              icon={<Layers size={22} className="text-[#2D6A4F]" />}
+              icon={<Layers size={22} className="text-[var(--accent-green)]" />}
             />
             <StatCounter
               end={platformStats.registeredUsers}
@@ -565,7 +565,7 @@ export default function HomePage() {
               end={platformStats.cities}
               suffix=""
               label={lang === 'tr' ? 'Aktif Şehir' : 'Active Cities'}
-              icon={<Building2 size={22} className="text-[#A47148]" />}
+              icon={<Building2 size={22} className="text-[var(--accent-orange)]" />}
             />
             <StatCounter
               end={6}

@@ -58,12 +58,12 @@ export default function AuthPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-semibold tracking-tight mb-2">
             <span className="text-[var(--text-primary)]">HASAT</span>
-            <span className="text-[#2D6A4F]">LiNK</span>
+            <span className="text-[var(--accent-green)]">LiNK</span>
           </h1>
-          <p className="text-sm text-[#6B6560]">{t('appSlogan')}</p>
+          <p className="text-sm text-[var(--text-secondary)]">{t('appSlogan')}</p>
         </div>
 
-        <div className="bg-[var(--bg-surface)] rounded-[2.5rem] p-8 shadow-sm">
+        <div className="surface-card-lg p-8">
           {/* Tab Switch */}
           <div className="flex bg-[var(--bg-input)] rounded-full p-1 mb-6">
             <button
@@ -120,9 +120,9 @@ export default function AuthPage() {
             </Button>
           </form>
 
-          <p className="text-center text-xs text-[#6B6560] mt-4">
+          <p className="text-center text-xs text-[var(--text-secondary)] mt-4">
             {isLogin ? t('noAccount') : t('hasAccount')}{' '}
-            <button onClick={() => setIsLogin(!isLogin)} className="text-[#2D6A4F] font-semibold">
+            <button onClick={() => setIsLogin(!isLogin)} className="text-[var(--accent-green)] font-semibold">
               {isLogin ? t('registerTitle') : t('loginTitle')}
             </button>
           </p>

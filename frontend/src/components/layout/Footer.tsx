@@ -51,8 +51,8 @@ function AccordionSection({ title, children }: { title: string; children: React.
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between py-3"
       >
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#6B6560]">{title}</span>
-        <ChevronDown size={14} className={`text-[#6B6560] transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{title}</span>
+        <ChevronDown size={14} className={`text-[var(--text-secondary)] transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
       <div className={`overflow-hidden transition-all duration-200 ${open ? 'max-h-60 opacity-100 pb-3' : 'max-h-0 opacity-0'}`}>
         {children}
@@ -107,14 +107,14 @@ export default function Footer() {
             <div>
               <h3 className="text-lg font-semibold tracking-tight leading-none">
                 <span className="text-white">HASAT</span>
-                <span className="text-[#2D6A4F]">LiNK</span>
+                <span className="text-[var(--accent-green)]">LiNK</span>
               </h3>
-              <p className="text-[10px] text-[#6B6560] mt-0.5">{isTr ? "Türkiye'nin tarım pazaryeri" : 'Agricultural marketplace'}</p>
+              <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">{isTr ? "Türkiye'nin tarım pazaryeri" : 'Agricultural marketplace'}</p>
             </div>
             {hasSocials && (
               <div className="flex items-center gap-2">
                 {socialIcons.map(s => (
-                  <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-[#2D6A4F] hover:text-white transition-colors">
+                  <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-[var(--accent-green)] hover:text-white transition-colors">
                     {s.icon}
                   </a>
                 ))}
@@ -156,13 +156,13 @@ export default function Footer() {
           {/* PWA install — single row */}
           {!isInstalled && (
             <div className="flex items-center gap-3 mt-4 py-3 px-3 bg-white/5 rounded-xl">
-              <Download size={16} className="text-[#2D6A4F] shrink-0" />
+              <Download size={16} className="text-[var(--accent-green)] shrink-0" />
               <p className="flex-1 text-[11px] text-white/60 leading-tight">
                 {isTr ? 'Ana ekrana ekle' : 'Add to home screen'}
               </p>
               <button
                 onClick={promptInstall}
-                className="px-3 py-1.5 bg-[#2D6A4F] text-white text-[10px] font-semibold uppercase rounded-lg hover:bg-[#1B4332] transition-colors shrink-0"
+                className="px-3 py-1.5 bg-[var(--accent-green)] text-white text-[10px] font-semibold uppercase rounded-lg hover:opacity-90 transition-colors shrink-0"
               >
                 {isTr ? 'Yükle' : 'Install'}
               </button>
@@ -174,19 +174,19 @@ export default function Footer() {
             {hasSocials && (
               <div className="flex items-center gap-2 mb-1">
                 {socialIcons.map(s => (
-                  <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-[#2D6A4F] hover:text-white transition-colors">
+                  <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-[var(--accent-green)] hover:text-white transition-colors">
                     {s.icon}
                   </a>
                 ))}
               </div>
             )}
-            <div className="flex items-center gap-3 text-[10px] text-[#6B6560]">
+            <div className="flex items-center gap-3 text-[10px] text-[var(--text-secondary)]">
               <Link to="/gizlilik" className="hover:text-white">{isTr ? 'Gizlilik' : 'Privacy'}</Link>
               <Link to="/kullanim-sartlari" className="hover:text-white">{isTr ? 'Şartlar' : 'Terms'}</Link>
               <Link to="/cerez-politikasi" className="hover:text-white">{isTr ? 'Çerez' : 'Cookies'}</Link>
               <Link to="/iletisim" className="hover:text-white">{isTr ? 'İletişim' : 'Contact'}</Link>
             </div>
-            <p className="text-[10px] text-[#6B6560]">&copy; {year} HasatLink. Tüm hakları saklıdır.</p>
+            <p className="text-[10px] text-[var(--text-secondary)]">&copy; {year} HasatLink. Tüm hakları saklıdır.</p>
           </div>
         </div>
 
@@ -197,13 +197,13 @@ export default function Footer() {
             <div>
               <h3 className="text-xl font-semibold tracking-tight mb-3">
                 <span className="text-white">HASAT</span>
-                <span className="text-[#2D6A4F]">LiNK</span>
+                <span className="text-[var(--accent-green)]">LiNK</span>
               </h3>
-              <p className="text-sm text-[#6B6560] mb-4">{t('footer.description')}</p>
+              <p className="text-sm text-[var(--text-secondary)] mb-4">{t('footer.description')}</p>
               {hasSocials && (
                 <div className="flex items-center gap-2">
                   {socialIcons.map(s => (
-                    <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-[#2D6A4F] hover:text-white transition-colors">
+                    <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-[var(--accent-green)] hover:text-white transition-colors">
                       {s.icon}
                     </a>
                   ))}
@@ -213,7 +213,7 @@ export default function Footer() {
 
             {/* Categories */}
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-[#6B6560] mb-3">{t('categories.pazar')}</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">{t('categories.pazar')}</h4>
               <div className="flex flex-col gap-2">
                 <Link to="/pazar" className="text-sm text-white/70 hover:text-white">{t('categories.pazar')}</Link>
                 <Link to="/lojistik" className="text-sm text-white/70 hover:text-white">{t('categories.lojistik')}</Link>
@@ -226,7 +226,7 @@ export default function Footer() {
 
             {/* Features */}
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-[#6B6560] mb-3">{isTr ? 'Özellikler' : 'Features'}</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">{isTr ? 'Özellikler' : 'Features'}</h4>
               <div className="flex flex-col gap-2">
                 <Link to="/harita" className="text-sm text-white/70 hover:text-white">{t('map.title')}</Link>
                 <Link to="/ai-teshis" className="text-sm text-white/70 hover:text-white">{t('ai.title')}</Link>
@@ -238,7 +238,7 @@ export default function Footer() {
 
             {/* Legal */}
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-[#6B6560] mb-3">{isTr ? 'Yasal' : 'Legal'}</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">{isTr ? 'Yasal' : 'Legal'}</h4>
               <div className="flex flex-col gap-2">
                 <Link to="/gizlilik" className="text-sm text-white/70 hover:text-white">{isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}</Link>
                 <Link to="/kullanim-sartlari" className="text-sm text-white/70 hover:text-white">{isTr ? 'Kullanım Şartları' : 'Terms of Service'}</Link>
@@ -251,8 +251,8 @@ export default function Footer() {
           {/* Desktop PWA install */}
           {!isInstalled && (
             <div className="border-t border-white/10 mt-8 pt-8">
-              <div className="flex items-center gap-6 bg-gradient-to-r from-[#2D6A4F]/20 to-[#1B4332]/20 border border-[#2D6A4F]/30 rounded-2xl p-6">
-                <div className="w-12 h-12 bg-[#2D6A4F] rounded-xl flex items-center justify-center shrink-0">
+              <div className="flex items-center gap-6 bg-gradient-to-r from-[var(--accent-green)]/20 to-[var(--accent-green)]/30 border border-[var(--accent-green)]/30 rounded-2xl p-6">
+                <div className="w-12 h-12 bg-[var(--accent-green)] rounded-xl flex items-center justify-center shrink-0">
                   <Download size={24} className="text-white" />
                 </div>
                 <div className="flex-1">
@@ -276,13 +276,13 @@ export default function Footer() {
 
           {/* Desktop bottom bar */}
           <div className="border-t border-white/10 mt-8 pt-6 flex flex-col items-center gap-3 text-center">
-            <div className="flex items-center gap-4 text-xs text-[#6B6560]">
+            <div className="flex items-center gap-4 text-xs text-[var(--text-secondary)]">
               <Link to="/gizlilik" className="hover:text-white">{isTr ? 'Gizlilik' : 'Privacy'}</Link>
               <Link to="/kullanim-sartlari" className="hover:text-white">{isTr ? 'Kullanım Şartları' : 'Terms'}</Link>
               <Link to="/cerez-politikasi" className="hover:text-white">{isTr ? 'Çerezler' : 'Cookies'}</Link>
               <Link to="/iletisim" className="hover:text-white">{isTr ? 'İletişim' : 'Contact'}</Link>
             </div>
-            <p className="text-xs text-[#6B6560]">&copy; {year} HasatLink. Tüm hakları saklıdır.</p>
+            <p className="text-xs text-[var(--text-secondary)]">&copy; {year} HasatLink. Tüm hakları saklıdır.</p>
           </div>
         </div>
       </div>

@@ -46,7 +46,7 @@ export default function Header() {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="w-full pl-10 pr-4 py-2 bg-[var(--bg-input)] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]"
+              className="w-full pl-10 pr-4 py-2 bg-[var(--bg-input)] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
             />
           </div>
         </form>
@@ -68,7 +68,7 @@ export default function Header() {
             <Link to="/mesajlar" className="relative p-1.5 md:p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors hidden sm:flex">
               <MessageSquare size={18} className="md:w-5 md:h-5" />
               {messageUnreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 md:w-5 md:h-5 bg-[#2D6A4F] text-white text-[8px] md:text-[10px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 md:w-5 md:h-5 bg-[var(--accent-green)] text-white text-[8px] md:text-[10px] font-bold rounded-full flex items-center justify-center">
                   {messageUnreadCount > 9 ? '9+' : messageUnreadCount}
                 </span>
               )}
@@ -84,7 +84,7 @@ export default function Header() {
               >
                 <Bell size={18} className="md:w-5 md:h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 md:w-5 md:h-5 bg-[#C1341B] text-white text-[8px] md:text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 md:w-5 md:h-5 bg-[var(--accent-red)] text-white text-[8px] md:text-[10px] font-bold rounded-full flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -98,7 +98,7 @@ export default function Header() {
           {/* Admin - hidden on mobile, accessible from bottom nav */}
           {user?.role === 'admin' && (
             <Link to="/admin" className="p-1.5 md:p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors hidden sm:flex" title="Admin Panel">
-              <Shield size={18} className="text-[#2D6A4F] md:w-5 md:h-5" />
+              <Shield size={18} className="text-[var(--accent-green)] md:w-5 md:h-5" />
             </Link>
           )}
 
@@ -123,7 +123,7 @@ export default function Header() {
           ) : (
             <Link
               to="/giris"
-              className="px-3 md:px-4 py-1.5 md:py-2 bg-[#2D6A4F] text-white text-[10px] md:text-xs font-semibold tracking-wide rounded-full hover:bg-[#1B4332] transition-colors"
+              className="px-3 md:px-4 py-1.5 md:py-2 bg-[var(--accent-green)] text-white text-[10px] md:text-xs font-semibold tracking-wide rounded-full hover:opacity-90 transition-colors"
             >
               {t('login')}
             </Link>

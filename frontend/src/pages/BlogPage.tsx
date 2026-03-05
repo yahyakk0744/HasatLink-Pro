@@ -40,7 +40,7 @@ export default function BlogPage() {
             <Link
               key={blog._id}
               to={`/blog/${blog.slug}`}
-              className="group bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+              className="group surface-card rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
             >
               {blog.coverImage ? (
                 <img src={blog.coverImage} alt={blog.title} className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
@@ -51,16 +51,16 @@ export default function BlogPage() {
               )}
               <div className="p-5">
                 {blog.category && (
-                  <span className="inline-block text-[10px] font-medium uppercase tracking-wider text-[#2D6A4F] bg-[#2D6A4F]/10 px-2.5 py-0.5 rounded-full mb-2">
+                  <span className="inline-block text-[10px] font-medium uppercase tracking-wider text-[var(--accent-green)] bg-[color-mix(in_srgb,var(--accent-green)_10%,transparent)] px-2.5 py-0.5 rounded-full mb-2">
                     {blog.category}
                   </span>
                 )}
-                <h2 className="text-base font-semibold tracking-tight line-clamp-2 mb-2 group-hover:text-[#2D6A4F] transition-colors">{blog.title}</h2>
+                <h2 className="text-base font-semibold tracking-tight line-clamp-2 mb-2 group-hover:text-[var(--accent-green)] transition-colors">{blog.title}</h2>
                 <div className="flex items-center gap-3 text-[10px] text-[var(--text-secondary)]">
                   <span className="flex items-center gap-1"><User size={10} />{blog.author}</span>
                   <span className="flex items-center gap-1"><Calendar size={10} />{formatDate(blog.createdAt)}</span>
                 </div>
-                <div className="mt-3 flex items-center gap-1 text-xs font-medium text-[#2D6A4F] group-hover:gap-2 transition-all">
+                <div className="mt-3 flex items-center gap-1 text-xs font-medium text-[var(--accent-green)] group-hover:gap-2 transition-all">
                   {lang === 'tr' ? 'Devamını Oku' : 'Read More'} <ArrowRight size={12} />
                 </div>
               </div>

@@ -36,7 +36,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
   return (
     <Link to={`/ilan/${listing._id}`} className="group">
-      <div className="bg-[var(--bg-surface)] rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+      <div className="surface-card-hover rounded-2xl overflow-hidden">
         {/* Image */}
         <div className="relative aspect-[4/3] bg-[var(--bg-input)] overflow-hidden">
           {listing.images?.[0] ? (
@@ -56,7 +56,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           {/* Hover arrow */}
           <div className="absolute bottom-3 right-3 w-8 h-8 bg-[var(--glass-surface)] backdrop-blur rounded-full flex items-center justify-center opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-            <ArrowRight size={14} className="text-[#2D6A4F]" />
+            <ArrowRight size={14} className="text-[var(--accent-green)]" />
           </div>
 
           {/* Top-left badges */}
@@ -186,14 +186,14 @@ export default function ListingCard({ listing }: ListingCardProps) {
               {listing.sellerImage ? (
                 <img src={listing.sellerImage} alt={listing.sellerName} className="w-6 h-6 rounded-full object-cover" />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-[#2D6A4F]/10 flex items-center justify-center text-[10px] font-semibold text-[#2D6A4F]">
+                <div className="w-6 h-6 rounded-full bg-[var(--accent-green)]/10 flex items-center justify-center text-[10px] font-semibold text-[var(--accent-green)]">
                   {listing.sellerName[0]}
                 </div>
               )}
               <span className="text-xs font-medium text-[var(--text-primary)] truncate flex-1">{listing.sellerName}</span>
               {listing.sellerRating > 0 && (
-                <span className="flex items-center gap-0.5 text-[10px] font-semibold text-[#A47148]">
-                  <Star size={10} fill="#A47148" />
+                <span className="flex items-center gap-0.5 text-[10px] font-semibold text-[var(--accent-orange)]">
+                  <Star size={10} fill="var(--accent-orange)" />
                   {listing.sellerRating.toFixed(1)}
                 </span>
               )}

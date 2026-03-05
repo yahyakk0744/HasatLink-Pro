@@ -15,14 +15,14 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
   const { t } = useTranslation();
 
   return (
-    <div className="bg-[var(--bg-surface)] rounded-[2.5rem] p-6 shadow-sm">
+    <div className="surface-card-lg p-6">
       {/* Mobile: stacked centered layout, Desktop: horizontal */}
       <div className="flex flex-col items-center text-center md:flex-row md:items-center md:text-left md:gap-4">
-        <div className="w-24 h-24 rounded-full bg-[var(--bg-input)] overflow-hidden shrink-0 ring-4 ring-[#2D6A4F]/20 mb-3 md:mb-0">
+        <div className="w-24 h-24 rounded-full bg-[var(--bg-input)] overflow-hidden shrink-0 ring-4 ring-[var(--accent-green)]/20 mb-3 md:mb-0">
           {user.profileImage ? (
             <img src={user.profileImage} alt={user.name} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-3xl font-semibold text-[#6B6560]">
+            <div className="w-full h-full flex items-center justify-center text-3xl font-semibold text-[var(--text-secondary)]">
               {user.name?.charAt(0) || '?'}
             </div>
           )}
@@ -30,10 +30,10 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
         <div className="flex-1">
           <div className="flex items-center justify-center md:justify-start gap-2">
             <h2 className="text-xl font-bold tracking-tight break-words">{user.name}</h2>
-            {user.isVerified && <CheckCircle size={18} className="text-[#2D6A4F] shrink-0" />}
+            {user.isVerified && <CheckCircle size={18} className="text-[var(--accent-green)] shrink-0" />}
           </div>
           {user.location && (
-            <div className="flex items-center justify-center md:justify-start gap-1 text-xs text-[#6B6560] mt-1">
+            <div className="flex items-center justify-center md:justify-start gap-1 text-xs text-[var(--text-secondary)] mt-1">
               <MapPin size={12} />
               <span>{user.location}</span>
             </div>
@@ -42,11 +42,11 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
             <div className="flex items-center justify-center md:justify-start gap-2 mt-1.5">
               <RatingStars score={Math.round(user.averageRating)} size={14} />
               <span className="text-sm font-semibold">{user.averageRating.toFixed(1)}</span>
-              <span className="text-xs text-[#6B6560]">({user.totalRatings})</span>
+              <span className="text-xs text-[var(--text-secondary)]">({user.totalRatings})</span>
             </div>
           )}
           {user.createdAt && (
-            <div className="flex items-center justify-center md:justify-start gap-1 text-xs text-[#6B6560] mt-1.5">
+            <div className="flex items-center justify-center md:justify-start gap-1 text-xs text-[var(--text-secondary)] mt-1.5">
               <Calendar size={12} />
               <span>{t('profileInfo.memberSince')}: {formatDate(user.createdAt)}</span>
             </div>
@@ -64,7 +64,7 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
             {!isOwn && onMessage && (
               <button
                 onClick={onMessage}
-                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase bg-[#2D6A4F] text-white rounded-full hover:bg-[#1B4332] transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase bg-[var(--accent-green)] text-white rounded-full hover:opacity-90 transition-colors"
               >
                 <MessageSquare size={14} />
                 {t('listing.message')}

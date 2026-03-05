@@ -14,7 +14,7 @@ export default function Toggle({ checked, onChange, label, description }: Toggle
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className="relative shrink-0 w-[44px] h-[24px] rounded-full transition-colors duration-200"
-        style={{ background: checked ? '#2D6A4F' : 'var(--bg-input)' }}
+        style={{ background: checked ? 'var(--accent-green)' : 'var(--bg-input)' }}
       >
         <span
           className="absolute top-[2px] left-[2px] w-[20px] h-[20px] rounded-full bg-white shadow-sm transition-transform duration-200"

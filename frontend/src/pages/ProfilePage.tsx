@@ -111,25 +111,25 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               <RatingStars score={Math.round(displayUser.averageRating)} size={14} />
               <span className="text-sm font-semibold">{displayUser.averageRating.toFixed(1)}</span>
-              <span className="text-xs text-[#6B6560]">({displayUser.totalRatings})</span>
+              <span className="text-xs text-[var(--text-secondary)]">({displayUser.totalRatings})</span>
             </div>
           )}
         </div>
 
         {/* Rating Distribution */}
         {ratings.length > 0 && (
-          <div className="bg-[var(--bg-surface)] rounded-2xl p-4 shadow-sm space-y-2">
+          <div className="surface-card rounded-2xl p-4 space-y-2">
             {ratingDistribution.map(({ star, count }) => (
               <div key={star} className="flex items-center gap-2">
                 <span className="text-xs font-semibold w-4 text-right">{star}</span>
-                <Star size={12} className="text-[#A47148] fill-[#A47148]" />
+                <Star size={12} className="text-[var(--accent-orange)] fill-[var(--accent-orange)]" />
                 <div className="flex-1 h-2 bg-[var(--bg-input)] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#A47148] rounded-full transition-all"
+                    className="h-full bg-[var(--accent-orange)] rounded-full transition-all"
                     style={{ width: `${(count / maxCount) * 100}%` }}
                   />
                 </div>
-                <span className="text-[10px] text-[#6B6560] w-6 text-right">{count}</span>
+                <span className="text-[10px] text-[var(--text-secondary)] w-6 text-right">{count}</span>
               </div>
             ))}
           </div>
@@ -138,7 +138,7 @@ export default function ProfilePage() {
         {ratings.length > 0 ? (
           ratings.map(r => <ReviewCard key={r._id} rating={r} />)
         ) : (
-          <p className="text-sm text-[#6B6560]">{t('rating.noReviews')}</p>
+          <p className="text-sm text-[var(--text-secondary)]">{t('rating.noReviews')}</p>
         )}
 
         {/* Review Form — only on other user's profile */}

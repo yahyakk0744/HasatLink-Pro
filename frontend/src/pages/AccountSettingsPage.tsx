@@ -71,13 +71,13 @@ export default function AccountSettingsPage() {
       <SEO title={isTr ? 'Hesap Ayarları' : 'Account Settings'} />
 
       <div className="flex items-center gap-3 mb-6">
-        <UserCog size={24} className="text-[#2D6A4F]" />
+        <UserCog size={24} className="text-[var(--accent-green)]" />
         <h1 className="text-2xl font-semibold tracking-tight">{isTr ? 'Hesap Ayarları' : 'Account Settings'}</h1>
       </div>
 
       <div className="space-y-6">
         {/* Username & Email */}
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="surface-card rounded-2xl p-6 space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
             {isTr ? 'Hesap Bilgileri' : 'Account Info'}
           </h2>
@@ -96,7 +96,7 @@ export default function AccountSettingsPage() {
         </div>
 
         {/* Password Change */}
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="surface-card rounded-2xl p-6 space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
             {isTr ? 'Şifre Değiştir' : 'Change Password'}
           </h2>
