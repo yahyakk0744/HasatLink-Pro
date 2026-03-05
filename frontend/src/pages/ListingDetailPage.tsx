@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Bell } from 'lucide-react';
+import { ArrowLeft, Bell, HandCoins } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useRatings } from '../hooks/useRatings';
 import { useMessages } from '../hooks/useMessages';
@@ -87,6 +87,10 @@ export default function ListingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [offerPrice, setOfferPrice] = useState('');
+  const [offerMessage, setOfferMessage] = useState('');
+  const [offerSending, setOfferSending] = useState(false);
 
   const isOwner = !!(user && listing && user.userId === listing.userId);
 
@@ -130,6 +134,27 @@ export default function ListingDetailPage() {
         navigator.clipboard.writeText(window.location.href);
         toast.success('Link kopyalandı!');
       }
+    }
+  };
+
+  const handleOffer = async () => {
+    if (!listing || !offerPrice || Number(offerPrice) <= 0) return;
+    if (!user) { navigate('/giris'); return; }
+    setOfferSending(true);
+    try {
+      await api.post('/offers', {
+        listingId: listing._id,
+        offerPrice: Number(offerPrice),
+        message: offerMessage,
+      });
+      toast.success('Teklifiniz gönderildi!');
+      setShowOfferModal(false);
+      setOfferPrice('');
+      setOfferMessage('');
+    } catch {
+      toast.error('Teklif gönderilemedi');
+    } finally {
+      setOfferSending(false);
     }
   };
 
@@ -202,6 +227,7 @@ export default function ListingDetailPage() {
             onEdit={() => setShowEditForm(true)}
             onDelete={() => setShowDeleteConfirm(true)}
             onMessage={!isOwner ? handleMessage : undefined}
+            onOffer={!isOwner ? () => setShowOfferModal(true) : undefined}
           />
 
           {/* Comments */}
@@ -269,6 +295,76 @@ export default function ListingDetailPage() {
                 className="flex-1 px-4 py-2.5 text-sm font-medium bg-[var(--accent-red)] text-white rounded-xl hover:opacity-90 transition-colors"
               >
                 {t('delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Offer Modal */}
+      {showOfferModal && listing && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowOfferModal(false)}>
+          <div
+            className="bg-[var(--bg-surface)]/95 backdrop-blur-xl border border-white/20 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#E76F00]/10 flex items-center justify-center">
+                <HandCoins size={20} className="text-[#E76F00]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Teklif Ver</h3>
+                <p className="text-[11px] text-[var(--text-secondary)]">{listing.title}</p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-[var(--bg-input)] flex items-center justify-between">
+              <span className="text-xs text-[var(--text-secondary)]">Mevcut Fiyat</span>
+              <span className="text-sm font-bold text-[var(--text-primary)]">
+                {listing.price.toLocaleString('tr-TR')} TL
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">
+                Teklif Fiyatı (TL)
+              </label>
+              <input
+                type="number"
+                value={offerPrice}
+                onChange={e => setOfferPrice(e.target.value)}
+                placeholder="Teklifinizi girin..."
+                className="w-full px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-default)] rounded-2xl text-sm outline-none focus:border-[#E76F00] transition-colors"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">
+                Mesaj (Opsiyonel)
+              </label>
+              <textarea
+                value={offerMessage}
+                onChange={e => setOfferMessage(e.target.value)}
+                placeholder="Satıcıya bir not bırakın..."
+                rows={2}
+                className="w-full px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-default)] rounded-2xl text-sm outline-none focus:border-[#E76F00] transition-colors resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowOfferModal(false)}
+                className="flex-1 px-4 py-3 text-sm font-medium bg-[var(--bg-input)] rounded-2xl hover:bg-[var(--bg-surface-hover)] transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleOffer}
+                disabled={offerSending || !offerPrice}
+                className="flex-1 px-4 py-3 text-sm font-semibold bg-[#E76F00] text-white rounded-2xl hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50"
+              >
+                {offerSending ? 'Gönderiliyor...' : 'Teklif Gönder'}
               </button>
             </div>
           </div>

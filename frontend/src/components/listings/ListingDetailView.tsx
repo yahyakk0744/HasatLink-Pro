@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { MapPin, Eye, Phone, Share2, MessageCircle, MessageSquare, Truck, Leaf, Star, Calendar, Weight, Box, Shield, Users, Clock, Wrench, Pencil, Trash2, Droplets, Zap, FileText, Landmark, Thermometer, Clock3, Ruler, ShieldCheck } from 'lucide-react';
+import { MapPin, Eye, Phone, Share2, MessageCircle, MessageSquare, Truck, Leaf, Star, Calendar, Weight, Box, Shield, Users, Clock, Wrench, Pencil, Trash2, Droplets, Zap, FileText, Landmark, Thermometer, Clock3, Ruler, ShieldCheck, HandCoins } from 'lucide-react';
 import type { Listing } from '../../types';
 import { formatPrice, formatDate } from '../../utils/formatters';
 import ImageGallery from './ImageGallery';
@@ -16,6 +16,7 @@ interface ListingDetailViewProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onMessage?: () => void;
+  onOffer?: () => void;
 }
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
@@ -40,7 +41,7 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
   );
 }
 
-export default function ListingDetailView({ listing, onWaClick, onShare: _onShare, isOwner, onEdit, onDelete, onMessage }: ListingDetailViewProps) {
+export default function ListingDetailView({ listing, onWaClick, onShare: _onShare, isOwner, onEdit, onDelete, onMessage, onOffer }: ListingDetailViewProps) {
   const { t, i18n } = useTranslation();
   const { shareListing } = useShare();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
@@ -120,6 +121,12 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2D6A4F]/10 rounded-xl">
               <Leaf size={12} strokeWidth={1.5} className="text-[#2D6A4F]" />
               <span className="text-[11px] font-medium text-[#2D6A4F]">Organik</span>
+            </div>
+          )}
+          {listing.is_negotiable && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E76F00]/10 rounded-xl">
+              <HandCoins size={12} strokeWidth={1.5} className="text-[#E76F00]" />
+              <span className="text-[11px] font-medium text-[#E76F00]">Pazarlığa Açık</span>
             </div>
           )}
           {listing.type === 'lojistik' && listing.isFrigo && (
@@ -265,6 +272,15 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
                 <a href={`tel:${listing.phone}`} className="flex items-center justify-center w-12 h-12 bg-[var(--bg-input)] rounded-2xl hover:bg-[var(--bg-surface-hover)] transition-colors">
                   <Phone size={18} />
                 </a>
+              )}
+              {onOffer && listing.is_negotiable && (
+                <button
+                  onClick={onOffer}
+                  className="flex items-center justify-center gap-2 px-4 h-12 bg-[#E76F00] text-white font-semibold text-sm rounded-2xl hover:opacity-90 active:scale-[0.95] transition-all duration-300"
+                >
+                  <HandCoins size={16} />
+                  Teklif
+                </button>
               )}
             </>
           )}

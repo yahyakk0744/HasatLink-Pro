@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../components/admin/AdminLayout';
-import { Users, Search, Ban, ShieldCheck, Trash2, ChevronLeft, ChevronRight, Eye, Pause, AlertTriangle } from 'lucide-react';
+import { Users, Search, Ban, ShieldCheck, Trash2, ChevronLeft, ChevronRight, Eye, Pause, AlertTriangle, ExternalLink } from 'lucide-react';
 import api from '../config/api';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -512,6 +512,15 @@ export default function AdminUsersPage() {
                 <Eye size={14} />
                 Profili Gör
               </button>
+              <a
+                href={`/profil/${detailUser.userId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0077B6]/10 text-[#0077B6] hover:bg-[#0077B6]/20 transition-colors"
+              >
+                <ExternalLink size={14} />
+                Yeni Sekmede Aç
+              </a>
             </div>
           </div>
         ) : null}

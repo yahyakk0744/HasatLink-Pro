@@ -155,6 +155,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const [temperatureMax, setTemperatureMax] = useState(initialData?.temperatureMax?.toString() || '');
   const [hasSecurity, setHasSecurity] = useState(initialData?.hasSecurity || false);
   const [has24Access, setHas24Access] = useState(initialData?.has24Access || false);
+  const [isNegotiable, setIsNegotiable] = useState(initialData?.is_negotiable || false);
 
   const subCategories = CATEGORIES[type as keyof typeof CATEGORIES]?.filter(c => c !== 'HEPSİ') || [];
   const productOptions = type === 'pazar' && subCategory ? (PAZAR_SUBCATEGORIES[subCategory] || []) : [];
@@ -191,6 +192,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         amount: parseFloat(amount) || 0,
         unit, location, phone, images,
         coordinates: coordLat && coordLng ? { lat: coordLat, lng: coordLng } : undefined,
+        is_negotiable: isNegotiable,
       };
 
       if (type === 'pazar') {
@@ -572,6 +574,12 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
             )}
           </>
         )}
+
+        {/* Negotiable Toggle */}
+        <div className="flex items-center gap-3 py-2 px-3 bg-[#E76F00]/5 rounded-2xl border border-[#E76F00]/10">
+          <CheckboxField label="Pazarlığa Açık" checked={isNegotiable} onChange={setIsNegotiable} />
+          <span className="text-[10px] text-[#E76F00]">Alıcılar fiyat teklifi gönderebilir</span>
+        </div>
 
         {/* Common: Location & Phone */}
         <SectionTitle>{t('listing.contactInfo')}</SectionTitle>

@@ -109,6 +109,7 @@ export interface Listing {
   hasSecurity: boolean;
   has24Access: boolean;
   isFeatured?: boolean;
+  is_negotiable?: boolean;
   // Stats
   stats: { views: number; whatsappClicks: number; shares: number };
   // Populated seller info
@@ -123,7 +124,7 @@ export interface Listing {
 export interface Notification {
   _id: string;
   userId: string;
-  type: 'borsa' | 'istatistik' | 'sistem' | 'ilan' | 'rating' | 'hava' | 'mesaj';
+  type: 'borsa' | 'istatistik' | 'sistem' | 'ilan' | 'rating' | 'hava' | 'mesaj' | 'teklif';
   title: string;
   message: string;
   relatedId: string;
@@ -349,6 +350,19 @@ export interface Ad {
   endDate: string;
   clickCount: number;
   impressionCount: number;
+  createdAt: string;
+}
+
+export interface Offer {
+  _id: string;
+  listingId: string;
+  listingTitle: string;
+  fromUserId: string;
+  fromUserName: string;
+  toUserId: string;
+  offerPrice: number;
+  message: string;
+  status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
 }
 

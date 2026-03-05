@@ -61,6 +61,7 @@ export interface IListing extends Document {
   temperatureMax: number;
   hasSecurity: boolean;
   has24Access: boolean;
+  is_negotiable: boolean;
   // Stats
   stats: { views: number; whatsappClicks: number; shares: number };
   createdAt: Date;
@@ -130,6 +131,7 @@ const ListingSchema = new Schema<IListing>({
   temperatureMax: { type: Number, default: 0 },
   hasSecurity: { type: Boolean, default: false },
   has24Access: { type: Boolean, default: false },
+  is_negotiable: { type: Boolean, default: false },
   // Stats
   stats: {
     views: { type: Number, default: 0 },
