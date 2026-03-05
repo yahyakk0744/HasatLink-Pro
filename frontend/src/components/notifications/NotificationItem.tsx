@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import type { Notification } from '../../types';
 import { timeAgo } from '../../utils/formatters';
 import { TrendingUp, BarChart3, Bell, FileText, Star, CloudSnow, MessageSquare, HandCoins } from 'lucide-react';
@@ -29,13 +30,32 @@ const typeColors: Record<string, string> = {
   teklif: '#D97706',
 };
 
+function getDeepLink(notification: Notification): string | null {
+  const { type, relatedId } = notification;
+  if (!relatedId) return null;
+  switch (type) {
+    case 'mesaj': return `/mesajlar/${relatedId}`;
+    case 'ilan': return `/ilan/${relatedId}`;
+    case 'teklif': return `/ilan/${relatedId}`;
+    case 'rating': return `/profil`;
+    default: return null;
+  }
+}
+
 export default function NotificationItem({ notification, onClick }: NotificationItemProps) {
+  const navigate = useNavigate();
   const Icon = typeIcons[notification.type] || Bell;
   const color = typeColors[notification.type] || '#6B6560';
 
+  const handleClick = () => {
+    onClick?.();
+    const link = getDeepLink(notification);
+    if (link) navigate(link);
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       className={`w-full text-left flex items-start gap-3 p-3 rounded-2xl transition-colors ${
         notification.isRead ? 'opacity-60' : 'bg-[var(--bg-input)]'
       } hover:bg-[var(--bg-surface-hover)]`}

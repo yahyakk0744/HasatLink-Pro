@@ -287,29 +287,6 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
         </div>
       )}
 
-      {/* ─── REGIONAL ALERTS ─── */}
-      {result.regional_alerts && result.regional_alerts.length > 0 && (
-        <div className="rounded-2xl overflow-hidden border border-red-200/30 bg-gradient-to-br from-red-50/60 to-orange-50/60 backdrop-blur-md">
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center">
-                <ShieldAlert size={16} className="text-red-600" />
-              </div>
-              <p className="text-[12px] font-semibold text-red-800 uppercase tracking-wider">
-                {isTr ? 'Bölgesel Uyarı' : 'Regional Alert'}
-              </p>
-            </div>
-            <div className="space-y-2">
-              {result.regional_alerts.map((alert, i) => (
-                <div key={i} className="rounded-xl bg-white/50 p-3 border border-red-200/20">
-                  <p className="text-[12px] text-red-800 leading-relaxed">{alert.message}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ─── SMART MATCHING: Related Listings ─── */}
       {matchedListings.length > 0 && (
         <div className="rounded-2xl overflow-hidden border border-[var(--border-default)] bg-[var(--bg-surface)]/80 backdrop-blur-md">

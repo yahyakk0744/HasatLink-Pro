@@ -110,6 +110,8 @@ export default function HomePage() {
   const [showForm, setShowForm] = useState(false);
   const [showEntrySheet, setShowEntrySheet] = useState(false);
   const [formInitialType, setFormInitialType] = useState<Listing['type']>('pazar');
+  const [geoFilterEnabled, setGeoFilterEnabled] = useState(false);
+  const [geoRadius, setGeoRadius] = useState(50);
 
   useEffect(() => {
     const userCity = geoLocation?.city || user?.location?.split(',').pop()?.trim() || '';
@@ -133,6 +135,19 @@ export default function HomePage() {
     }, 300);
     return () => clearTimeout(timer);
   }, [fetchAllPrices, fetchHasatlinkPrices]);
+
+  // Client-side geo-filter: Haversine distance
+  const filteredListings = geoFilterEnabled && geoLocation?.lat && geoLocation?.lng
+    ? listings.filter(l => {
+        if (!l.coordinates?.lat || !l.coordinates?.lng) return false;
+        const R = 6371;
+        const dLat = (l.coordinates.lat - geoLocation.lat) * Math.PI / 180;
+        const dLng = (l.coordinates.lng - geoLocation.lng) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(geoLocation.lat * Math.PI / 180) * Math.cos(l.coordinates.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+        const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return d <= geoRadius;
+      })
+    : listings;
 
   const popularProducts = ['Domates', 'Biber', 'Patlıcan', 'Salatalık', 'Soğan', 'Patates'];
   const comparisonPrices = popularProducts
@@ -239,27 +254,63 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-3 md:px-4 py-8 md:py-12">
           <div className="flex items-center justify-between mb-4 md:mb-6">
             <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-              {geoLocation?.city
-                ? (lang === 'tr' ? `${geoLocation.city} Yakınındaki İlanlar` : `Listings Near ${geoLocation.city}`)
-                : (lang === 'tr' ? 'Öne Çıkan İlanlar' : 'Featured Listings')}
+              {geoFilterEnabled
+                ? (lang === 'tr' ? `${geoRadius} km İçindeki İlanlar` : `Listings Within ${geoRadius} km`)
+                : geoLocation?.city
+                  ? (lang === 'tr' ? `${geoLocation.city} Yakınındaki İlanlar` : `Listings Near ${geoLocation.city}`)
+                  : (lang === 'tr' ? 'Öne Çıkan İlanlar' : 'Featured Listings')}
             </h2>
             <Link to="/pazar" className="text-xs font-medium uppercase text-[var(--accent-green)] flex items-center gap-1 hover:gap-2 transition-all">
               {t('all')} <ArrowRight size={12} />
             </Link>
           </div>
+          {/* Geo-Filter Toggle */}
+          {geoLocation?.lat && geoLocation?.lng && (
+            <div className="flex items-center gap-3 mb-4 p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)]">
+              <MapPin size={16} className="text-[var(--accent-green)] shrink-0" />
+              <span className="text-[13px] font-medium text-[var(--text-primary)]">
+                {lang === 'tr' ? 'Yakınımdaki İlanlar' : 'Nearby Listings'}
+              </span>
+              <button
+                onClick={() => setGeoFilterEnabled(!geoFilterEnabled)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${geoFilterEnabled ? 'bg-[#2D6A4F]' : 'bg-[var(--bg-input)] border border-[var(--border-default)]'}`}
+              >
+                <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${geoFilterEnabled ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+              </button>
+              {geoFilterEnabled && (
+                <select
+                  value={geoRadius}
+                  onChange={e => setGeoRadius(Number(e.target.value))}
+                  className="ml-auto px-2.5 py-1 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[12px] font-semibold text-[var(--text-primary)] focus:outline-none"
+                >
+                  {[10, 25, 50, 100, 200].map(km => (
+                    <option key={km} value={km}>{km} km</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
-          ) : listings.length === 0 ? (
+          ) : filteredListings.length === 0 ? (
             <div className="surface-card rounded-2xl p-12 text-center">
               <PackageOpen size={48} className="text-[var(--text-secondary)] mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">{lang === 'tr' ? 'Henüz ilan eklenmedi' : 'No listings yet'}</h3>
-              <p className="text-sm text-[var(--text-secondary)]">{lang === 'tr' ? 'İlk ilanı sen oluştur!' : 'Be the first to create a listing!'}</p>
+              <h3 className="text-lg font-semibold mb-2">
+                {geoFilterEnabled
+                  ? (lang === 'tr' ? `${geoRadius} km içinde ilan bulunamadı` : `No listings within ${geoRadius} km`)
+                  : (lang === 'tr' ? 'Henüz ilan eklenmedi' : 'No listings yet')}
+              </h3>
+              <p className="text-sm text-[var(--text-secondary)]">
+                {geoFilterEnabled
+                  ? (lang === 'tr' ? 'Mesafeyi artırmayı deneyin' : 'Try increasing the distance')
+                  : (lang === 'tr' ? 'İlk ilanı sen oluştur!' : 'Be the first to create a listing!')}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {listings.slice(0, 8).map((listing, index) => (
+              {filteredListings.slice(0, 8).map((listing, index) => (
                 <div key={listing._id} className="card-enter" style={{ animationDelay: `${index * 80}ms` }}>
                   <ListingCard listing={listing} />
                 </div>

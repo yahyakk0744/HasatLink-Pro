@@ -9,6 +9,7 @@ import { auth as firebaseAuth } from '../config/firebase';
 import ProfileCard from '../components/profile/ProfileCard';
 import AnalyticsCards from '../components/profile/AnalyticsCards';
 import MyListings from '../components/profile/MyListings';
+import MyOffers from '../components/profile/MyOffers';
 import ProfileEditForm from '../components/profile/ProfileEditForm';
 import RatingStars from '../components/ratings/RatingStars';
 import ReviewCard from '../components/ratings/ReviewCard';
@@ -118,6 +119,8 @@ export default function ProfilePage() {
       {isOwn && stats && <AnalyticsCards stats={stats} />}
 
       {targetUserId && <MyListings userId={targetUserId} isOwn={isOwn} />}
+
+      {isOwn && <MyOffers />}
 
       {/* Ratings Section */}
       <div className="space-y-3">

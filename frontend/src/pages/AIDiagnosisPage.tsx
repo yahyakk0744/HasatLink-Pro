@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate } from 'react-router-dom';
-import { Sparkles, BookOpen, Clock } from 'lucide-react';
+import { Sparkles, BookOpen } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AIDiagnosisPanel from '../components/ai/AIDiagnosisPanel';
-import DiagnosisHistory from '../components/ai/DiagnosisHistory';
 import DiseaseLibrary from '../components/ai/DiseaseLibrary';
 import SEO from '../components/ui/SEO';
 
-type Tab = 'doctor' | 'library' | 'history';
+type Tab = 'doctor' | 'library';
 
 export default function AIDiagnosisPage() {
   const { i18n } = useTranslation();
@@ -21,7 +20,6 @@ export default function AIDiagnosisPage() {
   const tabs: { key: Tab; icon: typeof Sparkles; label: string }[] = [
     { key: 'doctor', icon: Sparkles, label: isTr ? 'Bitki Doktoru' : 'Plant Doctor' },
     { key: 'library', icon: BookOpen, label: isTr ? 'Hastalık Kütüphanesi' : 'Disease Library' },
-    { key: 'history', icon: Clock, label: isTr ? 'Geçmiş' : 'History' },
   ];
 
   return (
@@ -74,12 +72,6 @@ export default function AIDiagnosisPage() {
         {activeTab === 'library' && (
           <div className="max-w-3xl mx-auto">
             <DiseaseLibrary />
-          </div>
-        )}
-
-        {activeTab === 'history' && (
-          <div className="max-w-2xl mx-auto">
-            <DiagnosisHistory userId={user.userId} />
           </div>
         )}
       </div>

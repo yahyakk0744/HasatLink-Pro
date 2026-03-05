@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  BookOpen, Search, AlertTriangle, ShieldAlert,
+  BookOpen, Search,
   Leaf, Bug, ChevronDown, ChevronUp, Pill, Shield,
 } from 'lucide-react';
 import { useAIDiagnosis } from '../../hooks/useAIDiagnosis';
@@ -22,15 +22,14 @@ const CROP_ICONS: Record<string, string> = {
 export default function DiseaseLibrary() {
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
-  const { diseases, alerts, fetchDiseaseLibrary, fetchAlerts } = useAIDiagnosis();
+  const { diseases, fetchDiseaseLibrary } = useAIDiagnosis();
   const [search, setSearch] = useState('');
   const [selectedCrop, setSelectedCrop] = useState<string>('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDiseaseLibrary();
-    fetchAlerts('Mersin');
-  }, [fetchDiseaseLibrary, fetchAlerts]);
+  }, [fetchDiseaseLibrary]);
 
   const cropTypes = [...new Set(diseases.map(d => d.crop_type))];
 
@@ -42,34 +41,6 @@ export default function DiseaseLibrary() {
 
   return (
     <div className="space-y-5">
-      {/* Regional Alerts Banner */}
-      {alerts.length > 0 && (
-        <div className="rounded-2xl overflow-hidden border border-red-200/40 bg-gradient-to-r from-red-50/80 to-orange-50/80 backdrop-blur-md">
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <ShieldAlert size={18} className="text-red-600" />
-              <p className="text-[13px] font-bold text-red-800">
-                {isTr ? 'Bölgesel Uyarılar' : 'Regional Alerts'}
-              </p>
-              <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold">
-                {alerts.length}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {alerts.map((alert, i) => (
-                <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl bg-white/50 border border-red-200/20">
-                  <AlertTriangle size={14} className="text-red-500 mt-0.5 shrink-0" />
-                  <div>
-                    <span className="text-[11px] font-semibold text-red-700">{alert.crop_type}:</span>
-                    <p className="text-[11px] text-red-800 leading-relaxed mt-0.5">{alert.message}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/20">

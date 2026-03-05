@@ -7,7 +7,7 @@ import { useRatings } from '../hooks/useRatings';
 import { useMessages } from '../hooks/useMessages';
 import { useAuth } from '../contexts/AuthContext';
 import { auth as firebaseAuth } from '../config/firebase';
-import type { Listing } from '../types';
+import type { Listing, Offer } from '../types';
 import api from '../config/api';
 import ListingDetailView from '../components/listings/ListingDetailView';
 import ListingCard from '../components/listings/ListingCard';
@@ -207,6 +207,7 @@ export default function ListingDetailPage() {
   const [similarListings, setSimilarListings] = useState<Listing[]>([]);
   const [logisticsPool, setLogisticsPool] = useState<Listing[]>([]);
   const [marketAnalytics, setMarketAnalytics] = useState<{ avgPrice: number; minPrice: number; maxPrice: number; count: number; trend: number; city: string } | null>(null);
+  const [incomingOffers, setIncomingOffers] = useState<Offer[]>([]);
 
   const isOwner = !!(user && listing && user.userId === listing.userId);
 
@@ -242,6 +243,15 @@ export default function ListingDetailPage() {
       });
     }
   }, [id, fetchListing, fetchRatings]);
+
+  // Fetch incoming offers for owner
+  useEffect(() => {
+    if (isOwner && listing?._id) {
+      api.get<Offer[]>(`/offers/listing/${listing._id}`)
+        .then(({ data }) => setIncomingOffers(Array.isArray(data) ? data : []))
+        .catch(() => {});
+    }
+  }, [isOwner, listing?._id]);
 
   const handleEditSubmit = async (data: Partial<Listing>) => {
     if (!listing) return;
@@ -417,6 +427,65 @@ export default function ListingDetailPage() {
           {/* Seller Identity Card */}
           {listing.sellerName && !isOwner && (
             <SellerCard listing={listing} onMessage={handleMessage} />
+          )}
+
+          {/* Incoming Offers — Owner only */}
+          {isOwner && incomingOffers.length > 0 && (
+            <div className="surface-card rounded-2xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <HandCoins size={16} className="text-[#D97706]" />
+                <h3 className="text-sm font-semibold tracking-tight">Gelen Teklifler</h3>
+                <span className="ml-auto text-[10px] font-bold text-[var(--text-secondary)]">{incomingOffers.length}</span>
+              </div>
+              {incomingOffers.map(offer => {
+                const isPending = offer.status === 'pending';
+                return (
+                  <div key={offer._id} className="p-3 rounded-xl bg-[var(--bg-input)] border border-[var(--border-default)] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Link to={`/kullanici/${offer.fromUserId}`} className="text-[12px] font-semibold text-[var(--text-primary)] hover:text-[var(--accent-green)] transition-colors">
+                        {offer.fromUserName}
+                      </Link>
+                      <span className="text-[13px] font-bold text-[var(--accent-green)]">{offer.offerPrice.toLocaleString()} TL</span>
+                    </div>
+                    {offer.message && <p className="text-[11px] text-[var(--text-secondary)]">{offer.message}</p>}
+                    <div className="flex items-center gap-2">
+                      {isPending ? (
+                        <>
+                          <button
+                            onClick={() => {
+                              api.put(`/offers/${offer._id}/status`, { status: 'accepted' })
+                                .then(() => setIncomingOffers(prev => prev.map(o => o._id === offer._id ? { ...o, status: 'accepted' } : o)))
+                                .catch(() => toast.error('İşlem başarısız'));
+                            }}
+                            className="flex-1 py-1.5 rounded-lg bg-[#2D6A4F] text-white text-[11px] font-semibold hover:bg-[#40916C] transition-colors"
+                          >
+                            Kabul Et
+                          </button>
+                          <button
+                            onClick={() => {
+                              api.put(`/offers/${offer._id}/status`, { status: 'rejected' })
+                                .then(() => setIncomingOffers(prev => prev.map(o => o._id === offer._id ? { ...o, status: 'rejected' } : o)))
+                                .catch(() => toast.error('İşlem başarısız'));
+                            }}
+                            className="flex-1 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] text-[11px] font-semibold text-[var(--text-secondary)] hover:bg-red-50 hover:text-red-600 transition-colors"
+                          >
+                            Reddet
+                          </button>
+                        </>
+                      ) : (
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          offer.status === 'accepted'
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-red-50 text-red-700'
+                        }`}>
+                          {offer.status === 'accepted' ? 'Kabul Edildi' : 'Reddedildi'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
           {/* Mini Map */}
