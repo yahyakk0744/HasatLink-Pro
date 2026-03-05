@@ -26,6 +26,7 @@ import shareRoutes from './routes/shareRoutes';
 import priceAlertRoutes from './routes/priceAlertRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import offerRoutes from './routes/offerRoutes';
+import satelliteRoutes from './routes/satelliteRoutes';
 import { expireOutdatedDealers } from './controllers/dealerController';
 
 dotenv.config();
@@ -96,6 +97,7 @@ app.use('/api', shareRoutes);
 app.use('/api', priceAlertRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api', offerRoutes);
+app.use('/api', satelliteRoutes);
 
 // VAPID public key endpoint
 app.get('/api/push/vapid-key', (_req, res) => {
