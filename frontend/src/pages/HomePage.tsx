@@ -5,7 +5,7 @@ import {
   ArrowRight, MapPin, TrendingUp, TrendingDown, Droplets, Wind, Cloud,
   BarChart3, ShoppingBag, PackageOpen, Search, Wheat, Truck, HardHat,
   Tractor, Mountain, Warehouse, Users, Building2, Layers,
-  UserPlus, MessageCircle,
+  UserPlus, MessageCircle, AlertTriangle,
 } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useAuth } from '../contexts/AuthContext';
@@ -335,30 +335,51 @@ export default function HomePage() {
       <AnimatedSection>
         <section className="max-w-7xl mx-auto px-3 md:px-4 py-6 md:py-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-            {/* Hava Durumu */}
-            <div className="surface-card rounded-2xl p-3 md:p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Cloud size={14} className="text-[#0077B6]" />
-                <h3 className="text-xs font-semibold tracking-tight">{t('weather.title')}</h3>
-              </div>
-              {weather ? (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[11px] text-[var(--text-secondary)]">{weather.city}</p>
-                    <p className="text-3xl font-semibold tracking-tight">{weather.temp}°C</p>
-                    <p className="text-[11px] text-[var(--text-secondary)] capitalize">{weather.description}</p>
-                    <div className="flex items-center gap-4 mt-1.5">
-                      <span className="flex items-center gap-1 text-[10px] text-[var(--text-secondary)]"><Droplets size={10} />{weather.humidity}%</span>
-                      <span className="flex items-center gap-1 text-[10px] text-[var(--text-secondary)]"><Wind size={10} />{weather.windSpeed} km/h</span>
-                    </div>
+            {/* Tarım Hava Durumu - Glassmorphism */}
+            <div className="surface-card rounded-2xl p-4 md:p-5 relative overflow-hidden">
+              {/* Glassmorphism background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#0077B6]/5 to-[#2D6A4F]/5" />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-xl bg-[#0077B6]/10 flex items-center justify-center">
+                    <Cloud size={16} strokeWidth={1.5} className="text-[#0077B6]" />
                   </div>
-                  {weather.icon && (
-                    <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} alt={weather.description} className="w-16 h-16" />
-                  )}
+                  <h3 className="text-sm font-semibold tracking-tight">{lang === 'tr' ? 'Tarım Hava Durumu' : 'Agricultural Weather'}</h3>
                 </div>
-              ) : (
-                <div className="h-20 bg-[var(--bg-surface)] rounded-xl animate-pulse" />
-              )}
+                {weather ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-[11px] text-[var(--text-secondary)] flex items-center gap-1">
+                          <MapPin size={10} />{weather.city}
+                        </p>
+                        <p className="text-4xl font-bold tracking-tight mt-1">{weather.temp}°<span className="text-lg font-normal text-[var(--text-secondary)]">C</span></p>
+                        <p className="text-[11px] text-[var(--text-secondary)] capitalize mt-0.5">{weather.description}</p>
+                      </div>
+                      {weather.icon && (
+                        <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} alt={weather.description} className="w-20 h-20 -mr-2" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 py-2 border-t border-[var(--border-default)]">
+                      <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-secondary)]"><Droplets size={12} className="text-[#0077B6]" />{weather.humidity}%</span>
+                      <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-secondary)]"><Wind size={12} className="text-[#52796F]" />{weather.windSpeed} km/h</span>
+                    </div>
+                    {/* Weather alerts */}
+                    {weather.alerts && weather.alerts.length > 0 && (
+                      <div className="mt-2 space-y-1.5">
+                        {weather.alerts.map((alert, i) => (
+                          <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--accent-red)]/10 border border-[var(--accent-red)]/20">
+                            <AlertTriangle size={14} className="text-[var(--accent-red)] shrink-0" />
+                            <p className="text-[11px] font-medium text-[var(--accent-red)]">{alert.message}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="h-24 bg-[var(--bg-surface)] rounded-xl animate-pulse" />
+                )}
+              </div>
             </div>
 
             {/* Hal Fiyatları */}

@@ -245,6 +245,38 @@ export const updateAccount = async (req: Request, res: Response): Promise<void> 
   }
 };
 
+// ─── Recalculate Trust Score ───
+export const recalculateTrustScore = async (userId: string): Promise<void> => {
+  try {
+    const user = await User.findOne({ userId });
+    if (!user) return;
+
+    const listingCount = await Listing.countDocuments({ userId, status: 'active' });
+    const averageRating = user.averageRating || 0;
+    const totalRatings = user.totalRatings || 0;
+
+    const trust_score = Math.min(
+      100,
+      Math.round(
+        (averageRating / 5) * 40 +
+        Math.min(listingCount, 20) * 2 +
+        Math.min(totalRatings, 50) * 0.4
+      )
+    );
+
+    const updates: any = { trust_score };
+
+    // Auto-verify elite producers
+    if (averageRating >= 4.5 && listingCount >= 10) {
+      updates.isVerified = true;
+    }
+
+    await User.findOneAndUpdate({ userId }, { $set: updates });
+  } catch (error) {
+    console.error('Trust score hesaplama hatası:', error);
+  }
+};
+
 // ─── Toggle Favorite ───
 interface ToggleFavoriteBody {
   listingId: string;

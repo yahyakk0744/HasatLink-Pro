@@ -53,13 +53,24 @@ export const getWeather = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    const temp = Math.round(data.main.temp);
+    const humidity = data.main.humidity;
+    const windSpeedKmh = Math.round(data.wind.speed * 3.6);
+
+    const alerts: { type: string; message: string }[] = [];
+    if (temp <= 0) alerts.push({ type: 'frost', message: 'Don riski! Ürünlerinizi koruyun.' });
+    if (temp >= 38) alerts.push({ type: 'heat', message: 'Aşırı sıcak! Sulama artırın.' });
+    if (windSpeedKmh > 50) alerts.push({ type: 'storm', message: 'Fırtına uyarısı! Seraları sabitleyin.' });
+    if (humidity > 85) alerts.push({ type: 'humidity', message: 'Yüksek nem! Mantar riski.' });
+
     const weatherData = {
       city: data.name || city,
-      temp: Math.round(data.main.temp),
+      temp,
       description: data.weather[0].description,
       icon: data.weather[0].icon,
-      humidity: data.main.humidity,
-      windSpeed: Math.round(data.wind.speed * 3.6),
+      humidity,
+      windSpeed: windSpeedKmh,
+      alerts,
     };
 
     weatherCache[cacheKey] = { data: weatherData, timestamp: Date.now() };
@@ -121,6 +132,7 @@ export const checkWeatherAlerts = async (req: AuthRequest, res: Response): Promi
         });
         createdAlerts.push(notif);
         sendPushToUser(userId, { title: alert.title, body: alert.message, url: '/' }, notif);
+        try { const { getIO } = require('../socket'); getIO().to(`user:${userId}`).emit('notification:weather', { title: alert.title, message: alert.message, type: 'hava' }); } catch {}
       }
     }
 

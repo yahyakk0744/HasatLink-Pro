@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { MapPin, Eye, Phone, Share2, MessageCircle, MessageSquare, Truck, Leaf, Star, Calendar, Weight, Box, Shield, Users, Clock, Wrench, Pencil, Trash2, Droplets, Zap, FileText, Landmark, Thermometer, Clock3, Ruler } from 'lucide-react';
+import { MapPin, Eye, Phone, Share2, MessageCircle, MessageSquare, Truck, Leaf, Star, Calendar, Weight, Box, Shield, Users, Clock, Wrench, Pencil, Trash2, Droplets, Zap, FileText, Landmark, Thermometer, Clock3, Ruler, ShieldCheck } from 'lucide-react';
 import type { Listing } from '../../types';
 import { formatPrice, formatDate } from '../../utils/formatters';
 import ImageGallery from './ImageGallery';
@@ -65,6 +65,11 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
                 {LISTING_MODE_LABELS[listing.type]?.[listing.listingMode]?.[lang] || (lang === 'tr' ? 'SATIŞ' : 'SELL')}
               </Badge>
               <span className="text-[10px] font-medium uppercase text-[#6B6560]">{listing.subCategory}</span>
+              {listing.sellerVerified && (
+                <Badge color="#2D6A4F">
+                  <ShieldCheck size={10} strokeWidth={1.5} className="inline mr-1" />Onaylı Satıcı
+                </Badge>
+              )}
             </div>
             <h1 className="text-2xl font-semibold tracking-tight">{listing.title}</h1>
           </div>

@@ -14,6 +14,7 @@ export interface User {
   totalRatings: number;
   bio: string;
   isBanned: boolean;
+  trust_score?: number;
   isSuspended?: boolean;
   firebaseUid?: string;
   favorites?: string[];
@@ -114,6 +115,8 @@ export interface Listing {
   sellerName: string;
   sellerImage: string;
   sellerRating: number;
+  sellerVerified?: boolean;
+  sellerTrustScore?: number;
   createdAt: string;
 }
 
@@ -225,6 +228,11 @@ export interface DealersResponse {
   totalPages: number;
 }
 
+export interface WeatherAlert {
+  type: 'frost' | 'heat' | 'storm' | 'humidity';
+  message: string;
+}
+
 export interface WeatherData {
   city: string;
   temp: number;
@@ -232,6 +240,7 @@ export interface WeatherData {
   icon: string;
   humidity: number;
   windSpeed: number;
+  alerts?: WeatherAlert[];
 }
 
 export interface UserStats {
@@ -313,6 +322,17 @@ export interface SiteSettings {
   commission: { enabled: boolean; percentage: number };
   aiUsageLimit: { enabled: boolean; dailyFreeCount: number };
   maintenanceMode?: boolean;
+}
+
+export interface PriceAlert {
+  _id: string;
+  userId: string;
+  category: string;
+  subCategory: string;
+  targetPrice: number;
+  keyword: string;
+  isActive: boolean;
+  createdAt: string;
 }
 
 export interface Ad {

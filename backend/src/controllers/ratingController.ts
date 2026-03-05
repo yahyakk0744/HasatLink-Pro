@@ -3,6 +3,7 @@ import Rating from '../models/Rating';
 import User from '../models/User';
 import Notification from '../models/Notification';
 import { sendPushToUser } from '../utils/pushNotification';
+import { recalculateTrustScore } from './userController';
 
 export const getUserRatings = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -59,6 +60,9 @@ export const createRating = async (req: Request, res: Response): Promise<void> =
       { userId: toUserId },
       { averageRating: Math.round(avgScore * 10) / 10, totalRatings: allRatings.length }
     );
+
+    // Recalculate trust score for the rated user
+    await recalculateTrustScore(toUserId);
 
     res.status(updated ? 200 : 201).json({ ...rating.toObject(), updated });
   } catch (error) {

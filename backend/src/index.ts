@@ -23,6 +23,7 @@ import commentRoutes from './routes/commentRoutes';
 import blogRoutes from './routes/blogRoutes';
 import dealerRoutes from './routes/dealerRoutes';
 import shareRoutes from './routes/shareRoutes';
+import priceAlertRoutes from './routes/priceAlertRoutes';
 import { expireOutdatedDealers } from './controllers/dealerController';
 
 dotenv.config();
@@ -90,6 +91,7 @@ app.use('/api', commentRoutes);
 app.use('/api', blogRoutes);
 app.use('/api', dealerRoutes);
 app.use('/api', shareRoutes);
+app.use('/api', priceAlertRoutes);
 
 // VAPID public key endpoint
 app.get('/api/push/vapid-key', (_req, res) => {

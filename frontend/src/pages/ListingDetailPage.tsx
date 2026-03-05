@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Bell } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useRatings } from '../hooks/useRatings';
 import { useMessages } from '../hooks/useMessages';
@@ -19,6 +19,61 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import EmptyState from '../components/ui/EmptyState';
 import CommentSection from '../components/comments/CommentSection';
 import toast from 'react-hot-toast';
+
+function PriceAlertBox({ category, subCategory, currentPrice }: { category: string; subCategory: string; currentPrice: number }) {
+  const [targetPrice, setTargetPrice] = useState('');
+  const [saved, setSaved] = useState(false);
+  const { t } = useTranslation();
+
+  const handleSave = async () => {
+    if (!targetPrice || Number(targetPrice) <= 0) return;
+    try {
+      await api.post('/price-alerts', { category, subCategory, targetPrice: Number(targetPrice) });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      setTargetPrice('');
+    } catch {}
+  };
+
+  return (
+    <div className="surface-card rounded-2xl p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-xl bg-[var(--accent-orange)]/10 flex items-center justify-center">
+          <Bell size={16} strokeWidth={1.5} className="text-[var(--accent-orange)]" />
+        </div>
+        <h3 className="text-sm font-semibold tracking-tight">{t('listing.priceAlert') || 'Fiyat Alarmi'}</h3>
+      </div>
+      <p className="text-[11px] text-[var(--text-secondary)] mb-3">
+        Bu kategoride hedef fiyatinizin altinda ilan girildiginde bildirim alin.
+      </p>
+      <div className="flex gap-2">
+        <input
+          type="number"
+          value={targetPrice}
+          onChange={e => setTargetPrice(e.target.value)}
+          placeholder={`Hedef fiyat (Guncel: ${currentPrice.toLocaleString('tr-TR')})`}
+          className="flex-1 px-3 py-2 text-sm bg-[var(--bg-input)] border border-[var(--border-default)] rounded-xl outline-none focus:border-[var(--accent-green)] transition-colors"
+        />
+        <button
+          onClick={handleSave}
+          disabled={saved}
+          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+            saved
+              ? 'bg-[var(--accent-green)] text-white'
+              : 'bg-[var(--accent-orange)] text-white hover:opacity-90 active:scale-95'
+          }`}
+        >
+          {saved ? '✓' : 'Kur'}
+        </button>
+      </div>
+      {saved && (
+        <p className="text-[11px] text-[var(--accent-green)] mt-2 font-medium">
+          Alarm kuruldu! Eslesen ilan girildiginde bildirim alacaksiniz.
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -162,6 +217,11 @@ export default function ListingDetailPage() {
               zoom={13}
             />
           </div>
+
+          {/* Price Alert */}
+          {user && !isOwner && (
+            <PriceAlertBox category={listing.type} subCategory={listing.subCategory} currentPrice={listing.price} />
+          )}
 
           {/* Reviews */}
           <div className="space-y-3">

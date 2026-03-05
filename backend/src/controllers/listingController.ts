@@ -48,11 +48,11 @@ export const getListings = async (req: Request, res: Response): Promise<void> =>
 
     // Populate seller info
     const userIds = [...new Set(listings.map((l: any) => l.userId))];
-    const users = await User.find({ userId: { $in: userIds } }).select('userId name profileImage averageRating').lean();
+    const users = await User.find({ userId: { $in: userIds } }).select('userId name profileImage averageRating isVerified trust_score').lean();
     const userMap = new Map(users.map((u: any) => [u.userId, u]));
     const enriched = listings.map((l: any) => {
       const seller = userMap.get(l.userId);
-      return { ...l, sellerName: seller?.name || '', sellerImage: seller?.profileImage || '', sellerRating: seller?.averageRating || 0 };
+      return { ...l, sellerName: seller?.name || '', sellerImage: seller?.profileImage || '', sellerRating: seller?.averageRating || 0, sellerVerified: (seller as any)?.isVerified || false, sellerTrustScore: (seller as any)?.trust_score || 0 };
     });
 
     res.json({ listings: enriched, total, page: parseInt(page as string), totalPages: Math.ceil(total / parseInt(limit as string)) });
@@ -79,7 +79,10 @@ export const getListing = async (req: Request, res: Response): Promise<void> => 
       // Duplicate view — skip increment
     }
 
-    res.json(listing);
+    // Attach seller verification info
+    const seller = await User.findOne({ userId: listing.userId }).select('isVerified trust_score').lean();
+    const listingObj = listing.toObject();
+    res.json({ ...listingObj, sellerVerified: seller?.isVerified || false, sellerTrustScore: seller?.trust_score || 0 });
   } catch (error) {
     res.status(500).json({ message: 'İlan detay hatası', error });
   }
@@ -94,6 +97,41 @@ export const createListing = async (req: Request, res: Response): Promise<void> 
       return;
     }
     const listing = await Listing.create({ ...req.body, userId: (req as any).userId || req.body.userId });
+
+    // Check price alerts
+    try {
+      const PriceAlert = require('../models/PriceAlert').default;
+      const Notification = require('../models/Notification').default;
+      const { sendSocketNotification } = require('../socket');
+      const { sendPushToUser } = require('../utils/pushNotification');
+
+      const matchingAlerts = await PriceAlert.find({
+        category: listing.type,
+        isActive: true,
+        targetPrice: { $gte: listing.price },
+        userId: { $ne: listing.userId },
+      });
+
+      for (const alert of matchingAlerts) {
+        const notif = await Notification.create({
+          userId: alert.userId,
+          type: 'ilan',
+          title: 'Firsat Yakalandi!',
+          message: `"${listing.title}" - ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(listing.price)} (Hedef: ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(alert.targetPrice)})`,
+          relatedId: listing._id.toString(),
+        });
+        sendSocketNotification(alert.userId, {
+          _id: notif._id,
+          type: 'ilan',
+          title: notif.title,
+          message: notif.message,
+          relatedId: listing._id.toString(),
+          playSound: true,
+        });
+        sendPushToUser(alert.userId, { title: notif.title, body: notif.message, url: `/ilan/${listing._id}` }, notif);
+      }
+    } catch {}
+
     res.status(201).json(listing);
   } catch (error) {
     res.status(500).json({ message: 'İlan oluşturma hatası', error });

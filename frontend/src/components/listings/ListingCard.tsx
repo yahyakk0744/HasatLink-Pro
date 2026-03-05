@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Shield, Clock3, ArrowRight, Heart, Star, Sparkles } from 'lucide-react';
+import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Shield, Clock3, ArrowRight, Heart, Star, Sparkles, ShieldCheck } from 'lucide-react';
 import type { Listing } from '../../types';
 import { formatPrice, timeAgo } from '../../utils/formatters';
 import Badge from '../ui/Badge';
@@ -215,6 +215,12 @@ export default function ListingCard({ listing }: ListingCardProps) {
                 </div>
               )}
               <span className="text-xs font-medium text-[var(--text-primary)] truncate flex-1">{listing.sellerName}</span>
+              {listing.sellerVerified && (
+                <span className="flex items-center gap-0.5 text-[10px] font-semibold text-[#2D6A4F]" title="Onaylı Satıcı">
+                  <ShieldCheck size={12} fill="#2D6A4F" stroke="white" />
+                  Lider
+                </span>
+              )}
               {listing.sellerRating > 0 && (
                 <span className="flex items-center gap-0.5 text-[10px] font-semibold text-[var(--accent-orange)]">
                   <Star size={10} fill="var(--accent-orange)" />
