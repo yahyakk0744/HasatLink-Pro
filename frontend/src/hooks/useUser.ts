@@ -12,7 +12,10 @@ export const useUser = () => {
     try {
       const { data } = await api.get<User>(`/users/${userId}`);
       setUser(data);
-    } catch {} finally { setLoading(false); }
+    } catch (err) {
+      setUser(null);
+      throw err;
+    } finally { setLoading(false); }
   }, []);
 
   const updateUser = useCallback(async (userId: string, updates: Partial<User>) => {

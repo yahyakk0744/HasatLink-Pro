@@ -22,29 +22,44 @@ import toast from 'react-hot-toast';
 export default function ProfilePage() {
   const { userId: paramUserId } = useParams<{ userId: string }>();
   const { t } = useTranslation();
-  const { user: authUser, firebaseUid, updateUserData } = useAuth();
+  const { user: authUser, loading: authLoading, firebaseUid, updateUserData } = useAuth();
   const { user: profileUser, stats, loading, fetchUser, fetchStats, updateUser } = useUser();
   const { ratings, fetchRatings } = useRatings();
   const { getOrCreateConversation } = useMessages();
   const navigate = useNavigate();
   const [showEdit, setShowEdit] = useState(false);
+  const [fetchFailed, setFetchFailed] = useState(false);
 
   const targetUserId = paramUserId || authUser?.userId;
   const isOwn = !paramUserId || paramUserId === authUser?.userId;
+  const isAdmin = authUser?.role === 'admin';
 
   useEffect(() => {
     if (targetUserId) {
-      fetchUser(targetUserId);
+      setFetchFailed(false);
+      fetchUser(targetUserId)
+        .catch(() => setFetchFailed(true));
       fetchStats(targetUserId);
       fetchRatings(targetUserId);
     }
   }, [targetUserId, fetchUser, fetchStats, fetchRatings]);
 
-  if (!paramUserId && !authUser) return <Navigate to="/giris" replace />;
-  if (loading) return <LoadingSpinner size="lg" className="py-20" />;
+  // Only redirect to login if viewing own profile without auth (not a :userId param route)
+  if (!paramUserId && !authLoading && !authUser) return <Navigate to="/giris" replace />;
 
-  const displayUser = isOwn ? authUser : profileUser;
-  if (!displayUser) return <LoadingSpinner size="lg" className="py-20" />;
+  // Show spinner only during initial load, not forever
+  if (authLoading || (loading && !profileUser && !fetchFailed)) {
+    return <LoadingSpinner size="lg" className="py-20" />;
+  }
+
+  const displayUser = isOwn ? (authUser || profileUser) : profileUser;
+  if (!displayUser) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+        <p className="text-sm text-[var(--text-secondary)]">Kullanıcı bulunamadı</p>
+      </div>
+    );
+  }
 
   const handleEditSubmit = async (updates: Partial<User>) => {
     if (!targetUserId) return;

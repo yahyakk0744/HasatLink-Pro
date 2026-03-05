@@ -7,7 +7,6 @@ import Modal from '../components/ui/Modal';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
 import type { User } from '../types';
-import { useNavigate } from 'react-router-dom';
 
 interface UserDetail extends User {
   isSuspended?: boolean;
@@ -16,8 +15,6 @@ interface UserDetail extends User {
 }
 
 export default function AdminUsersPage() {
-  const navigate = useNavigate();
-
   const [users, setUsers] = useState<UserDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -504,23 +501,21 @@ export default function AdminUsersPage() {
               {renderActions(detailUser, false)}
               <button
                 onClick={() => {
-                  navigate(`/profil/${detailUser.userId}`);
                   setDetailModalOpen(false);
+                  window.location.href = `/profil/${detailUser.userId}`;
                 }}
                 className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#2D6A4F]/10 text-[#2D6A4F] hover:bg-[#2D6A4F]/20 transition-colors"
               >
                 <Eye size={14} />
                 Profili Gör
               </button>
-              <a
-                href={`/profil/${detailUser.userId}`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => window.open(`/profil/${detailUser.userId}`, '_blank')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0077B6]/10 text-[#0077B6] hover:bg-[#0077B6]/20 transition-colors"
               >
                 <ExternalLink size={14} />
                 Yeni Sekmede Aç
-              </a>
+              </button>
             </div>
           </div>
         ) : null}
