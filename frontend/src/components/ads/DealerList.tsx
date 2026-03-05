@@ -13,7 +13,7 @@ interface DealerListProps {
 }
 
 export default function DealerList({ disease_code, radius = 50, className = '' }: DealerListProps) {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
   const [dealers, setDealers] = useState<NearbyDealerItem[]>([]);
   const [loading, setLoading] = useState(true);

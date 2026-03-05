@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../components/admin/AdminLayout';
-import { Package, Search, Trash2, Eye, ChevronLeft, ChevronRight, Star, CheckCircle, XCircle, Square, CheckSquare } from 'lucide-react';
+import { Package, Search, Trash2, Eye, ChevronLeft, ChevronRight, Star, Square, CheckSquare } from 'lucide-react';
 import api from '../config/api';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';

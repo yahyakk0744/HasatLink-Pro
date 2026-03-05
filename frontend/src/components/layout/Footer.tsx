@@ -74,7 +74,7 @@ export default function Footer() {
   const isTr = i18n.language?.startsWith('tr');
   const year = new Date().getFullYear();
   const [socials, setSocials] = useState<Socials>({ facebookUrl: '', instagramUrl: '', twitterUrl: '', linkedinUrl: '', youtubeUrl: '' });
-  const { canInstall, isInstalled, promptInstall } = usePWAInstall();
+  const { canInstall: _canInstall, isInstalled, promptInstall } = usePWAInstall();
 
   useEffect(() => {
     api.get('/settings').then(({ data }) => setSocials({

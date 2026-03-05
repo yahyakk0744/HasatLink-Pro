@@ -45,7 +45,7 @@ const navItems = [
 
 export default function AdminLayout({ children, title, icon }: AdminLayoutProps) {
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
