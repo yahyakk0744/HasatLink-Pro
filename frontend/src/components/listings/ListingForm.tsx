@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ImagePlus, X } from 'lucide-react';
+import { ImagePlus, X, ChevronRight, ChevronLeft, MapPin, Eye, Truck, Leaf, Trophy, Check } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import LocationPicker from '../map/LocationPicker';
+import Badge from '../ui/Badge';
 import {
   CATEGORIES, CATEGORY_LABELS, PAZAR_SUBCATEGORIES,
   PAZAR_UNITS, QUALITY_GRADES, STORAGE_TYPES,
@@ -17,6 +18,7 @@ import {
 } from '../../utils/constants';
 import type { Listing } from '../../types';
 import { containsProfanity } from '../../utils/profanityFilter';
+import { formatPrice } from '../../utils/formatters';
 import toast from 'react-hot-toast';
 
 interface ListingFormProps {
@@ -25,6 +27,8 @@ interface ListingFormProps {
   onSubmit: (data: Partial<Listing>) => Promise<void>;
   initialData?: Partial<Listing>;
 }
+
+/* ─── Helper Components ─── */
 
 function SelectButtons({ options, value, onChange, color = '#2D6A4F' }: { options: readonly string[] | string[]; value: string; onChange: (v: string) => void; color?: string }) {
   return (
@@ -44,11 +48,19 @@ function SelectButtons({ options, value, onChange, color = '#2D6A4F' }: { option
   );
 }
 
-function CheckboxField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function ToggleSwitch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <label className="flex items-center gap-2 cursor-pointer">
-      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="w-4 h-4 accent-[#2D6A4F]" />
-      <span className="text-xs font-medium uppercase">{label}</span>
+    <label className="flex items-center gap-3 cursor-pointer group">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${checked ? 'bg-[var(--accent-green)]' : 'bg-[var(--text-tertiary)]/30'}`}
+      >
+        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+      </button>
+      <span className="text-xs font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-green)] transition-colors">{label}</span>
     </label>
   );
 }
@@ -76,14 +88,14 @@ function MultiSelectButtons({ options, values, onChange, color = '#2D6A4F' }: { 
 }
 
 const TURKISH_CITIES = [
-  'Adana','Adıyaman','Afyonkarahisar','Ağrı','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin',
-  'Aydın','Balıkesir','Bartın','Batman','Bayburt','Bilecik','Bingöl','Bitlis','Bolu','Burdur',
-  'Bursa','Çanakkale','Çankırı','Çorum','Denizli','Diyarbakır','Düzce','Edirne','Elazığ','Erzincan',
-  'Erzurum','Eskişehir','Gaziantep','Giresun','Gümüşhane','Hakkari','Hatay','Iğdır','Isparta','İstanbul',
-  'İzmir','Kahramanmaraş','Karabük','Karaman','Kars','Kastamonu','Kayseri','Kırıkkale','Kırklareli','Kırşehir',
-  'Kilis','Kocaeli','Konya','Kütahya','Malatya','Manisa','Mardin','Mersin','Muğla','Muş',
-  'Nevşehir','Niğde','Ordu','Osmaniye','Rize','Sakarya','Samsun','Şanlıurfa','Siirt','Sinop',
-  'Şırnak','Sivas','Tekirdağ','Tokat','Trabzon','Tunceli','Uşak','Van','Yalova','Yozgat','Zonguldak',
+  'Adana','Adiyaman','Afyonkarahisar','Agri','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin',
+  'Aydin','Balikesir','Bartin','Batman','Bayburt','Bilecik','Bingol','Bitlis','Bolu','Burdur',
+  'Bursa','Canakkale','Cankiri','Corum','Denizli','Diyarbakir','Duzce','Edirne','Elazig','Erzincan',
+  'Erzurum','Eskisehir','Gaziantep','Giresun','Gumushane','Hakkari','Hatay','Igdir','Isparta','Istanbul',
+  'Izmir','Kahramanmaras','Karabuk','Karaman','Kars','Kastamonu','Kayseri','Kirikkale','Kirklareli','Kirsehir',
+  'Kilis','Kocaeli','Konya','Kutahya','Malatya','Manisa','Mardin','Mersin','Mugla','Mus',
+  'Nevsehir','Nigde','Ordu','Osmaniye','Rize','Sakarya','Samsun','Sanliurfa','Siirt','Sinop',
+  'Sirnak','Sivas','Tekirdag','Tokat','Trabzon','Tunceli','Usak','Van','Yalova','Yozgat','Zonguldak',
 ];
 
 function SectionTitle({ children }: { children: string }) {
@@ -96,10 +108,95 @@ function SectionTitle({ children }: { children: string }) {
   );
 }
 
+/* ─── Step Indicator ─── */
+
+const STEPS = [
+  { key: 'images', icon: '1' },
+  { key: 'details', icon: '2' },
+  { key: 'location', icon: '3' },
+] as const;
+
+function StepIndicator({ current, onStep }: { current: number; onStep: (s: number) => void }) {
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
+  const labels = lang === 'tr'
+    ? ['Gorseller', 'Detaylar', 'Konum & Yayinla']
+    : ['Images', 'Details', 'Location & Publish'];
+
+  return (
+    <div className="flex items-center justify-between px-2 mb-6">
+      {STEPS.map((step, i) => (
+        <div key={step.key} className="flex items-center flex-1">
+          <button
+            type="button"
+            onClick={() => onStep(i)}
+            className={`flex items-center gap-2 transition-all ${i <= current ? 'opacity-100' : 'opacity-40'}`}
+          >
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+              i < current ? 'bg-[var(--accent-green)] text-white' :
+              i === current ? 'bg-[var(--accent-green)] text-white ring-4 ring-[var(--accent-green)]/20' :
+              'bg-[var(--bg-input)] text-[var(--text-secondary)]'
+            }`}>
+              {i < current ? <Check size={14} /> : step.icon}
+            </div>
+            <span className="text-[10px] font-semibold uppercase tracking-wide hidden sm:block">{labels[i]}</span>
+          </button>
+          {i < STEPS.length - 1 && (
+            <div className={`flex-1 h-px mx-3 transition-colors duration-300 ${i < current ? 'bg-[var(--accent-green)]' : 'bg-[var(--border-default)]'}`} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Live Preview Card ─── */
+
+function LivePreview({ data, lang }: { data: Partial<Listing>; lang: string }) {
+  const catLabel = CATEGORY_LABELS[data.type || 'pazar'];
+  return (
+    <div className="surface-card rounded-2xl overflow-hidden">
+      <div className="relative aspect-[4/3] bg-[var(--bg-input)] overflow-hidden">
+        {data.images?.[0] ? (
+          <img src={data.images[0]} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-4xl text-[var(--text-tertiary)]">
+            {catLabel?.icon || '?'}
+          </div>
+        )}
+        {data.type === 'pazar' && (data.price || 0) > 0 && (
+          <div className="absolute bottom-2 left-2 px-2 py-1 rounded-lg bg-black/30 backdrop-blur-md border border-white/10">
+            <span className="text-xs font-bold text-white">{formatPrice(data.price || 0)}</span>
+          </div>
+        )}
+        <div className="absolute top-2 left-2 flex gap-1">
+          <Badge color="#2D6A4F">{catLabel?.[lang as 'tr' | 'en'] || data.type}</Badge>
+        </div>
+      </div>
+      <div className="p-3">
+        <h3 className="text-xs font-semibold tracking-tight line-clamp-1 mb-0.5">
+          {data.title || (lang === 'tr' ? 'Ilan Basligi' : 'Listing Title')}
+        </h3>
+        <p className={`text-sm font-bold tracking-tight mb-1.5 ${data.listingMode === 'buy' ? 'text-[#0077B6]' : 'text-[var(--accent-green)]'}`}>
+          {formatPrice(data.price || 0)}
+        </p>
+        {data.location && (
+          <div className="flex items-center gap-1 text-[9px] text-[var(--text-secondary)]">
+            <MapPin size={8} />{data.location}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main Form ─── */
+
 export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: ListingFormProps) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState(0);
 
   // Common
   const [type, setType] = useState(initialData?.type || 'pazar');
@@ -133,7 +230,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const [hasInsurance, setHasInsurance] = useState(initialData?.hasInsurance || false);
   const [plateNumber, setPlateNumber] = useState(initialData?.plateNumber || '');
 
-  // İşgücü
+  // Isgucu
   const [isTeam, setIsTeam] = useState(initialData?.isTeam || false);
   const [workerCount, setWorkerCount] = useState(initialData?.workerCount?.toString() || '1');
   const [experienceYears, setExperienceYears] = useState(initialData?.experienceYears?.toString() || '');
@@ -151,7 +248,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
 
   // Arazi
   const [landSize, setLandSize] = useState(initialData?.landSize?.toString() || '');
-  const [landUnit, setLandUnit] = useState(initialData?.landUnit || 'dönüm');
+  const [landUnit, setLandUnit] = useState(initialData?.landUnit || 'donum');
   const [soilType, setSoilType] = useState(initialData?.soilType || '');
   const [waterAvailable, setWaterAvailable] = useState(initialData?.waterAvailable || false);
   const [hasElectricity, setHasElectricity] = useState(initialData?.hasElectricity || false);
@@ -170,7 +267,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const [needsTransport, setNeedsTransport] = useState(initialData?.needsTransport || false);
   const [hasTransportCapacity, setHasTransportCapacity] = useState(initialData?.hasTransportCapacity || false);
 
-  const subCategories = CATEGORIES[type as keyof typeof CATEGORIES]?.filter(c => c !== 'HEPSİ') || [];
+  const subCategories = CATEGORIES[type as keyof typeof CATEGORIES]?.filter(c => c !== 'HEPSI') || [];
   const productOptions = type === 'pazar' && subCategory ? (PAZAR_SUBCATEGORIES[subCategory] || []) : [];
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,10 +286,18 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Build preview data
+  const previewData = useMemo<Partial<Listing>>(() => ({
+    type: type as Listing['type'],
+    listingMode,
+    title, price: parseFloat(price) || 0, location, images,
+    subCategory, isOrganic,
+  }), [type, listingMode, title, price, location, images, subCategory, isOrganic]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (containsProfanity(title) || containsProfanity(description)) {
-      toast.error('Uygunsuz içerik tespit edildi, lütfen düzenleyin');
+      toast.error(lang === 'tr' ? 'Uygunsuz icerik tespit edildi, lutfen duzenleyin' : 'Inappropriate content detected');
       return;
     }
     setLoading(true);
@@ -218,7 +323,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         data.minOrderAmount = parseFloat(minOrderAmount) || 0;
       } else if (type === 'lojistik') {
         data.subCategory = vehicleType;
-        data.isFrigo = vehicleType === 'FRİGO KAMYON' ? true : isFrigo;
+        data.isFrigo = vehicleType === 'FRIGO KAMYON' ? true : isFrigo;
         data.vehicleType = vehicleType;
         data.capacity = parseFloat(capacity) || 0;
         data.routeFrom = routeFrom;
@@ -266,412 +371,466 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
     }
   };
 
+  const canNext = () => {
+    if (step === 0) return images.length > 0 || true; // images optional
+    if (step === 1) return title.length > 0 && (parseFloat(price) || 0) > 0;
+    return true;
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={initialData ? t('edit') : t('listing.create')} size="lg">
-      <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-        {/* Type Selection */}
-        <div>
-          <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-2">{t('listing.type')}</label>
-          <div className="flex gap-2 flex-wrap">
-            {Object.entries(CATEGORY_LABELS).map(([key, cat]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => { setType(key as typeof type); setSubCategory(''); }}
-                className={`px-4 py-2 text-xs font-semibold uppercase rounded-full transition-all ${
-                  type === key ? 'bg-[var(--bg-invert)] text-[var(--text-on-invert)]' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
-                }`}
-              >
-                {cat.icon} {cat.tr}
-              </button>
-            ))}
-          </div>
-        </div>
+    <Modal isOpen={isOpen} onClose={onClose} title={initialData ? t('edit') : t('listing.create')} size="full">
+      <form onSubmit={handleSubmit}>
+        {/* Step Indicator */}
+        <StepIndicator current={step} onStep={setStep} />
 
-        {/* Listing Mode: Sell / Buy */}
-        <div>
-          <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-2">{t('listing.listingMode')}</label>
-          <div className="flex gap-2">
-            {(['sell', 'buy'] as const).map(mode => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setListingMode(mode)}
-                className={`flex-1 px-4 py-2.5 text-xs font-semibold uppercase rounded-full transition-all ${
-                  listingMode === mode
-                    ? mode === 'sell' ? 'bg-[#2D6A4F] text-white' : 'bg-[#0077B6] text-white'
-                    : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
-                }`}
-              >
-                {LISTING_MODE_LABELS[type]?.[mode]?.[lang] || (mode === 'sell' ? t('listing.modeSell') : t('listing.modeBuy'))}
-              </button>
-            ))}
-          </div>
-        </div>
+        <div className="flex gap-6">
+          {/* Main Form Area */}
+          <div className="flex-1 min-w-0">
 
-        {/* Sub Category — hidden for lojistik (vehicle type serves as sub-category) */}
-        {type !== 'lojistik' && (
-          <div>
-            <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-2">{t('listing.subCategory')}</label>
-            <div className="flex gap-2 flex-wrap">
-              {subCategories.map(cat => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => { setSubCategory(cat); setTitle(''); }}
-                  className={`px-3 py-1.5 text-[10px] font-medium uppercase rounded-full transition-all ${
-                    subCategory === cat ? 'bg-[#2D6A4F] text-white' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Product Selection — detailed subcategory for pazar */}
-        {productOptions.length > 0 && (
-          <div>
-            <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-2">{t('listing.product') || 'Ürün Seçin'}</label>
-            <select
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
-            >
-              <option value="">{t('listing.selectProduct') || 'Ürün seçin...'}</option>
-              {productOptions.map(p => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <Input label={t('listing.title')} value={title} onChange={e => setTitle(e.target.value)} required />
-
-        <div>
-          <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.description')}</label>
-          <textarea
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            rows={3}
-            className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
-          />
-        </div>
-
-        {/* === PAZAR SPECIFIC === */}
-        {type === 'pazar' && (
-          <>
-            <SectionTitle>{t('listing.pazarDetails')}</SectionTitle>
-
-            <div className="grid grid-cols-3 gap-3">
-              <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (₺/birim)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
-              <Input label={t('listing.amount')} type="number" value={amount} onChange={e => setAmount(e.target.value)} />
-              <div>
-                <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.unit')}</label>
-                <SelectButtons options={PAZAR_UNITS} value={unit} onChange={setUnit} />
-              </div>
-            </div>
-
-            {listingMode === 'sell' && (
-              <Input label={t('listing.minOrder')} type="number" value={minOrderAmount} onChange={e => setMinOrderAmount(e.target.value)} />
-            )}
-
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">
-                {listingMode === 'buy' ? t('listing.minQualityWanted') : t('listing.quality')}
-              </label>
-              <SelectButtons options={QUALITY_GRADES} value={qualityGrade} onChange={setQualityGrade} />
-            </div>
-
-            {listingMode === 'sell' && (
-              <div>
-                <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.storage')}</label>
-                <SelectButtons options={STORAGE_TYPES} value={storageType} onChange={setStorageType} />
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3">
-              <Input label={listingMode === 'buy' ? t('listing.deliveryDateNeeded') : t('listing.harvestDate')} type="date" value={harvestDate} onChange={e => setHarvestDate(e.target.value)} />
-              <div className="flex items-end pb-1">
-                <CheckboxField label={t('listing.organic')} checked={isOrganic} onChange={setIsOrganic} />
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* === LOJİSTİK SPECIFIC === */}
-        {type === 'lojistik' && (
-          <>
-            <SectionTitle>{t('listing.lojistikDetails')}</SectionTitle>
-
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">
-                {listingMode === 'buy' ? t('listing.neededVehicleType') : t('listing.vehicleType')}
-              </label>
-              <SelectButtons options={VEHICLE_TYPES} value={vehicleType} onChange={(v) => { setVehicleType(v); if (v === 'FRİGO KAMYON') setIsFrigo(true); }} color="#0077B6" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (₺)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
-              <Input label={listingMode === 'buy' ? t('listing.cargoWeight') : t('listing.capacity')} type="number" value={capacity} onChange={e => setCapacity(e.target.value)} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Input label={t('listing.routeFrom')} value={routeFrom} onChange={e => setRouteFrom(e.target.value)} />
-              <Input label={t('listing.routeTo')} value={routeTo} onChange={e => setRouteTo(e.target.value)} />
-            </div>
-
-            <div className={`grid ${listingMode === 'sell' ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
-              <Input label={t('listing.availableDate')} type="date" value={availableDate} onChange={e => setAvailableDate(e.target.value)} />
-              {listingMode === 'sell' && (
-                <Input label={t('listing.plateNumber')} value={plateNumber} onChange={e => setPlateNumber(e.target.value)} />
-              )}
-            </div>
-
-            <div className="flex items-center gap-6">
-              {vehicleType !== 'FRİGO KAMYON' && (
-                <CheckboxField label={t('listing.frigo')} checked={isFrigo} onChange={setIsFrigo} />
-              )}
-              <CheckboxField label={t('listing.insurance')} checked={hasInsurance} onChange={setHasInsurance} />
-            </div>
-          </>
-        )}
-
-        {/* === İŞGÜCÜ SPECIFIC === */}
-        {type === 'isgucu' && (
-          <>
-            <SectionTitle>{t('listing.isgucuDetails')}</SectionTitle>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Input label={(listingMode === 'buy' ? t('listing.offeredWage') : t('listing.dailyWage')) + ' (₺)'} type="number" value={dailyWage} onChange={e => setDailyWage(e.target.value)} />
-              <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (₺ toplam)'} type="number" value={price} onChange={e => setPrice(e.target.value)} />
-            </div>
-
-            <CheckboxField label={t('listing.team')} checked={isTeam} onChange={(v) => { setIsTeam(v); if (!v) setWorkerCount('1'); }} />
-
-            <div className={`grid ${isTeam ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
-              {isTeam && (
-                <Input label={listingMode === 'buy' ? t('listing.neededWorkers') : t('listing.workerCount')} type="number" value={workerCount} onChange={e => setWorkerCount(e.target.value)} />
-              )}
-              <Input label={t('listing.experience')} type="number" value={experienceYears} onChange={e => setExperienceYears(e.target.value)} />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">
-                {listingMode === 'buy' ? t('listing.requiredSkills') : t('listing.skills')}
-              </label>
-              <MultiSelectButtons options={WORKER_SKILLS} values={skills} onChange={setSkills} color="#A47148" />
-            </div>
-          </>
-        )}
-
-        {/* === EKİPMAN SPECIFIC === */}
-        {type === 'ekipman' && (
-          <>
-            <SectionTitle>{t('listing.ekipmanDetails')}</SectionTitle>
-
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.saleType')}</label>
-              <SelectButtons options={SALE_TYPES} value={saleType} onChange={setSaleType} color="#A47148" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (₺)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
-              {saleType !== 'SATILIK' && (
+            {/* ═══════════ STEP 1: IMAGES ═══════════ */}
+            {step === 0 && (
+              <div className="space-y-5 animate-fade-in">
+                {/* Type Selection */}
                 <div>
-                  <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.rentType')}</label>
-                  <SelectButtons options={RENT_TYPES} value={rentType} onChange={setRentType} color="#A47148" />
+                  <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-2">{t('listing.type')}</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {Object.entries(CATEGORY_LABELS).map(([key, cat]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => { setType(key as typeof type); setSubCategory(''); }}
+                        className={`px-4 py-2 text-xs font-semibold uppercase rounded-full transition-all ${
+                          type === key ? 'bg-[var(--bg-invert)] text-[var(--text-on-invert)]' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
+                        }`}
+                      >
+                        {cat.icon} {cat.tr}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">
-                {listingMode === 'buy' ? t('listing.preferredBrand') : t('listing.brand')}
-              </label>
-              <SelectButtons options={EQUIPMENT_BRANDS} value={brand} onChange={setBrand} color="#1A1A1A" />
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <Input label={listingMode === 'buy' ? t('listing.preferredModel') : t('listing.modelName')} value={modelName} onChange={e => setModelName(e.target.value)} />
-              <Input label={t('listing.year')} type="number" value={yearOfManufacture} onChange={e => setYearOfManufacture(e.target.value)} />
-              <Input label={t('listing.horsePower')} type="number" value={horsePower} onChange={e => setHorsePower(e.target.value)} />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">
-                {listingMode === 'buy' ? t('listing.minCondition') : t('listing.condition')}
-              </label>
-              <SelectButtons options={EQUIPMENT_CONDITIONS} value={condition} onChange={setCondition} />
-            </div>
-          </>
-        )}
-
-        {/* === ARAZİ SPECIFIC === */}
-        {type === 'arazi' && (
-          <>
-            <SectionTitle>{t('listing.araziDetails')}</SectionTitle>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (₺)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
-              <div className="grid grid-cols-2 gap-2">
-                <Input label={t('listing.landSize')} type="number" value={landSize} onChange={e => setLandSize(e.target.value)} />
+                {/* Listing Mode */}
                 <div>
-                  <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.landUnit')}</label>
-                  <SelectButtons options={LAND_UNITS} value={landUnit} onChange={setLandUnit} />
+                  <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-2">{t('listing.listingMode')}</label>
+                  <div className="flex gap-2">
+                    {(['sell', 'buy'] as const).map(mode => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setListingMode(mode)}
+                        className={`flex-1 px-4 py-2.5 text-xs font-semibold uppercase rounded-full transition-all ${
+                          listingMode === mode
+                            ? mode === 'sell' ? 'bg-[#2D6A4F] text-white' : 'bg-[#0077B6] text-white'
+                            : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
+                        }`}
+                      >
+                        {LISTING_MODE_LABELS[type]?.[mode]?.[lang] || (mode === 'sell' ? t('listing.modeSell') : t('listing.modeBuy'))}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Glassmorphism Image Upload Area */}
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-2">{t('listing.images')}</label>
+                  <div className="p-5 rounded-3xl bg-white/50 dark:bg-white/5 backdrop-blur-xl border border-white/20 shadow-lg">
+                    <div className="flex gap-3 flex-wrap">
+                      {images.map((img, i) => (
+                        <div key={i} className="relative w-24 h-24 rounded-2xl overflow-hidden group shadow-md">
+                          <img src={img} alt="" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(i)}
+                            className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/50 backdrop-blur text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X size={12} />
+                          </button>
+                          {i === 0 && (
+                            <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-[var(--accent-green)] text-white text-[8px] font-bold uppercase rounded-full">
+                              {lang === 'tr' ? 'Kapak' : 'Cover'}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <label className="w-24 h-24 border-2 border-dashed border-[var(--accent-green)]/30 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[var(--accent-green)] hover:bg-[var(--accent-green)]/5 transition-all group">
+                        <ImagePlus size={24} className="text-[var(--text-tertiary)] group-hover:text-[var(--accent-green)] transition-colors" />
+                        <span className="text-[9px] font-medium text-[var(--text-tertiary)] mt-1 group-hover:text-[var(--accent-green)]">
+                          {lang === 'tr' ? 'Ekle' : 'Add'}
+                        </span>
+                        <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+                      </label>
+                    </div>
+                    <p className="text-[10px] text-[var(--text-tertiary)] mt-3">
+                      {lang === 'tr' ? 'Ilk gorsel kapak fotografi olarak kullanilir. En fazla 8 gorsel yukleyebilirsiniz.' : 'First image will be used as cover. You can upload up to 8 images.'}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.soilType')}</label>
-              <SelectButtons options={SOIL_TYPES} value={soilType} onChange={setSoilType} color="#A47148" />
-            </div>
+            {/* ═══════════ STEP 2: DETAILS ═══════════ */}
+            {step === 1 && (
+              <div className="space-y-4 animate-fade-in">
+                {/* Sub Category */}
+                {type !== 'lojistik' && (
+                  <div>
+                    <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-2">{t('listing.subCategory')}</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {subCategories.map(cat => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => { setSubCategory(cat); setTitle(''); }}
+                          className={`px-3 py-1.5 text-[10px] font-medium uppercase rounded-full transition-all ${
+                            subCategory === cat ? 'bg-[#2D6A4F] text-white' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.deedStatus')}</label>
-              <SelectButtons options={DEED_STATUSES} value={deedStatus} onChange={setDeedStatus} />
-            </div>
+                {/* Product Selection */}
+                {productOptions.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-2">{t('listing.product') || 'Urun Secin'}</label>
+                    <select
+                      value={title}
+                      onChange={e => setTitle(e.target.value)}
+                      className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
+                    >
+                      <option value="">{t('listing.selectProduct') || 'Urun secin...'}</option>
+                      {productOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                )}
 
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.zoningStatus')}</label>
-              <SelectButtons options={ZONING_STATUSES} value={zoningStatus} onChange={setZoningStatus} />
-            </div>
+                <Input label={t('listing.title')} value={title} onChange={e => setTitle(e.target.value)} required />
 
-            {listingMode === 'buy' && (
-              <div>
-                <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.rentDuration')}</label>
-                <SelectButtons options={RENT_DURATIONS_ARAZI} value={rentDuration} onChange={setRentDuration} color="#0077B6" />
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.description')}</label>
+                  <textarea
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
+                  />
+                </div>
+
+                {/* === PAZAR SPECIFIC === */}
+                {type === 'pazar' && (
+                  <>
+                    <SectionTitle>{t('listing.pazarDetails')}</SectionTitle>
+                    <div className="grid grid-cols-3 gap-3">
+                      <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (TL/birim)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
+                      <Input label={t('listing.amount')} type="number" value={amount} onChange={e => setAmount(e.target.value)} />
+                      <div>
+                        <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.unit')}</label>
+                        <SelectButtons options={PAZAR_UNITS} value={unit} onChange={setUnit} />
+                      </div>
+                    </div>
+                    {listingMode === 'sell' && (
+                      <Input label={t('listing.minOrder')} type="number" value={minOrderAmount} onChange={e => setMinOrderAmount(e.target.value)} />
+                    )}
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">
+                        {listingMode === 'buy' ? t('listing.minQualityWanted') : t('listing.quality')}
+                      </label>
+                      <SelectButtons options={QUALITY_GRADES} value={qualityGrade} onChange={setQualityGrade} />
+                    </div>
+                    {listingMode === 'sell' && (
+                      <div>
+                        <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.storage')}</label>
+                        <SelectButtons options={STORAGE_TYPES} value={storageType} onChange={setStorageType} />
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label={listingMode === 'buy' ? t('listing.deliveryDateNeeded') : t('listing.harvestDate')} type="date" value={harvestDate} onChange={e => setHarvestDate(e.target.value)} />
+                      <div className="flex items-end pb-1">
+                        <ToggleSwitch label={t('listing.organic')} checked={isOrganic} onChange={setIsOrganic} />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* === LOJISTIK SPECIFIC === */}
+                {type === 'lojistik' && (
+                  <>
+                    <SectionTitle>{t('listing.lojistikDetails')}</SectionTitle>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">
+                        {listingMode === 'buy' ? t('listing.neededVehicleType') : t('listing.vehicleType')}
+                      </label>
+                      <SelectButtons options={VEHICLE_TYPES} value={vehicleType} onChange={(v) => { setVehicleType(v); if (v === 'FRIGO KAMYON') setIsFrigo(true); }} color="#0077B6" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (TL)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
+                      <Input label={listingMode === 'buy' ? t('listing.cargoWeight') : t('listing.capacity')} type="number" value={capacity} onChange={e => setCapacity(e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label={t('listing.routeFrom')} value={routeFrom} onChange={e => setRouteFrom(e.target.value)} />
+                      <Input label={t('listing.routeTo')} value={routeTo} onChange={e => setRouteTo(e.target.value)} />
+                    </div>
+                    <div className={`grid ${listingMode === 'sell' ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                      <Input label={t('listing.availableDate')} type="date" value={availableDate} onChange={e => setAvailableDate(e.target.value)} />
+                      {listingMode === 'sell' && (
+                        <Input label={t('listing.plateNumber')} value={plateNumber} onChange={e => setPlateNumber(e.target.value)} />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-6">
+                      {vehicleType !== 'FRIGO KAMYON' && (
+                        <ToggleSwitch label={t('listing.frigo')} checked={isFrigo} onChange={setIsFrigo} />
+                      )}
+                      <ToggleSwitch label={t('listing.insurance')} checked={hasInsurance} onChange={setHasInsurance} />
+                    </div>
+                  </>
+                )}
+
+                {/* === ISGUCU SPECIFIC === */}
+                {type === 'isgucu' && (
+                  <>
+                    <SectionTitle>{t('listing.isgucuDetails')}</SectionTitle>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label={(listingMode === 'buy' ? t('listing.offeredWage') : t('listing.dailyWage')) + ' (TL)'} type="number" value={dailyWage} onChange={e => setDailyWage(e.target.value)} />
+                      <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (TL toplam)'} type="number" value={price} onChange={e => setPrice(e.target.value)} />
+                    </div>
+                    <ToggleSwitch label={t('listing.team')} checked={isTeam} onChange={(v) => { setIsTeam(v); if (!v) setWorkerCount('1'); }} />
+                    <div className={`grid ${isTeam ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                      {isTeam && (
+                        <Input label={listingMode === 'buy' ? t('listing.neededWorkers') : t('listing.workerCount')} type="number" value={workerCount} onChange={e => setWorkerCount(e.target.value)} />
+                      )}
+                      <Input label={t('listing.experience')} type="number" value={experienceYears} onChange={e => setExperienceYears(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">
+                        {listingMode === 'buy' ? t('listing.requiredSkills') : t('listing.skills')}
+                      </label>
+                      <MultiSelectButtons options={WORKER_SKILLS} values={skills} onChange={setSkills} color="#A47148" />
+                    </div>
+                  </>
+                )}
+
+                {/* === EKIPMAN SPECIFIC === */}
+                {type === 'ekipman' && (
+                  <>
+                    <SectionTitle>{t('listing.ekipmanDetails')}</SectionTitle>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.saleType')}</label>
+                      <SelectButtons options={SALE_TYPES} value={saleType} onChange={setSaleType} color="#A47148" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (TL)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
+                      {saleType !== 'SATILIK' && (
+                        <div>
+                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.rentType')}</label>
+                          <SelectButtons options={RENT_TYPES} value={rentType} onChange={setRentType} color="#A47148" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">
+                        {listingMode === 'buy' ? t('listing.preferredBrand') : t('listing.brand')}
+                      </label>
+                      <SelectButtons options={EQUIPMENT_BRANDS} value={brand} onChange={setBrand} color="#1A1A1A" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <Input label={listingMode === 'buy' ? t('listing.preferredModel') : t('listing.modelName')} value={modelName} onChange={e => setModelName(e.target.value)} />
+                      <Input label={t('listing.year')} type="number" value={yearOfManufacture} onChange={e => setYearOfManufacture(e.target.value)} />
+                      <Input label={t('listing.horsePower')} type="number" value={horsePower} onChange={e => setHorsePower(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">
+                        {listingMode === 'buy' ? t('listing.minCondition') : t('listing.condition')}
+                      </label>
+                      <SelectButtons options={EQUIPMENT_CONDITIONS} value={condition} onChange={setCondition} />
+                    </div>
+                  </>
+                )}
+
+                {/* === ARAZI SPECIFIC === */}
+                {type === 'arazi' && (
+                  <>
+                    <SectionTitle>{t('listing.araziDetails')}</SectionTitle>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (TL)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input label={t('listing.landSize')} type="number" value={landSize} onChange={e => setLandSize(e.target.value)} />
+                        <div>
+                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.landUnit')}</label>
+                          <SelectButtons options={LAND_UNITS} value={landUnit} onChange={setLandUnit} />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.soilType')}</label>
+                      <SelectButtons options={SOIL_TYPES} value={soilType} onChange={setSoilType} color="#A47148" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.deedStatus')}</label>
+                      <SelectButtons options={DEED_STATUSES} value={deedStatus} onChange={setDeedStatus} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.zoningStatus')}</label>
+                      <SelectButtons options={ZONING_STATUSES} value={zoningStatus} onChange={setZoningStatus} />
+                    </div>
+                    {listingMode === 'buy' && (
+                      <div>
+                        <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.rentDuration')}</label>
+                        <SelectButtons options={RENT_DURATIONS_ARAZI} value={rentDuration} onChange={setRentDuration} color="#0077B6" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-6">
+                      <ToggleSwitch label={t('listing.waterAvailable')} checked={waterAvailable} onChange={setWaterAvailable} />
+                      <ToggleSwitch label={t('listing.hasElectricity')} checked={hasElectricity} onChange={setHasElectricity} />
+                    </div>
+                  </>
+                )}
+
+                {/* === DEPOLAMA SPECIFIC === */}
+                {type === 'depolama' && (
+                  <>
+                    <SectionTitle>{t('listing.depolamaDetails')}</SectionTitle>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (TL)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input label={t('listing.storageCapacity')} type="number" value={storageCapacity} onChange={e => setStorageCapacity(e.target.value)} />
+                        <div>
+                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.capacityUnit')}</label>
+                          <SelectButtons options={STORAGE_CAPACITY_UNITS} value={storageCapacityUnit} onChange={setStorageCapacityUnit} />
+                        </div>
+                      </div>
+                    </div>
+                    {subCategory === 'SOGUK HAVA DEPOSU' && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <Input label={t('listing.temperatureMin') + ' (C)'} type="number" value={temperatureMin} onChange={e => setTemperatureMin(e.target.value)} />
+                        <Input label={t('listing.temperatureMax') + ' (C)'} type="number" value={temperatureMax} onChange={e => setTemperatureMax(e.target.value)} />
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.rentDuration')}</label>
+                      <SelectButtons options={RENT_DURATIONS_DEPO} value={rentDuration} onChange={setRentDuration} color="#0077B6" />
+                    </div>
+                    {subCategory && subCategory !== 'ACIK DEPO' && (
+                      <div className="flex items-center gap-6">
+                        <ToggleSwitch label={t('listing.hasSecurity')} checked={hasSecurity} onChange={setHasSecurity} />
+                        <ToggleSwitch label={t('listing.has24Access')} checked={has24Access} onChange={setHas24Access} />
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
 
-            <div className="flex items-center gap-6">
-              <CheckboxField label={t('listing.waterAvailable')} checked={waterAvailable} onChange={setWaterAvailable} />
-              <CheckboxField label={t('listing.hasElectricity')} checked={hasElectricity} onChange={setHasElectricity} />
-            </div>
-          </>
-        )}
+            {/* ═══════════ STEP 3: LOCATION & PUBLISH ═══════════ */}
+            {step === 2 && (
+              <div className="space-y-4 animate-fade-in">
+                {/* Negotiable Toggle */}
+                <div className="flex items-center gap-3 py-3 px-4 bg-[#E76F00]/5 rounded-2xl border border-[#E76F00]/10">
+                  <ToggleSwitch label={lang === 'tr' ? 'Pazarliga Acik' : 'Negotiable'} checked={isNegotiable} onChange={setIsNegotiable} />
+                  <span className="text-[10px] text-[#E76F00]">{lang === 'tr' ? 'Alicilar fiyat teklifi gonderebilir' : 'Buyers can send price offers'}</span>
+                </div>
 
-        {/* === DEPOLAMA SPECIFIC === */}
-        {type === 'depolama' && (
-          <>
-            <SectionTitle>{t('listing.depolamaDetails')}</SectionTitle>
+                {/* Transport Options */}
+                {type !== 'lojistik' && (
+                  <div className="flex items-center gap-3 py-3 px-4 bg-[#0077B6]/5 rounded-2xl border border-[#0077B6]/10">
+                    <ToggleSwitch label={lang === 'tr' ? 'Nakliye Ariyorum' : 'Need Transport'} checked={needsTransport} onChange={(v) => { setNeedsTransport(v); if (v) setHasTransportCapacity(false); }} />
+                    <span className="text-[10px] text-[#0077B6]">{lang === 'tr' ? 'Urunum icin nakliye destegi ariyorum' : 'I need transport support'}</span>
+                  </div>
+                )}
+                {type === 'lojistik' && (
+                  <div className="flex items-center gap-3 py-3 px-4 bg-[#0077B6]/5 rounded-2xl border border-[#0077B6]/10">
+                    <ToggleSwitch label={lang === 'tr' ? 'Bos Kapasitem Var' : 'Available Capacity'} checked={hasTransportCapacity} onChange={(v) => { setHasTransportCapacity(v); if (v) setNeedsTransport(false); }} />
+                    <span className="text-[10px] text-[#0077B6]">{lang === 'tr' ? 'Bos donus veya ekstra kapasite mevcut' : 'Empty return or extra capacity available'}</span>
+                  </div>
+                )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (₺)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
-              <div className="grid grid-cols-2 gap-2">
-                <Input label={t('listing.storageCapacity')} type="number" value={storageCapacity} onChange={e => setStorageCapacity(e.target.value)} />
-                <div>
-                  <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.capacityUnit')}</label>
-                  <SelectButtons options={STORAGE_CAPACITY_UNITS} value={storageCapacityUnit} onChange={setStorageCapacityUnit} />
+                {/* Location & Phone */}
+                <SectionTitle>{t('listing.contactInfo')}</SectionTitle>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.location')}</label>
+                    <select
+                      value={location}
+                      onChange={e => setLocation(e.target.value)}
+                      className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
+                    >
+                      <option value="">{lang === 'tr' ? 'Il Secin' : 'Select City'}</option>
+                      {TURKISH_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <Input label={t('listing.phone')} value={phone} onChange={e => setPhone(e.target.value)} />
+                </div>
+
+                {/* Map */}
+                <LocationPicker
+                  lat={coordLat || undefined}
+                  lng={coordLng || undefined}
+                  onSelect={(lat, lng) => { setCoordLat(lat); setCoordLng(lng); }}
+                />
+
+                {/* +10 Hasat Puan Motivation */}
+                <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-[#2D6A4F]/10 via-[#40916C]/5 to-[#E76F00]/10 border border-[#2D6A4F]/20">
+                  <div className="w-10 h-10 rounded-xl bg-[#2D6A4F]/10 flex items-center justify-center">
+                    <Trophy size={20} className="text-[#2D6A4F]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#2D6A4F]">+10 Hasat Puan {lang === 'tr' ? 'kazanacaksin!' : 'you will earn!'}</p>
+                    <p className="text-[10px] text-[var(--text-secondary)]">{lang === 'tr' ? 'Bu ilani yayinlayarak sadakat puani kazan' : 'Earn loyalty points by publishing this listing'}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {subCategory === 'SOĞUK HAVA DEPOSU' && (
-              <div className="grid grid-cols-2 gap-3">
-                <Input label={t('listing.temperatureMin') + ' (°C)'} type="number" value={temperatureMin} onChange={e => setTemperatureMin(e.target.value)} />
-                <Input label={t('listing.temperatureMax') + ' (°C)'} type="number" value={temperatureMax} onChange={e => setTemperatureMax(e.target.value)} />
-              </div>
             )}
 
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.rentDuration')}</label>
-              <SelectButtons options={RENT_DURATIONS_DEPO} value={rentDuration} onChange={setRentDuration} color="#0077B6" />
-            </div>
-
-            {subCategory && subCategory !== 'AÇIK DEPO' && (
-              <div className="flex items-center gap-6">
-                <CheckboxField label={t('listing.hasSecurity')} checked={hasSecurity} onChange={setHasSecurity} />
-                <CheckboxField label={t('listing.has24Access')} checked={has24Access} onChange={setHas24Access} />
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Negotiable Toggle */}
-        <div className="flex items-center gap-3 py-2 px-3 bg-[#E76F00]/5 rounded-2xl border border-[#E76F00]/10">
-          <CheckboxField label="Pazarlığa Açık" checked={isNegotiable} onChange={setIsNegotiable} />
-          <span className="text-[10px] text-[#E76F00]">Alıcılar fiyat teklifi gönderebilir</span>
-        </div>
-
-        {/* Transport Options */}
-        {type !== 'lojistik' && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 py-2 px-3 bg-[#0077B6]/5 rounded-2xl border border-[#0077B6]/10">
-              <CheckboxField label="Nakliye Arıyorum" checked={needsTransport} onChange={(v) => { setNeedsTransport(v); if (v) setHasTransportCapacity(false); }} />
-              <span className="text-[10px] text-[#0077B6]">Ürünüm için nakliye desteği arıyorum</span>
+            {/* Navigation Buttons */}
+            <div className="flex gap-3 pt-6 mt-4 border-t border-[var(--border-default)]">
+              {step > 0 && (
+                <Button type="button" variant="ghost" onClick={() => setStep(step - 1)} className="flex items-center gap-1">
+                  <ChevronLeft size={14} />
+                  {lang === 'tr' ? 'Geri' : 'Back'}
+                </Button>
+              )}
+              <div className="flex-1" />
+              {step < 2 ? (
+                <Button type="button" onClick={() => canNext() && setStep(step + 1)} className="flex items-center gap-1">
+                  {lang === 'tr' ? 'Devam' : 'Continue'}
+                  <ChevronRight size={14} />
+                </Button>
+              ) : (
+                <Button type="submit" loading={loading} className="flex items-center gap-2 px-8">
+                  {t('save')}
+                </Button>
+              )}
             </div>
           </div>
-        )}
-        {type === 'lojistik' && (
-          <div className="flex items-center gap-3 py-2 px-3 bg-[#0077B6]/5 rounded-2xl border border-[#0077B6]/10">
-            <CheckboxField label="Boş Kapasitem Var" checked={hasTransportCapacity} onChange={(v) => { setHasTransportCapacity(v); if (v) setNeedsTransport(false); }} />
-            <span className="text-[10px] text-[#0077B6]">Boş dönüş veya ekstra kapasite mevcut</span>
-          </div>
-        )}
 
-        {/* Common: Location & Phone */}
-        <SectionTitle>{t('listing.contactInfo')}</SectionTitle>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.location')}</label>
-            <select
-              value={location}
-              onChange={e => setLocation(e.target.value)}
-              className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
-            >
-              <option value="">{lang === 'tr' ? 'İl Seçin' : 'Select City'}</option>
-              {TURKISH_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <Input label={t('listing.phone')} value={phone} onChange={e => setPhone(e.target.value)} />
-        </div>
-
-        {/* Map Location Picker */}
-        <LocationPicker
-          lat={coordLat || undefined}
-          lng={coordLng || undefined}
-          onSelect={(lat, lng) => { setCoordLat(lat); setCoordLng(lng); }}
-        />
-
-        {/* Pazar specific: price already handled above, others need generic price if not shown */}
-        {type !== 'pazar' && type !== 'lojistik' && type !== 'isgucu' && type !== 'ekipman' && type !== 'arazi' && type !== 'depolama' && (
-          <div className="grid grid-cols-3 gap-3">
-            <Input label={t('listing.price')} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
-            <Input label={t('listing.amount')} type="number" value={amount} onChange={e => setAmount(e.target.value)} />
-            <Input label={t('listing.unit')} value={unit} onChange={e => setUnit(e.target.value)} />
-          </div>
-        )}
-
-        {/* Images */}
-        <div>
-          <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-2">{t('listing.images')}</label>
-          <div className="flex gap-3 flex-wrap">
-            {images.map((img, i) => (
-              <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden">
-                <img src={img} alt="" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeImage(i)}
-                  className="absolute top-1 right-1 w-5 h-5 bg-black/50 text-white rounded-full flex items-center justify-center"
-                >
-                  <X size={12} />
-                </button>
+          {/* ═══════════ LIVE PREVIEW (Desktop Sidebar) ═══════════ */}
+          <div className="hidden lg:block w-72 shrink-0">
+            <div className="sticky top-0">
+              <div className="flex items-center gap-2 mb-3">
+                <Eye size={14} className="text-[var(--text-secondary)]" />
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-secondary)]">
+                  {lang === 'tr' ? 'Canli Onizleme' : 'Live Preview'}
+                </span>
               </div>
-            ))}
-            <label className="w-20 h-20 border-2 border-dashed border-[var(--border-default)] rounded-xl flex items-center justify-center cursor-pointer hover:border-[#2D6A4F] transition-colors">
-              <ImagePlus size={20} className="text-[var(--text-secondary)]" />
-              <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
-            </label>
+              <LivePreview data={previewData} lang={lang} />
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-3 pt-4">
-          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">{t('cancel')}</Button>
-          <Button type="submit" loading={loading} className="flex-1">{t('save')}</Button>
+        {/* ═══════════ LIVE PREVIEW (Mobile Bottom) ═══════════ */}
+        <div className="lg:hidden mt-4">
+          <details className="group">
+            <summary className="flex items-center gap-2 cursor-pointer text-[10px] font-semibold uppercase tracking-widest text-[var(--text-secondary)] mb-2">
+              <Eye size={12} />
+              {lang === 'tr' ? 'Onizlemeyi Gor' : 'Show Preview'}
+            </summary>
+            <div className="max-w-xs mx-auto">
+              <LivePreview data={previewData} lang={lang} />
+            </div>
+          </details>
         </div>
       </form>
     </Modal>

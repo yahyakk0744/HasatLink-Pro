@@ -325,6 +325,18 @@ export const getMarketAnalytics = async (req: Request, res: Response): Promise<v
   }
 };
 
+export const getListingViewers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const views = await ListingView.find({ listingId: req.params.id }).sort({ createdAt: -1 }).limit(100);
+    const userIds = views.map(v => v.identifier).filter(id => /^[a-zA-Z0-9_-]+$/.test(id) && id.length > 5);
+    const users = await User.find({ userId: { $in: userIds } }).select('userId name profileImage');
+    const viewers = users.map(u => ({ userId: u.userId, name: u.name, profileImage: u.profileImage }));
+    res.json({ viewers });
+  } catch (error) {
+    res.status(500).json({ message: 'Viewer listesi alinamadi', error });
+  }
+};
+
 export const getPlatformStats = async (_req: Request, res: Response): Promise<void> => {
   try {
     const [activeListings, registeredUsers, aiDiagnoses, citiesResult, categoryAgg] = await Promise.all([
