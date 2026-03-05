@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Shield, Clock3, ArrowRight, Heart, Star, Sparkles, ShieldCheck } from 'lucide-react';
+import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Shield, Clock3, ArrowRight, Heart, Star, Sparkles, ShieldCheck, TrendingUp, HandCoins } from 'lucide-react';
 import type { Listing } from '../../types';
 import { formatPrice, timeAgo } from '../../utils/formatters';
 import Badge from '../ui/Badge';
@@ -13,7 +13,11 @@ interface ListingCardProps {
 }
 
 function isNew(createdAt: string): boolean {
-  return Date.now() - new Date(createdAt).getTime() < 3 * 24 * 60 * 60 * 1000;
+  return Date.now() - new Date(createdAt).getTime() < 24 * 60 * 60 * 1000;
+}
+
+function isPopular(views: number): boolean {
+  return views > 100;
 }
 
 const CATEGORY_BADGE_COLORS: Record<string, string> = {
@@ -83,12 +87,22 @@ export default function ListingCard({ listing }: ListingCardProps) {
             )}
           </div>
 
-          {/* Top-right: YENİ badge + heart */}
+          {/* Top-right: dynamic badges + heart */}
           <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
             {isNew(listing.createdAt) && (
-              <Badge color="#E76F00" className="!bg-[#E76F00] !text-white">
+              <span className="inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-[#E76F00]/80 backdrop-blur-md text-white border border-white/20">
                 <Sparkles size={8} className="mr-0.5" />{lang === 'tr' ? 'YENİ' : 'NEW'}
-              </Badge>
+              </span>
+            )}
+            {isPopular(listing.stats?.views || 0) && (
+              <span className="inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-[#7C3AED]/80 backdrop-blur-md text-white border border-white/20">
+                <TrendingUp size={8} className="mr-0.5" />{lang === 'tr' ? 'POPÜLER' : 'POPULAR'}
+              </span>
+            )}
+            {listing.is_negotiable && (
+              <span className="inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-[#0077B6]/80 backdrop-blur-md text-white border border-white/20">
+                <HandCoins size={8} className="mr-0.5" />{lang === 'tr' ? 'PAZARLIK' : 'NEGOTIABLE'}
+              </span>
             )}
             <button
               ref={heartRef}

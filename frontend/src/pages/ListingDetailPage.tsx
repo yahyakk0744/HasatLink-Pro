@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Bell, HandCoins, ShieldCheck, Star, Package, Calendar, MessageCircle, Store } from 'lucide-react';
+import { ArrowLeft, Bell, HandCoins, ShieldCheck, Star, Package, Calendar, MessageCircle, Store, Layers } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useRatings } from '../hooks/useRatings';
 import { useMessages } from '../hooks/useMessages';
@@ -10,6 +10,7 @@ import { auth as firebaseAuth } from '../config/firebase';
 import type { Listing } from '../types';
 import api from '../config/api';
 import ListingDetailView from '../components/listings/ListingDetailView';
+import ListingCard from '../components/listings/ListingCard';
 import ListingForm from '../components/listings/ListingForm';
 import ListingMap from '../components/map/ListingMap';
 import SEO from '../components/ui/SEO';
@@ -184,6 +185,7 @@ export default function ListingDetailPage() {
   const [offerPrice, setOfferPrice] = useState('');
   const [offerMessage, setOfferMessage] = useState('');
   const [offerSending, setOfferSending] = useState(false);
+  const [similarListings, setSimilarListings] = useState<Listing[]>([]);
 
   const isOwner = !!(user && listing && user.userId === listing.userId);
 
@@ -194,6 +196,14 @@ export default function ListingDetailPage() {
         setListing(data);
         if (data?.userId) fetchRatings(data.userId);
         setLoading(false);
+        // Fetch similar listings (same category, exclude current)
+        if (data?.type) {
+          api.get<{ listings: Listing[] }>('/listings', { params: { type: data.type, limit: '5' } })
+            .then(res => {
+              setSimilarListings(res.data.listings.filter(l => l._id !== id).slice(0, 4));
+            })
+            .catch(() => {});
+        }
       });
     }
   }, [id, fetchListing, fetchRatings]);
@@ -325,6 +335,25 @@ export default function ListingDetailPage() {
 
           {/* Comments */}
           <CommentSection listingId={listing._id} />
+
+          {/* Similar Listings */}
+          {similarListings.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-xl bg-[#7C3AED]/10 flex items-center justify-center">
+                  <Layers size={16} strokeWidth={1.5} className="text-[#7C3AED]" />
+                </div>
+                <h3 className="text-sm font-semibold tracking-tight">Benzer İlanlar</h3>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
+                {similarListings.map(sl => (
+                  <div key={sl._id} className="w-[260px] flex-shrink-0 snap-start">
+                    <ListingCard listing={sl} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">

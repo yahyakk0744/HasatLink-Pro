@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, SlidersHorizontal, X, ArrowUpDown } from 'lucide-react';
+import { Plus, SlidersHorizontal, X, ArrowUpDown, CalendarClock, TrendingDown } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useAuth } from '../contexts/AuthContext';
 import ListingGrid from '../components/listings/ListingGrid';
@@ -53,6 +53,7 @@ export default function ListingsPage() {
   const [maxPrice, setMaxPrice] = useState('');
   const [sort, setSort] = useState('newest');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [quickFilter, setQuickFilter] = useState<'none' | 'today' | 'priceDropped'>('none');
 
   const subCategories = CATEGORIES[type as keyof typeof CATEGORIES] || CATEGORIES.pazar;
   const catLabel = CATEGORY_LABELS[type];
@@ -79,7 +80,15 @@ export default function ListingsPage() {
     setMinPrice('');
     setMaxPrice('');
     setSort('newest');
+    setQuickFilter('none');
   }, [type]);
+
+  // Client-side quick filtering
+  const filteredListings = quickFilter === 'none'
+    ? listings
+    : quickFilter === 'today'
+      ? listings.filter(l => Date.now() - new Date(l.createdAt).getTime() < 24 * 60 * 60 * 1000)
+      : listings.filter(l => l.is_negotiable);
 
   const handleCreate = async (data: Partial<Listing>) => {
     const result = await createListing({ ...data, type: type as Listing['type'] });
@@ -237,6 +246,32 @@ export default function ListingsPage() {
         </div>
       )}
 
+      {/* Quick Filters */}
+      <div className="flex gap-2 mt-3 overflow-x-auto scrollbar-hide">
+        <button
+          onClick={() => setQuickFilter(quickFilter === 'today' ? 'none' : 'today')}
+          className={`inline-flex items-center gap-1.5 px-4 py-2 text-[11px] font-semibold rounded-full whitespace-nowrap transition-all active:scale-[0.97] ${
+            quickFilter === 'today'
+              ? 'bg-[#2D6A4F] text-white shadow-sm'
+              : 'bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[#2D6A4F] hover:text-[#2D6A4F]'
+          }`}
+        >
+          <CalendarClock size={13} />
+          {lang === 'tr' ? 'Bugün Eklenenler' : 'Added Today'}
+        </button>
+        <button
+          onClick={() => setQuickFilter(quickFilter === 'priceDropped' ? 'none' : 'priceDropped')}
+          className={`inline-flex items-center gap-1.5 px-4 py-2 text-[11px] font-semibold rounded-full whitespace-nowrap transition-all active:scale-[0.97] ${
+            quickFilter === 'priceDropped'
+              ? 'bg-[#0077B6] text-white shadow-sm'
+              : 'bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[#0077B6] hover:text-[#0077B6]'
+          }`}
+        >
+          <TrendingDown size={13} />
+          {lang === 'tr' ? 'Pazarlığa Açık' : 'Negotiable'}
+        </button>
+      </div>
+
       {/* Desktop: sidebar + grid layout */}
       <div className="mt-4 flex gap-6">
         {/* Desktop sidebar filters */}
@@ -257,7 +292,7 @@ export default function ListingsPage() {
 
         {/* Listing grid */}
         <div className="flex-1 min-w-0">
-          <ListingGrid listings={listings} loading={loading} />
+          <ListingGrid listings={filteredListings} loading={loading} />
         </div>
       </div>
 
