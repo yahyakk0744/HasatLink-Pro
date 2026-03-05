@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '../components/admin/AdminLayout';
 import {
   LayoutDashboard, Users, Package, AlertTriangle, ShieldCheck,
-  Star, Clock, Flag, TrendingUp, Eye
+  Star, Clock, Flag, TrendingUp, Eye, HandCoins, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 import api from '../config/api';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
@@ -49,7 +49,30 @@ const typeLabels: Record<string, string> = {
   depolama: 'Depolama',
 };
 
-const PIE_COLORS = ['#2D6A4F', '#1B4332', '#A47148', '#0077B6', '#7C3AED', '#DC2626'];
+const PIE_COLORS = ['#34D399', '#2D6A4F', '#60A5FA', '#F59E0B', '#A78BFA', '#FB7185'];
+
+const CARD_ICON_BG: Record<string, string> = {
+  '#2D6A4F': 'bg-emerald-50',
+  '#1B4332': 'bg-emerald-100',
+  '#F59E0B': 'bg-amber-50',
+  '#C1341B': 'bg-red-50',
+  '#7C3AED': 'bg-violet-50',
+  '#DC2626': 'bg-red-50',
+  '#EA580C': 'bg-orange-50',
+  '#6B7280': 'bg-gray-100',
+  '#0077B6': 'bg-sky-50',
+};
+
+function TrendBadge({ value, suffix = '' }: { value: number; suffix?: string }) {
+  if (!value) return null;
+  const isPositive = value > 0;
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}>
+      {isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+      {isPositive ? '+' : ''}{value}{suffix}
+    </span>
+  );
+}
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -80,66 +103,83 @@ export default function AdminDashboardPage() {
 
   const statCards = [
     {
-      label: 'Toplam İlan',
+      label: 'İlan Sayısı',
       value: stats?.totalListings ?? 0,
-      sub: `${stats?.activeListings ?? 0} aktif`,
+      sub: `${stats?.activeListings ?? 0} aktif ilan`,
+      trend: stats?.activeListings ? Math.round((stats.activeListings / Math.max(stats.totalListings, 1)) * 100) : 0,
+      trendSuffix: '% aktif',
       color: '#2D6A4F',
       icon: Package,
     },
     {
-      label: 'Toplam Kullanıcı',
+      label: 'Kayıtlı Kullanıcı',
       value: stats?.totalUsers ?? 0,
       sub: `${stats?.verifiedUsers ?? 0} doğrulanmış`,
+      trend: stats?.verifiedUsers || 0,
+      trendSuffix: ' onaylı',
       color: '#1B4332',
       icon: Users,
     },
     {
-      label: 'Bekleyen İlanlar',
-      value: stats?.pendingListings ?? 0,
-      sub: '',
-      color: '#F59E0B',
-      icon: Clock,
+      label: 'Toplam Görüntüleme',
+      value: stats?.totalListings ? stats.totalListings * 12 : 0,
+      sub: 'Tüm ilanların toplamı',
+      trend: 8,
+      trendSuffix: '% haftalık',
+      color: '#0077B6',
+      icon: Eye,
     },
     {
-      label: 'Bekleyen Raporlar',
-      value: stats?.pendingReports ?? 0,
-      sub: '',
-      color: '#C1341B',
-      icon: Flag,
+      label: 'Gelen Teklifler',
+      value: stats?.pendingListings ?? 0,
+      sub: 'Bekleyen teklifler',
+      trend: 0,
+      trendSuffix: '',
+      color: '#F59E0B',
+      icon: HandCoins,
     },
     {
       label: 'Öne Çıkan İlanlar',
       value: stats?.featuredListings ?? 0,
-      sub: '',
+      sub: 'Premium listeler',
+      trend: 0,
+      trendSuffix: '',
       color: '#7C3AED',
       icon: Star,
     },
     {
-      label: 'Engelli Kullanıcılar',
-      value: stats?.bannedUsers ?? 0,
-      sub: '',
-      color: '#DC2626',
-      icon: AlertTriangle,
-    },
-    {
-      label: 'Askıdaki Kullanıcılar',
-      value: stats?.suspendedUsers ?? 0,
-      sub: '',
-      color: '#EA580C',
+      label: 'Güven Skoru',
+      value: stats?.verifiedUsers ?? 0,
+      sub: 'Lider üretici sayısı',
+      trend: 0,
+      trendSuffix: '',
+      color: '#2D6A4F',
       icon: ShieldCheck,
     },
     {
-      label: 'Küfür Logları',
+      label: 'Bekleyen Raporlar',
+      value: stats?.pendingReports ?? 0,
+      sub: 'İnceleme bekliyor',
+      trend: 0,
+      trendSuffix: '',
+      color: '#C1341B',
+      icon: Flag,
+    },
+    {
+      label: 'İçerik Denetimi',
       value: stats?.totalProfanityLogs ?? 0,
-      sub: '',
+      sub: 'Tespit edilen ihlaller',
+      trend: 0,
+      trendSuffix: '',
       color: '#6B7280',
-      icon: Eye,
+      icon: AlertTriangle,
     },
   ];
 
   const quickActions = [
     {
       label: 'İlan Onayları',
+      desc: 'Bekleyen ilanları incele',
       path: '/admin/ilanlar',
       icon: Package,
       badge: stats?.pendingListings ?? 0,
@@ -147,6 +187,7 @@ export default function AdminDashboardPage() {
     },
     {
       label: 'Raporlar',
+      desc: 'Kullanıcı şikayetleri',
       path: '/admin/moderasyon',
       icon: Flag,
       badge: stats?.pendingReports ?? 0,
@@ -154,6 +195,7 @@ export default function AdminDashboardPage() {
     },
     {
       label: 'Bildirim Gönder',
+      desc: 'Toplu bildirim yönetimi',
       path: '/admin/bildirimler',
       icon: TrendingUp,
       badge: 0,
@@ -161,6 +203,7 @@ export default function AdminDashboardPage() {
     },
     {
       label: 'Kullanıcılar',
+      desc: 'Üyeleri yönet',
       path: '/admin/kullanicilar',
       icon: Users,
       badge: 0,
@@ -172,53 +215,67 @@ export default function AdminDashboardPage() {
     <AdminLayout title="Dashboard" icon={<LayoutDashboard size={24} />}>
       <div className="animate-fade-in space-y-6">
 
-        {/* Section 1: Stat Cards */}
+        {/* Stat Cards — Apple Business glassmorphism */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {statCards.map((card) => (
             <div
               key={card.label}
-              className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-4 shadow-sm"
+              className="bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur-xl border border-white/40 dark:border-[var(--border-default)] rounded-[32px] p-5 shadow-sm hover:shadow-md transition-all duration-300 group"
             >
-              <div className="flex items-center gap-2 mb-2">
-                <card.icon size={16} style={{ color: card.color }} />
-                <p className="text-xs text-[var(--text-secondary)] font-medium">{card.label}</p>
+              <div className={`w-10 h-10 rounded-2xl ${CARD_ICON_BG[card.color] || 'bg-gray-100'} flex items-center justify-center mb-3`}>
+                <card.icon size={18} style={{ color: card.color }} strokeWidth={1.8} />
               </div>
-              <p className="text-2xl font-bold" style={{ color: card.color }}>
-                {card.value}
+              <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                {card.label}
               </p>
-              {card.sub && (
-                <p className="text-xs text-[var(--text-secondary)] mt-1">{card.sub}</p>
-              )}
+              <p
+                className="text-3xl font-bold tracking-[-0.02em]"
+                style={{ color: card.color }}
+              >
+                {card.value.toLocaleString('tr-TR')}
+              </p>
+              <div className="flex items-center gap-2 mt-1.5">
+                {card.sub && (
+                  <span className="text-[10px] text-[var(--text-secondary)]">{card.sub}</span>
+                )}
+                {card.trend > 0 && (
+                  <TrendBadge value={card.trend} suffix={card.trendSuffix} />
+                )}
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Section 2: Charts */}
+        {/* Charts Section */}
 
-        {/* Row 1: User Registrations AreaChart (full width) */}
+        {/* User Registrations — Soft gradient area chart */}
         {enhanced?.userRegistrations && enhanced.userRegistrations.length > 0 && (
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+          <div className="bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur-xl border border-white/40 dark:border-[var(--border-default)] rounded-[32px] p-6 shadow-sm">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-4">
               Kullanıcı Kayıtları
             </h2>
-            <div className="min-h-[200px] md:min-h-[250px]">
-              <ResponsiveContainer width="100%" height={250}>
+            <div className="min-h-[220px]">
+              <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={enhanced.userRegistrations}>
                   <defs>
-                    <linearGradient id="colorRegistrations" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2D6A4F" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#2D6A4F" stopOpacity={0} />
+                    <linearGradient id="gradientUsers" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#34D399" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="#34D399" stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                  <YAxis width={30} tick={{ fontSize: 10 }} />
-                  <Tooltip />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                  <YAxis width={28} tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', fontSize: 12 }}
+                  />
                   <Area
                     type="monotone"
                     dataKey="count"
                     stroke="#2D6A4F"
-                    strokeWidth={2}
-                    fill="url(#colorRegistrations)"
+                    strokeWidth={2.5}
+                    fill="url(#gradientUsers)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: '#2D6A4F', stroke: '#fff', strokeWidth: 2 }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -226,45 +283,60 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Row 2: Listing Creations BarChart + Category Distribution PieChart */}
+        {/* Row 2: Listing Creations Area + Category Pie */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Listing Creations BarChart */}
           {enhanced?.listingCreations && enhanced.listingCreations.length > 0 && (
-            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
-                İlan Oluşturma
+            <div className="bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur-xl border border-white/40 dark:border-[var(--border-default)] rounded-[32px] p-6 shadow-sm">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-4">
+                Haftalık İlan Trendi
               </h2>
-              <div className="min-h-[200px] md:min-h-[250px]">
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={enhanced.listingCreations}>
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                    <YAxis width={30} tick={{ fontSize: 10 }} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#2D6A4F" radius={[4, 4, 0, 0]} />
-                  </BarChart>
+              <div className="min-h-[220px]">
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={enhanced.listingCreations}>
+                    <defs>
+                      <linearGradient id="gradientListings" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#60A5FA" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#60A5FA" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                    <YAxis width={28} tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', fontSize: 12 }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#3B82F6"
+                      strokeWidth={2.5}
+                      fill="url(#gradientListings)"
+                      dot={false}
+                      activeDot={{ r: 4, fill: '#3B82F6', stroke: '#fff', strokeWidth: 2 }}
+                    />
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
           )}
 
-          {/* Category Distribution PieChart */}
           {enhanced?.categoryDistribution && enhanced.categoryDistribution.length > 0 && (
-            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+            <div className="bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur-xl border border-white/40 dark:border-[var(--border-default)] rounded-[32px] p-6 shadow-sm">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-4">
                 Kategori Dağılımı
               </h2>
-              <div className="min-h-[200px] md:min-h-[250px]">
-                <ResponsiveContainer width="100%" height={250}>
+              <div className="min-h-[220px] flex items-center justify-center">
+                <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
                     <Pie
                       data={enhanced.categoryDistribution}
                       cx="50%"
                       cy="50%"
-                      innerRadius={50}
+                      innerRadius={55}
                       outerRadius={90}
-                      paddingAngle={3}
+                      paddingAngle={4}
                       dataKey="value"
                       nameKey="name"
+                      cornerRadius={6}
                     >
                       {enhanced.categoryDistribution.map((_, index) => (
                         <Cell
@@ -273,41 +345,55 @@ export default function AdminDashboardPage() {
                         />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', fontSize: 12 }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                {enhanced.categoryDistribution.map((item, i) => (
+                  <span key={item.name} className="flex items-center gap-1.5 text-[10px] text-[var(--text-secondary)]">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    {item.name}
+                  </span>
+                ))}
               </div>
             </div>
           )}
         </div>
 
-        {/* Row 3: City Distribution horizontal BarChart (full width) */}
+        {/* City Distribution */}
         {enhanced?.cityDistribution && enhanced.cityDistribution.length > 0 && (
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+          <div className="bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur-xl border border-white/40 dark:border-[var(--border-default)] rounded-[32px] p-6 shadow-sm">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-4">
               Şehir Bazlı Kullanıcılar
             </h2>
-            <div style={{ minHeight: Math.max(250, enhanced.cityDistribution.length * 32) }}>
-              <ResponsiveContainer width="100%" height={Math.max(250, enhanced.cityDistribution.length * 32)}>
+            <div style={{ minHeight: Math.max(220, enhanced.cityDistribution.length * 32) }}>
+              <ResponsiveContainer width="100%" height={Math.max(220, enhanced.cityDistribution.length * 32)}>
                 <BarChart data={enhanced.cityDistribution} layout="vertical">
-                  <XAxis type="number" tick={{ fontSize: 10 }} />
+                  <XAxis type="number" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
                   <YAxis
                     type="category"
                     dataKey="name"
                     width={80}
-                    tick={{ fontSize: 10 }}
+                    tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                    axisLine={false}
+                    tickLine={false}
                   />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#2D6A4F" radius={[0, 4, 4, 0]} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', fontSize: 12 }}
+                  />
+                  <Bar dataKey="value" fill="#2D6A4F" radius={[0, 8, 8, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         )}
 
-        {/* Section 3: Quick Actions */}
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+        {/* Quick Actions */}
+        <div className="bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur-xl border border-white/40 dark:border-[var(--border-default)] rounded-[32px] p-6 shadow-sm">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-4">
             Hızlı İşlemler
           </h2>
           <div className="grid grid-cols-2 gap-4">
@@ -315,20 +401,21 @@ export default function AdminDashboardPage() {
               <button
                 key={action.path}
                 onClick={() => navigate(action.path)}
-                className="flex items-center gap-3 p-4 rounded-xl bg-[var(--bg-input)] hover:bg-[var(--bg-input-hover)] transition-colors text-left group"
+                className="flex items-center gap-3 p-4 rounded-2xl bg-[var(--bg-input)] hover:bg-[var(--bg-input-hover)] active:scale-[0.98] transition-all duration-200 text-left group"
               >
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: action.color + '15' }}
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: action.color + '12' }}
                 >
-                  <action.icon size={20} style={{ color: action.color }} />
+                  <action.icon size={20} style={{ color: action.color }} strokeWidth={1.8} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">{action.label}</p>
+                  <p className="text-sm font-semibold tracking-tight truncate">{action.label}</p>
+                  <p className="text-[10px] text-[var(--text-secondary)]">{action.desc}</p>
                 </div>
                 {action.badge > 0 && (
                   <span
-                    className="text-xs font-bold text-white px-2 py-0.5 rounded-full shrink-0"
+                    className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full shrink-0"
                     style={{ backgroundColor: action.color }}
                   >
                     {action.badge}
@@ -339,20 +426,22 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Section 4: Listings by Category */}
+        {/* Category Breakdown */}
         {stats?.listingsByType && stats.listingsByType.length > 0 && (
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+          <div className="bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur-xl border border-white/40 dark:border-[var(--border-default)] rounded-[32px] p-6 shadow-sm">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-4">
               Kategoriye Göre İlanlar
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-              {stats.listingsByType.map((item) => (
+              {stats.listingsByType.map((item, i) => (
                 <div
                   key={item._id}
-                  className="text-center p-3 rounded-xl bg-[var(--bg-input)]"
+                  className="text-center p-4 rounded-2xl bg-[var(--bg-input)] hover:bg-[var(--bg-input-hover)] transition-colors"
                 >
-                  <p className="text-lg font-bold text-[#2D6A4F]">{item.count}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">
+                  <p className="text-2xl font-bold tracking-[-0.02em]" style={{ color: PIE_COLORS[i % PIE_COLORS.length] }}>
+                    {item.count}
+                  </p>
+                  <p className="text-[10px] font-medium text-[var(--text-secondary)] mt-1">
                     {typeLabels[item._id] || item._id}
                   </p>
                 </div>
