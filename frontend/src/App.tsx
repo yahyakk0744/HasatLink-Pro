@@ -45,6 +45,7 @@ const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage'));
 const AdminBlogPage = lazy(() => import('./pages/AdminBlogPage'));
 const AdminModerationPage = lazy(() => import('./pages/AdminModerationPage'));
 const SatelliteHealthPage = lazy(() => import('./pages/SatelliteHealthPage'));
+const AgriEncyclopediaPage = lazy(() => import('./pages/AgriEncyclopediaPage'));
 
 function PageLoader() {
   return <LoadingSpinner size="lg" className="py-20" />;
@@ -81,6 +82,7 @@ export default function App() {
             <Route path="/profil/:userId" element={<ProfilePage />} />
             <Route path="/harita" element={<MapPage />} />
             <Route path="/ai-teshis" element={<AIDiagnosisPage />} />
+            <Route path="/tarim-ansiklopedisi" element={<AgriEncyclopediaPage />} />
             <Route path="/uydu-analiz" element={<SatelliteHealthPage />} />
             <Route path="/bildirimler" element={<NotificationsPage />} />
             <Route path="/hal-fiyatlari" element={<HalFiyatlariPage />} />
