@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Bell, HandCoins } from 'lucide-react';
+import { ArrowLeft, Bell, HandCoins, ShieldCheck, Star, Package, Calendar, MessageCircle, Store } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useRatings } from '../hooks/useRatings';
 import { useMessages } from '../hooks/useMessages';
@@ -19,6 +19,99 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import EmptyState from '../components/ui/EmptyState';
 import CommentSection from '../components/comments/CommentSection';
 import toast from 'react-hot-toast';
+
+function SellerCard({ listing, onMessage }: { listing: Listing; onMessage?: () => void }) {
+  const navigate = useNavigate();
+  const joinYear = listing.sellerJoinDate
+    ? new Date(listing.sellerJoinDate).getFullYear()
+    : null;
+
+  return (
+    <div className="bg-white/90 dark:bg-[var(--bg-surface)]/90 backdrop-blur-xl rounded-[32px] shadow-sm border border-gray-100 dark:border-[var(--border-default)] p-5 space-y-4">
+      {/* Seller Header */}
+      <div className="flex items-center gap-3">
+        {listing.sellerImage ? (
+          <img
+            src={listing.sellerImage}
+            alt={listing.sellerName}
+            className="w-12 h-12 rounded-2xl object-cover"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-2xl bg-[#2D6A4F]/10 flex items-center justify-center">
+            <span className="text-lg font-bold text-[#2D6A4F]">
+              {listing.sellerName?.[0]?.toUpperCase() || '?'}
+            </span>
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-semibold tracking-tight truncate">{listing.sellerName || 'Satıcı'}</p>
+            {listing.sellerVerified && (
+              <ShieldCheck size={14} className="text-[#0077B6] shrink-0" fill="#0077B6" stroke="white" />
+            )}
+          </div>
+          {joinYear && (
+            <p className="text-[10px] text-[var(--text-secondary)] flex items-center gap-1 mt-0.5">
+              <Calendar size={10} />
+              {joinYear}'den beri üye
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="text-center p-2.5 rounded-2xl bg-[var(--bg-input)]">
+          <div className="flex items-center justify-center gap-1 mb-0.5">
+            <Star size={12} className="text-[#F59E0B]" fill="#F59E0B" />
+          </div>
+          <p className="text-sm font-bold tracking-[-0.02em]">
+            {listing.sellerRating > 0 ? listing.sellerRating.toFixed(1) : '—'}
+          </p>
+          <p className="text-[9px] text-[var(--text-secondary)]">Puan</p>
+        </div>
+        <div className="text-center p-2.5 rounded-2xl bg-[var(--bg-input)]">
+          <div className="flex items-center justify-center gap-1 mb-0.5">
+            <Package size={12} className="text-[#2D6A4F]" />
+          </div>
+          <p className="text-sm font-bold tracking-[-0.02em]">
+            {listing.sellerListingCount ?? 0}
+          </p>
+          <p className="text-[9px] text-[var(--text-secondary)]">İlan</p>
+        </div>
+        <div className="text-center p-2.5 rounded-2xl bg-[var(--bg-input)]">
+          <div className="flex items-center justify-center gap-1 mb-0.5">
+            <ShieldCheck size={12} className="text-[#0077B6]" />
+          </div>
+          <p className="text-sm font-bold tracking-[-0.02em]">
+            {listing.sellerTotalRatings ?? 0}
+          </p>
+          <p className="text-[9px] text-[var(--text-secondary)]">Yorum</p>
+        </div>
+      </div>
+
+      {/* CTA Buttons */}
+      <div className="flex gap-2">
+        {onMessage && (
+          <button
+            onClick={onMessage}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold bg-[var(--bg-input)] hover:bg-[var(--bg-surface-hover)] rounded-2xl transition-all active:scale-[0.97]"
+          >
+            <MessageCircle size={14} />
+            Satıcıya Sor
+          </button>
+        )}
+        <button
+          onClick={() => navigate(`/profil/${listing.userId}`)}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold bg-[#0077B6] text-white rounded-2xl hover:opacity-90 transition-all active:scale-[0.97]"
+        >
+          <Store size={14} />
+          Mağazayı İncele
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function PriceAlertBox({ category, subCategory, currentPrice }: { category: string; subCategory: string; currentPrice: number }) {
   const [targetPrice, setTargetPrice] = useState('');
@@ -235,6 +328,11 @@ export default function ListingDetailPage() {
         </div>
 
         <div className="space-y-6">
+          {/* Seller Identity Card */}
+          {listing.sellerName && !isOwner && (
+            <SellerCard listing={listing} onMessage={handleMessage} />
+          )}
+
           {/* Mini Map */}
           <div className="surface-card rounded-2xl overflow-hidden h-[200px]">
             <ListingMap

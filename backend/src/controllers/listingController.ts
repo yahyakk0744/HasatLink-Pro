@@ -79,10 +79,23 @@ export const getListing = async (req: Request, res: Response): Promise<void> => 
       // Duplicate view — skip increment
     }
 
-    // Attach seller verification info
-    const seller = await User.findOne({ userId: listing.userId }).select('isVerified trust_score').lean();
+    // Attach seller info
+    const [seller, sellerListingCount] = await Promise.all([
+      User.findOne({ userId: listing.userId }).select('name profileImage averageRating totalRatings isVerified trust_score createdAt').lean(),
+      Listing.countDocuments({ userId: listing.userId, status: 'active' }),
+    ]);
     const listingObj = listing.toObject();
-    res.json({ ...listingObj, sellerVerified: seller?.isVerified || false, sellerTrustScore: seller?.trust_score || 0 });
+    res.json({
+      ...listingObj,
+      sellerName: seller?.name || '',
+      sellerImage: seller?.profileImage || '',
+      sellerRating: seller?.averageRating || 0,
+      sellerTotalRatings: seller?.totalRatings || 0,
+      sellerVerified: seller?.isVerified || false,
+      sellerTrustScore: seller?.trust_score || 0,
+      sellerListingCount,
+      sellerJoinDate: seller?.createdAt || '',
+    });
   } catch (error) {
     res.status(500).json({ message: 'İlan detay hatası', error });
   }

@@ -116,8 +116,11 @@ export interface Listing {
   sellerName: string;
   sellerImage: string;
   sellerRating: number;
+  sellerTotalRatings?: number;
   sellerVerified?: boolean;
   sellerTrustScore?: number;
+  sellerListingCount?: number;
+  sellerJoinDate?: string;
   createdAt: string;
 }
 
