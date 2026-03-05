@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
 import { useSocket } from './SocketContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
@@ -49,6 +50,25 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user?.userId, fetchNotifications]);
 
+  // Play a short D5 notification sound via Web Audio API
+  const playNotificationSound = useCallback(() => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 587.33; // D5
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } catch {
+      // Audio playback failed — non-critical
+    }
+  }, []);
+
   // Socket.IO real-time notifications
   useEffect(() => {
     if (!socket) return;
@@ -56,11 +76,48 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     const handleNewNotification = (notification: Notification) => {
       setNotifications(prev => [notification, ...prev]);
       setUnreadCount(prev => prev + 1);
+
+      // Play notification sound for messages and offers
+      if (notification.type === 'mesaj' || notification.type === 'teklif') {
+        playNotificationSound();
+      }
+
+      // Show visual toast for messages when user is NOT on the messages page
+      if (notification.type === 'mesaj' && !window.location.pathname.startsWith('/mesajlar')) {
+        toast.custom(
+          (t) => (
+            <div
+              className={`${t.visible ? 'animate-slide-up' : 'opacity-0'} max-w-sm w-full bg-white/95 dark:bg-[#1A1A1A]/95 backdrop-blur-xl shadow-2xl rounded-2xl border border-gray-100 dark:border-gray-800 p-4 cursor-pointer transition-opacity duration-300`}
+              onClick={() => {
+                toast.dismiss(t.id);
+                window.location.href = '/mesajlar';
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#2D6A4F]/10 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-[#2D6A4F]">
+                    {notification.title?.[0] || '\uD83D\uDCAC'}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    {notification.title}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {notification.message}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ),
+          { duration: 3000, position: 'top-right' }
+        );
+      }
     };
 
     socket.on('notification:new', handleNewNotification);
     return () => { socket.off('notification:new', handleNewNotification); };
-  }, [socket]);
+  }, [socket, playNotificationSound]);
 
   useEffect(() => {
     if (user?.userId) {

@@ -168,8 +168,46 @@ export const updateListing = async (req: Request, res: Response): Promise<void> 
       res.status(400).json({ message: 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' });
       return;
     }
+    const oldPrice = listing.price;
     Object.assign(listing, req.body);
     await listing.save();
+
+    // Price drop alert
+    if (req.body.price && Number(req.body.price) < oldPrice) {
+      try {
+        const PriceAlert = require('../models/PriceAlert').default;
+        const Notification = require('../models/Notification').default;
+        const { sendSocketNotification } = require('../socket');
+        const { sendPushToUser } = require('../utils/pushNotification');
+
+        const matchingAlerts = await PriceAlert.find({
+          category: listing.type,
+          isActive: true,
+          targetPrice: { $gte: Number(req.body.price) },
+          userId: { $ne: listing.userId },
+        });
+
+        for (const alert of matchingAlerts) {
+          const notif = await Notification.create({
+            userId: alert.userId,
+            type: 'ilan',
+            title: 'Fiyat Dustu!',
+            message: `"${listing.title}" fiyati ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(oldPrice)} → ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(Number(req.body.price))}`,
+            relatedId: listing._id.toString(),
+          });
+          sendSocketNotification(alert.userId, {
+            _id: notif._id,
+            type: 'ilan',
+            title: notif.title,
+            message: notif.message,
+            relatedId: listing._id.toString(),
+            playSound: true,
+          });
+          sendPushToUser(alert.userId, { title: notif.title, body: notif.message, url: `/ilan/${listing._id}` }, notif);
+        }
+      } catch {}
+    }
+
     res.json(listing);
   } catch (error) {
     res.status(500).json({ message: 'İlan güncelleme hatası', error });

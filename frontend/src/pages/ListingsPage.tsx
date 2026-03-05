@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, SlidersHorizontal, X, ArrowUpDown, CalendarClock, TrendingDown } from 'lucide-react';
+import { Plus, SlidersHorizontal, X, ArrowUpDown, CalendarClock, TrendingDown, LayoutGrid, Map } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useAuth } from '../contexts/AuthContext';
 import ListingGrid from '../components/listings/ListingGrid';
+import ListingMap from '../components/map/ListingMap';
 import SubCategoryBar from '../components/layout/SubCategoryBar';
 import ListingForm from '../components/listings/ListingForm';
 import FAB from '../components/ui/FAB';
@@ -54,6 +55,7 @@ export default function ListingsPage() {
   const [sort, setSort] = useState('newest');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [quickFilter, setQuickFilter] = useState<'none' | 'today' | 'priceDropped'>('none');
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
   const subCategories = CATEGORIES[type as keyof typeof CATEGORIES] || CATEGORIES.pazar;
   const catLabel = CATEGORY_LABELS[type];
@@ -246,7 +248,7 @@ export default function ListingsPage() {
         </div>
       )}
 
-      {/* Quick Filters */}
+      {/* Quick Filters + View Toggle */}
       <div className="flex gap-2 mt-3 overflow-x-auto scrollbar-hide">
         <button
           onClick={() => setQuickFilter(quickFilter === 'today' ? 'none' : 'today')}
@@ -270,6 +272,22 @@ export default function ListingsPage() {
           <TrendingDown size={13} />
           {lang === 'tr' ? 'Pazarlığa Açık' : 'Negotiable'}
         </button>
+
+        {/* View Toggle */}
+        <div className="ml-auto flex bg-[var(--bg-input)] rounded-full p-0.5 shrink-0">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-2 rounded-full transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
+          >
+            <LayoutGrid size={14} />
+          </button>
+          <button
+            onClick={() => setViewMode('map')}
+            className={`p-2 rounded-full transition-all ${viewMode === 'map' ? 'bg-white dark:bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
+          >
+            <Map size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Desktop: sidebar + grid layout */}
@@ -290,9 +308,15 @@ export default function ListingsPage() {
           </div>
         </aside>
 
-        {/* Listing grid */}
+        {/* Listing grid or map */}
         <div className="flex-1 min-w-0">
-          <ListingGrid listings={filteredListings} loading={loading} />
+          {viewMode === 'map' ? (
+            <div className="surface-card rounded-2xl overflow-hidden h-[calc(100vh-220px)] min-h-[400px]">
+              <ListingMap listings={filteredListings.filter(l => l.coordinates?.lat && l.coordinates?.lng)} />
+            </div>
+          ) : (
+            <ListingGrid listings={filteredListings} loading={loading} />
+          )}
         </div>
       </div>
 

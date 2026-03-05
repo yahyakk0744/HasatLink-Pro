@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Bell, HandCoins, ShieldCheck, Star, Package, Calendar, MessageCircle, Store, Layers } from 'lucide-react';
+import { ArrowLeft, Bell, HandCoins, ShieldCheck, Star, Package, Calendar, MessageCircle, Store, Layers, Zap, Award, CheckCircle2 } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useRatings } from '../hooks/useRatings';
 import { useMessages } from '../hooks/useMessages';
@@ -89,6 +89,25 @@ function SellerCard({ listing, onMessage }: { listing: Listing; onMessage?: () =
           </p>
           <p className="text-[9px] text-[var(--text-secondary)]">Yorum</p>
         </div>
+      </div>
+
+      {/* Trust Badges */}
+      <div className="flex gap-1.5 flex-wrap">
+        {listing.sellerVerified && (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-[#0077B6]/10 text-[#0077B6]">
+            <CheckCircle2 size={10} />Onayli Satici
+          </span>
+        )}
+        {(listing.sellerTotalRatings ?? 0) >= 5 && (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">
+            <Zap size={10} />Hizli Yanit
+          </span>
+        )}
+        {joinYear && new Date().getFullYear() - joinYear >= 1 && (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-[#E76F00]/10 text-[#E76F00]">
+            <Award size={10} />Deneyimli
+          </span>
+        )}
       </div>
 
       {/* CTA Buttons */}

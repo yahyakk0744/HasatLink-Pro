@@ -75,6 +75,17 @@ function MultiSelectButtons({ options, values, onChange, color = '#2D6A4F' }: { 
   );
 }
 
+const TURKISH_CITIES = [
+  'Adana','Adıyaman','Afyonkarahisar','Ağrı','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin',
+  'Aydın','Balıkesir','Bartın','Batman','Bayburt','Bilecik','Bingöl','Bitlis','Bolu','Burdur',
+  'Bursa','Çanakkale','Çankırı','Çorum','Denizli','Diyarbakır','Düzce','Edirne','Elazığ','Erzincan',
+  'Erzurum','Eskişehir','Gaziantep','Giresun','Gümüşhane','Hakkari','Hatay','Iğdır','Isparta','İstanbul',
+  'İzmir','Kahramanmaraş','Karabük','Karaman','Kars','Kastamonu','Kayseri','Kırıkkale','Kırklareli','Kırşehir',
+  'Kilis','Kocaeli','Konya','Kütahya','Malatya','Manisa','Mardin','Mersin','Muğla','Muş',
+  'Nevşehir','Niğde','Ordu','Osmaniye','Rize','Sakarya','Samsun','Şanlıurfa','Siirt','Sinop',
+  'Şırnak','Sivas','Tekirdağ','Tokat','Trabzon','Tunceli','Uşak','Van','Yalova','Yozgat','Zonguldak',
+];
+
 function SectionTitle({ children }: { children: string }) {
   return (
     <div className="flex items-center gap-2 pt-3 pb-1">
@@ -585,7 +596,17 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         <SectionTitle>{t('listing.contactInfo')}</SectionTitle>
 
         <div className="grid grid-cols-2 gap-3">
-          <Input label={t('listing.location')} value={location} onChange={e => setLocation(e.target.value)} />
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[#6B6560] mb-1.5">{t('listing.location')}</label>
+            <select
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
+            >
+              <option value="">{lang === 'tr' ? 'İl Seçin' : 'Select City'}</option>
+              {TURKISH_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
           <Input label={t('listing.phone')} value={phone} onChange={e => setPhone(e.target.value)} />
         </div>
 

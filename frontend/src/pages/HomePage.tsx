@@ -104,9 +104,12 @@ export default function HomePage() {
   const [heroCategory, setHeroCategory] = useState('');
   const [blogPosts, setBlogPosts] = useState<Blog[]>([]);
 
-  // Critical: listings + weather load immediately
+  // Critical: listings + weather load immediately (filter by user's city)
   useEffect(() => {
-    fetchListings({ limit: '8' });
+    const userCity = geoLocation?.city || user?.location?.split(',').pop()?.trim() || '';
+    const listingParams: Record<string, string> = { limit: '8' };
+    if (userCity) listingParams.city = userCity;
+    fetchListings(listingParams);
     if (geoLocation?.lat && geoLocation?.lng) {
       fetchWeather(geoLocation.lat, geoLocation.lng);
     } else {
@@ -494,7 +497,11 @@ export default function HomePage() {
       <AnimatedSection>
         <section className="max-w-7xl mx-auto px-3 md:px-4 py-8 md:py-12">
           <div className="flex items-center justify-between mb-4 md:mb-6">
-            <h2 className="text-xl md:text-2xl font-semibold tracking-tight">{lang === 'tr' ? 'Öne Çıkan İlanlar' : 'Featured Listings'}</h2>
+            <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
+              {geoLocation?.city
+                ? (lang === 'tr' ? `${geoLocation.city} Yakınındaki İlanlar` : `Listings Near ${geoLocation.city}`)
+                : (lang === 'tr' ? 'Öne Çıkan İlanlar' : 'Featured Listings')}
+            </h2>
             <Link to="/pazar" className="text-xs font-medium uppercase text-[var(--accent-green)] flex items-center gap-1 hover:gap-2 transition-all">
               {t('all')} <ArrowRight size={12} />
             </Link>
