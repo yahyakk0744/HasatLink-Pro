@@ -230,7 +230,8 @@ export interface AIDiagnosisResult {
   seasonal_alert?: boolean;
   regional_alerts?: RegionalAlert[];
   harvest_prediction?: HarvestPrediction;
-  ai_engine?: 'huggingface' | 'local';
+  ai_engine?: 'gemini' | 'huggingface' | 'local';
+  gemini_analysis?: string;
   hf_top3?: HFClassification[];
 }
 

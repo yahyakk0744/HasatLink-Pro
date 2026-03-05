@@ -3,6 +3,7 @@ import auth from '../middleware/auth';
 import { uploadDiagnosis } from '../middleware/upload';
 import {
   diagnose,
+  followUp,
   getDiagnosisHistory,
   getDiseaseLibrary,
   getRegionalAlertsEndpoint,
@@ -15,6 +16,7 @@ const router = Router();
 // Core diagnosis
 router.post('/ai/diagnose', auth, uploadDiagnosis, diagnose);
 router.get('/ai/history/:userId', auth, getDiagnosisHistory);
+router.post('/ai/followup', auth, followUp);
 
 // Disease library & regional alerts (public)
 router.get('/ai/diseases', getDiseaseLibrary);

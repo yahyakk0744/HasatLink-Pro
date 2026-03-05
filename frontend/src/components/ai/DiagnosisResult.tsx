@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import {
@@ -5,7 +6,9 @@ import {
   TrendingUp, AlertOctagon, Leaf, Camera, Sprout, Bug,
   Sun, ZoomIn, ImageOff, ShieldAlert, Timer, Star,
   Package, ShoppingBag, Wrench, Cpu, Search,
+  MessageCircle, Send, Loader2, Microscope,
 } from 'lucide-react';
+import api from '../../config/api';
 import type { AIDiagnosisResult, Listing } from '../../types';
 
 interface DiagnosisResultProps {
@@ -33,6 +36,10 @@ const URGENCY_MAP = {
 };
 
 export default function DiagnosisResult({ result, matchedListings = [], matchedProfessionals = [] }: DiagnosisResultProps) {
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
   const lang = isTr ? 'tr' : 'en';
@@ -69,6 +76,12 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 border border-red-200/50 text-red-700 text-[12px] font-semibold animate-pulse">
             <ShieldAlert size={13} />
             {isTr ? 'Mevsimsel Risk' : 'Seasonal Risk'}
+          </span>
+        )}
+        {result.ai_engine === 'gemini' && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200/50 text-blue-700 text-[12px] font-semibold">
+            <Microscope size={13} />
+            Gemini AI
           </span>
         )}
         {result.ai_engine === 'huggingface' && (
@@ -400,6 +413,115 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
           </div>
         </div>
       )}
+
+      {/* ─── GEMINI DETAILED ANALYSIS ─── */}
+      {result.gemini_analysis && (
+        <div className="rounded-2xl p-5 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 backdrop-blur-md border border-blue-200/30">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
+              <Microscope size={16} className="text-blue-600" />
+            </div>
+            <p className="text-[12px] font-semibold text-blue-800 uppercase tracking-wider">
+              {isTr ? 'Detayli Analiz' : 'Detailed Analysis'}
+            </p>
+          </div>
+          <p className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-line">{result.gemini_analysis}</p>
+        </div>
+      )}
+
+      {/* ─── ASK EXPERT BUTTON + CHAT ─── */}
+      {!isHealthy && (
+        <div className="space-y-3">
+          {!chatOpen ? (
+            <button
+              onClick={() => setChatOpen(true)}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[13px] font-semibold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 active:scale-[0.98] transition-all"
+            >
+              <MessageCircle size={16} />
+              {isTr ? 'Muhendise Detayli Sor' : 'Ask Expert'}
+            </button>
+          ) : (
+            <div className="rounded-2xl border border-blue-200/40 bg-white/80 backdrop-blur-md overflow-hidden">
+              <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center gap-2">
+                <MessageCircle size={15} className="text-white" />
+                <p className="text-[12px] font-semibold text-white">
+                  {isTr ? 'Ziraat Muhendisi' : 'Agricultural Engineer'}
+                </p>
+              </div>
+
+              {/* Chat messages */}
+              <div className="max-h-[280px] overflow-y-auto p-3 space-y-2.5">
+                {chatMessages.length === 0 && (
+                  <p className="text-[11px] text-gray-400 text-center py-4">
+                    {isTr ? 'Analiz sonucuyla ilgili sorularinizi sorun...' : 'Ask questions about the diagnosis...'}
+                  </p>
+                )}
+                {chatMessages.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-[12px] leading-relaxed ${
+                      msg.role === 'user'
+                        ? 'bg-blue-600 text-white rounded-br-md'
+                        : 'bg-gray-100 text-gray-800 rounded-bl-md'
+                    }`}>
+                      <p className="whitespace-pre-line">{msg.text}</p>
+                    </div>
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div className="flex justify-start">
+                    <div className="px-3.5 py-2.5 rounded-2xl rounded-bl-md bg-gray-100">
+                      <Loader2 size={14} className="animate-spin text-gray-400" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Chat input */}
+              <div className="p-3 border-t border-gray-100 flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey && chatInput.trim() && !chatLoading) {
+                      e.preventDefault();
+                      handleSendChat();
+                    }
+                  }}
+                  placeholder={isTr ? 'Sorunuzu yazin...' : 'Type your question...'}
+                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-[12px] text-gray-800 placeholder:text-gray-400 outline-none focus:border-blue-400 transition-colors"
+                />
+                <button
+                  onClick={handleSendChat}
+                  disabled={!chatInput.trim() || chatLoading}
+                  className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white disabled:opacity-40 hover:bg-blue-700 active:scale-95 transition-all shrink-0"
+                >
+                  <Send size={14} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
+
+  async function handleSendChat() {
+    const q = chatInput.trim();
+    if (!q || chatLoading) return;
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', text: q }]);
+    setChatLoading(true);
+    try {
+      const { data } = await api.post<{ answer: string }>('/ai/followup', {
+        question: q,
+        context: { crop_type: result.crop_type, disease: result.disease, treatment: result.treatment },
+      });
+      setChatMessages(prev => [...prev, { role: 'ai', text: data.answer }]);
+    } catch {
+      setChatMessages(prev => [...prev, { role: 'ai', text: isTr ? 'Yanit alinamadi. Tekrar deneyin.' : 'Could not get response. Try again.' }]);
+    } finally {
+      setChatLoading(false);
+    }
+  }
 }

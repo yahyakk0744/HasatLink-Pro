@@ -60,6 +60,13 @@ export const useAIDiagnosis = () => {
     } catch {}
   }, []);
 
+  const followUp = useCallback(async (question: string, context?: { crop_type?: string; disease?: string; treatment?: string }): Promise<string | null> => {
+    try {
+      const { data } = await api.post<{ answer: string }>('/ai/followup', { question, context });
+      return data.answer;
+    } catch { return null; }
+  }, []);
+
   const clearResult = useCallback(() => {
     setResult(null);
     setMatchedListings([]);
@@ -68,6 +75,6 @@ export const useAIDiagnosis = () => {
 
   return {
     result, history, loading, diseases, alerts, matchedListings, matchedProfessionals,
-    diagnose, fetchHistory, fetchDiseaseLibrary, fetchAlerts, clearResult,
+    diagnose, followUp, fetchHistory, fetchDiseaseLibrary, fetchAlerts, clearResult,
   };
 };
