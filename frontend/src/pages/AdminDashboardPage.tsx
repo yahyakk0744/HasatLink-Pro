@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '../components/admin/AdminLayout';
 import {
   LayoutDashboard, Users, Package, AlertTriangle, ShieldCheck,
-  Star, Clock, Flag, TrendingUp, Eye, HandCoins, ArrowUpRight, ArrowDownRight
+  Star, Flag, TrendingUp, Eye, HandCoins, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 import api from '../config/api';
 import LoadingSpinner from '../components/ui/LoadingSpinner';

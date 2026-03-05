@@ -16,7 +16,7 @@ export default function BannerCarousel() {
   const { ads, fetchActiveAds, trackClick, trackImpression } = useAds();
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval>>(null);
 
   useEffect(() => {
     fetchActiveAds('header');
@@ -42,13 +42,13 @@ export default function BannerCarousel() {
   useEffect(() => {
     if (ads.length > 1) {
       startAutoPlay();
-      return () => clearInterval(intervalRef.current);
+      return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
     }
   }, [ads.length, startAutoPlay]);
 
   const goTo = (index: number) => {
     setCurrent(index);
-    clearInterval(intervalRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
     startAutoPlay();
   };
 

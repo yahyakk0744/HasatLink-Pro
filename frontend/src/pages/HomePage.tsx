@@ -26,7 +26,7 @@ import FAB from '../components/ui/FAB';
 import { CATEGORY_LABELS } from '../utils/constants';
 import SEO from '../components/ui/SEO';
 import api from '../config/api';
-import type { Blog, Listing } from '../types';
+import type { Blog } from '../types';
 import { Calendar, User as UserIcon } from 'lucide-react';
 import { formatDate } from '../utils/formatters';
 import toast from 'react-hot-toast';

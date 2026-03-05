@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ImagePlus, X, ChevronRight, ChevronLeft, MapPin, Eye, Truck, Leaf, Trophy, Check } from 'lucide-react';
+import { ImagePlus, X, ChevronRight, ChevronLeft, MapPin, Eye, Trophy, Check } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
@@ -267,7 +267,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const [needsTransport, setNeedsTransport] = useState(initialData?.needsTransport || false);
   const [hasTransportCapacity, setHasTransportCapacity] = useState(initialData?.hasTransportCapacity || false);
 
-  const subCategories = CATEGORIES[type as keyof typeof CATEGORIES]?.filter(c => c !== 'HEPSI') || [];
+  const subCategories = CATEGORIES[type as keyof typeof CATEGORIES]?.filter(c => c !== 'HEPSİ') || [];
   const productOptions = type === 'pazar' && subCategory ? (PAZAR_SUBCATEGORIES[subCategory] || []) : [];
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
