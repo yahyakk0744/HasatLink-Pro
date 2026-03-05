@@ -32,7 +32,7 @@ function getListingIdFromUrl(): string | null {
 export default function SEO({ title, description, keywords, ogTitle, ogDescription, ogImage, ogUrl, listingId }: SEOProps) {
   useEffect(() => {
     const prev = document.title;
-    if (title) document.title = `${title} | HasatLink`;
+    if (title) document.title = `${title} | HasatLink - Tarımın Dijital Gücü`;
     if (description) setMeta('description', description);
     if (keywords) setMeta('keywords', keywords);
 
