@@ -93,7 +93,7 @@ export default function StoriesSection() {
           {/* Create Story CTA */}
           {user && (
             <Link
-              to="/ilan-ver"
+              to="/pazar"
               className="flex flex-col items-center shrink-0 snap-start"
             >
               <div className="w-16 h-16 md:w-[72px] md:h-[72px] rounded-full bg-gradient-to-br from-[var(--bg-input)] to-[var(--bg-surface)] border-2 border-dashed border-[var(--accent-green)]/40 flex items-center justify-center hover:border-[var(--accent-green)] transition-colors">

@@ -15,17 +15,21 @@ import { useHasatlinkPazar } from '../hooks/useHasatlinkPazar';
 import { useWeather } from '../hooks/useWeather';
 import { useInView } from '../hooks/useInView';
 import { useCountUp } from '../hooks/useCountUp';
+import { Plus } from 'lucide-react';
 import ListingCard from '../components/listings/ListingCard';
 import AIDiagnosisPanel from '../components/ai/AIDiagnosisPanel';
 import ListingMap from '../components/map/ListingMap';
 import StoriesSection from '../components/social/StoriesSection';
 import BannerCarousel from '../components/ads/BannerCarousel';
+import ListingForm from '../components/listings/ListingForm';
+import FAB from '../components/ui/FAB';
 import { CATEGORY_LABELS } from '../utils/constants';
 import SEO from '../components/ui/SEO';
 import api from '../config/api';
-import type { Blog } from '../types';
+import type { Blog, Listing } from '../types';
 import { Calendar, User as UserIcon } from 'lucide-react';
 import { formatDate } from '../utils/formatters';
+import toast from 'react-hot-toast';
 
 function AnimatedSection({ children, className = '' }: { children: ReactNode; className?: string }) {
   const { ref, inView } = useInView(0.15);
@@ -105,6 +109,7 @@ export default function HomePage() {
   const [heroSearch, setHeroSearch] = useState('');
   const [heroCategory, setHeroCategory] = useState('');
   const [blogPosts, setBlogPosts] = useState<Blog[]>([]);
+  const [showForm, setShowForm] = useState(false);
 
   // Critical: listings + weather load immediately (filter by user's city)
   useEffect(() => {
@@ -645,6 +650,22 @@ export default function HomePage() {
           </div>
         </section>
       </AnimatedSection>
+
+      {/* ─── FAB + Listing Form ─── */}
+      <FAB onClick={() => user ? setShowForm(true) : navigate('/giris')} icon={<Plus size={24} />} />
+      {user && (
+        <ListingForm
+          isOpen={showForm}
+          onClose={() => setShowForm(false)}
+          onSubmit={async (data) => {
+            const res = await api.post('/listings', data);
+            if (res.status === 201 || res.status === 200) {
+              toast.success(lang === 'tr' ? 'İlan oluşturuldu!' : 'Listing created!');
+              fetchListings({ limit: '8' });
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
