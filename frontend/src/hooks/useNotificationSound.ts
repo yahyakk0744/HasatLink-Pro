@@ -1,13 +1,30 @@
 import { useCallback } from 'react';
 
+// Shared AudioContext — reuse the same instance to avoid browser autoplay restrictions
+let sharedCtx: AudioContext | null = null;
+
+function getCtx(): AudioContext | null {
+  try {
+    if (!sharedCtx || sharedCtx.state === 'closed') {
+      sharedCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (sharedCtx.state === 'suspended') {
+      sharedCtx.resume();
+    }
+    return sharedCtx;
+  } catch {
+    return null;
+  }
+}
+
 export const useNotificationSound = () => {
   const playSound = useCallback(() => {
+    const ctx = getCtx();
+    if (!ctx) return;
     try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const now = ctx.currentTime;
 
       // Crystal-clear iPhone Tri-tone: three ascending pure tones
-      // Using dual oscillators (sine + soft triangle) for richer, bell-like clarity
       const notes = [
         { freq: 1174.66, start: 0.00, dur: 0.10 },   // D6
         { freq: 1396.91, start: 0.12, dur: 0.10 },   // F6
@@ -32,7 +49,7 @@ export const useNotificationSound = () => {
         const osc2 = ctx.createOscillator();
         const gain2 = ctx.createGain();
         osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(freq * 2, now + start); // octave above
+        osc2.frequency.setValueAtTime(freq * 2, now + start);
         osc2.connect(gain2);
         gain2.connect(ctx.destination);
         gain2.gain.setValueAtTime(0, now + start);

@@ -46,6 +46,7 @@ export interface Message {
   text: string;
   createdAt: any;
   read: boolean;
+  delivered?: boolean;
 }
 
 export interface Listing {

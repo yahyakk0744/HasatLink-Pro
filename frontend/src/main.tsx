@@ -58,6 +58,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               </MessageProvider>
               <Toaster
                 position="top-right"
+                containerStyle={{ zIndex: 9999 }}
                 toastOptions={{
                   duration: 3000,
                   style: {
@@ -65,6 +66,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                     background: 'var(--bg-invert)',
                     color: 'var(--text-on-invert)',
                     fontSize: '14px',
+                    zIndex: 9999,
                   },
                 }}
               />

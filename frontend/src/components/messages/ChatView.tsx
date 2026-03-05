@@ -57,14 +57,25 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
       }
     };
 
+    // Listen for delivery confirmations
+    const handleDelivered = (data: { conversationId: string; messageId?: string }) => {
+      if (data.conversationId === conversation.id) {
+        setMessages(prev => prev.map(m =>
+          m.senderId === currentUid && !m.read ? { ...m, delivered: true } : m
+        ));
+      }
+    };
+
     socket.on('typing:start', handleTypingStart);
     socket.on('typing:stop', handleTypingStop);
     socket.on('message:read', handleMessageRead);
+    socket.on('message:delivered', handleDelivered);
 
     return () => {
       socket.off('typing:start', handleTypingStart);
       socket.off('typing:stop', handleTypingStop);
       socket.off('message:read', handleMessageRead);
+      socket.off('message:delivered', handleDelivered);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
   }, [socket, currentUid]);

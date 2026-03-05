@@ -1,6 +1,6 @@
 import type { Notification } from '../../types';
 import { timeAgo } from '../../utils/formatters';
-import { TrendingUp, BarChart3, Bell, FileText, Star, CloudSnow } from 'lucide-react';
+import { TrendingUp, BarChart3, Bell, FileText, Star, CloudSnow, MessageSquare, HandCoins } from 'lucide-react';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -14,6 +14,8 @@ const typeIcons: Record<string, any> = {
   ilan: FileText,
   rating: Star,
   hava: CloudSnow,
+  mesaj: MessageSquare,
+  teklif: HandCoins,
 };
 
 const typeColors: Record<string, string> = {
@@ -23,6 +25,8 @@ const typeColors: Record<string, string> = {
   ilan: '#1A1A1A',
   rating: '#A47148',
   hava: '#0077B6',
+  mesaj: '#2D6A4F',
+  teklif: '#D97706',
 };
 
 export default function NotificationItem({ notification, onClick }: NotificationItemProps) {

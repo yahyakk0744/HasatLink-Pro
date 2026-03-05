@@ -20,6 +20,8 @@ export function initSocket(httpServer: HttpServer) {
       ],
       credentials: true,
     },
+    pingInterval: 25000,
+    pingTimeout: 20000,
   });
 
   io.on('connection', (socket: Socket) => {
@@ -59,7 +61,30 @@ export function initSocket(httpServer: HttpServer) {
 
     // New message — relay to conversation room + create notification
     socket.on('message:new', (data: { conversationId: string; message: any; recipientId?: string; senderName?: string }) => {
+      // Relay message to other participants in the conversation
       socket.to(`conversation:${data.conversationId}`).emit('message:new', data);
+
+      // Send delivery confirmation back to sender
+      if (data.message?.id || data.message?.createdAt) {
+        const recipientOnline = data.recipientId
+          ? onlineUsers.has(data.recipientId) && onlineUsers.get(data.recipientId)!.size > 0
+          : false;
+
+        socket.emit('message:delivered', {
+          conversationId: data.conversationId,
+          messageId: data.message?.id,
+          timestamp: new Date().toISOString(),
+        });
+
+        // If recipient is online and in the conversation room, notify them too
+        if (recipientOnline && data.recipientId) {
+          io.to(`user:${data.recipientId}`).emit('message:delivered', {
+            conversationId: data.conversationId,
+            messageId: data.message?.id,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
 
       // Create notification for recipient if they're not in the conversation room
       if (data.recipientId && data.recipientId !== userId) {

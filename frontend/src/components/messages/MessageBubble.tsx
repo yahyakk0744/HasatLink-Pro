@@ -11,12 +11,34 @@ function formatTime(timestamp: any): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function ReadReceipt({ read }: { read: boolean }) {
+function ReadReceipt({ read, delivered }: { read: boolean; delivered?: boolean }) {
+  if (read) {
+    // Double blue tick — read
+    return (
+      <span className="inline-flex ml-1 text-blue-400">
+        <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
+          <path d="M1 5l3 3L10 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M6 5l3 3L15 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    );
+  }
+  if (delivered) {
+    // Double gray tick — delivered
+    return (
+      <span className="inline-flex ml-1 text-white/50">
+        <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
+          <path d="M1 5l3 3L10 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M6 5l3 3L15 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    );
+  }
+  // Single gray tick — sent
   return (
-    <span className={`inline-flex ml-1 ${read ? 'text-blue-300' : 'text-white/40'}`}>
-      <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
+    <span className="inline-flex ml-1 text-white/40">
+      <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
         <path d="M1 5l3 3L10 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M6 5l3 3L15 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
   );
@@ -35,7 +57,7 @@ export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         <p className="text-sm leading-relaxed break-words">{message.text}</p>
         <div className={`flex items-center justify-end gap-0.5 mt-1 ${isOwn ? 'text-white/60' : 'text-[#6B6560]'}`}>
           <span className="text-[10px]">{formatTime(message.createdAt)}</span>
-          {isOwn && <ReadReceipt read={message.read} />}
+          {isOwn && <ReadReceipt read={message.read} delivered={message.delivered} />}
         </div>
       </div>
     </div>

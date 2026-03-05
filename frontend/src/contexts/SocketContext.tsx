@@ -5,12 +5,14 @@ import { useAuth } from './AuthContext';
 
 interface SocketContextType {
   socket: Socket | null;
+  connected: boolean;
   onlineUsers: Set<string>;
   isUserOnline: (userId: string) => boolean;
 }
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
+  connected: false,
   onlineUsers: new Set(),
   isUserOnline: () => false,
 });
@@ -20,6 +22,7 @@ const SOCKET_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [connected, setConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const socketRef = useRef<Socket | null>(null);
 
@@ -29,6 +32,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         socketRef.current.disconnect();
         socketRef.current = null;
         setSocket(null);
+        setConnected(false);
         setOnlineUsers(new Set());
       }
       return;
@@ -38,15 +42,26 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       query: { userId: user.userId },
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionDelay: 2000,
-      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
+      reconnectionAttempts: Infinity,
+      timeout: 20000,
     });
 
     s.on('connect', () => {
+      setConnected(true);
       // Get initial online users list
       s.emit('users:online-list', (userIds: string[]) => {
         setOnlineUsers(new Set(userIds));
       });
+    });
+
+    s.on('disconnect', () => {
+      setConnected(false);
+    });
+
+    s.on('reconnect', () => {
+      setConnected(true);
     });
 
     s.on('user:online', ({ userId }: { userId: string }) => {
@@ -65,10 +80,29 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       });
     });
 
+    // Reconnect when tab becomes visible again (handles background/sleep)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && s.disconnected) {
+        s.connect();
+      }
+    };
+
+    // Reconnect on network recovery
+    const handleOnline = () => {
+      if (s.disconnected) {
+        s.connect();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+
     socketRef.current = s;
     setSocket(s);
 
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
       s.disconnect();
       socketRef.current = null;
     };
@@ -77,7 +111,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const isUserOnline = useCallback((userId: string) => onlineUsers.has(userId), [onlineUsers]);
 
   return (
-    <SocketContext.Provider value={{ socket, onlineUsers, isUserOnline }}>
+    <SocketContext.Provider value={{ socket, connected, onlineUsers, isUserOnline }}>
       {children}
     </SocketContext.Provider>
   );
