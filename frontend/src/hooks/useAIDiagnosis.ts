@@ -1,15 +1,21 @@
 import { useState, useCallback } from 'react';
 import api from '../config/api';
-import type { AIDiagnosisResult, AIDiagnosisHistory } from '../types';
+import type { AIDiagnosisResult, AIDiagnosisHistory, DiseaseLibraryItem, RegionalAlert, Listing } from '../types';
 
 export const useAIDiagnosis = () => {
   const [result, setResult] = useState<AIDiagnosisResult | null>(null);
   const [history, setHistory] = useState<AIDiagnosisHistory[]>([]);
   const [loading, setLoading] = useState(false);
+  const [diseases, setDiseases] = useState<DiseaseLibraryItem[]>([]);
+  const [alerts, setAlerts] = useState<RegionalAlert[]>([]);
+  const [matchedListings, setMatchedListings] = useState<Listing[]>([]);
+  const [matchedProfessionals, setMatchedProfessionals] = useState<Listing[]>([]);
 
   const diagnose = useCallback(async (file: File): Promise<AIDiagnosisResult | null> => {
     setLoading(true);
     setResult(null);
+    setMatchedListings([]);
+    setMatchedProfessionals([]);
     try {
       const formData = new FormData();
       formData.append('image', file);
@@ -17,6 +23,17 @@ export const useAIDiagnosis = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setResult(data);
+
+      // Auto-fetch smart matches if disease found
+      if (data.disease_code && data.disease_code !== 'saglikli') {
+        api.get(`/ai/match/${data.disease_code}`)
+          .then(({ data: matchData }) => {
+            setMatchedListings(matchData.listings || []);
+            setMatchedProfessionals(matchData.professionals || []);
+          })
+          .catch(() => {});
+      }
+
       return data;
     } catch { return null; } finally { setLoading(false); }
   }, []);
@@ -28,7 +45,29 @@ export const useAIDiagnosis = () => {
     } catch {}
   }, []);
 
-  const clearResult = useCallback(() => setResult(null), []);
+  const fetchDiseaseLibrary = useCallback(async () => {
+    try {
+      const { data } = await api.get<{ diseases: DiseaseLibraryItem[] }>('/ai/diseases');
+      setDiseases(data.diseases);
+    } catch {}
+  }, []);
 
-  return { result, history, loading, diagnose, fetchHistory, clearResult };
+  const fetchAlerts = useCallback(async (region?: string) => {
+    try {
+      const params = region ? { region } : {};
+      const { data } = await api.get<{ alerts: RegionalAlert[] }>('/ai/alerts', { params });
+      setAlerts(data.alerts);
+    } catch {}
+  }, []);
+
+  const clearResult = useCallback(() => {
+    setResult(null);
+    setMatchedListings([]);
+    setMatchedProfessionals([]);
+  }, []);
+
+  return {
+    result, history, loading, diseases, alerts, matchedListings, matchedProfessionals,
+    diagnose, fetchHistory, fetchDiseaseLibrary, fetchAlerts, clearResult,
+  };
 };

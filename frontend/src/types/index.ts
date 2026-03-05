@@ -177,6 +177,34 @@ export interface Comment {
   createdAt: string;
 }
 
+export interface HarvestPrediction {
+  estimated_days: number;
+  quality_score: number;
+  quality_label: string;
+  quality_factors: string[];
+  optimal_conditions: string;
+}
+
+export interface RegionalAlert {
+  disease: string;
+  crop_type: string;
+  risk_level: string;
+  message: string;
+}
+
+export interface DiseaseLibraryItem {
+  disease: string;
+  disease_code: string;
+  crop_type: string;
+  urgency: 'low' | 'medium' | 'critical';
+  spread_risk: 'low' | 'medium' | 'high';
+  treatment: string;
+  recommended_products: string[];
+  prevention: string;
+  is_seasonal: boolean;
+  active_regions: string[];
+}
+
 export interface AIDiagnosisResult {
   disease: string;
   disease_code: string;
@@ -190,6 +218,11 @@ export interface AIDiagnosisResult {
   image_url?: string;
   needs_better_photo: boolean;
   warning: string | null;
+  recommended_products?: string[];
+  prevention?: string;
+  seasonal_alert?: boolean;
+  regional_alerts?: RegionalAlert[];
+  harvest_prediction?: HarvestPrediction;
 }
 
 export interface AIDiagnosisHistory extends AIDiagnosisResult {

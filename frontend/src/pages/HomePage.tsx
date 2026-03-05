@@ -15,7 +15,7 @@ import { useHasatlinkPazar } from '../hooks/useHasatlinkPazar';
 import { useWeather } from '../hooks/useWeather';
 import { useInView } from '../hooks/useInView';
 import { useCountUp } from '../hooks/useCountUp';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import ListingCard from '../components/listings/ListingCard';
 import AIDiagnosisPanel from '../components/ai/AIDiagnosisPanel';
 import ListingMap from '../components/map/ListingMap';
@@ -556,6 +556,27 @@ export default function HomePage() {
       {/* ─── 7. AI + Map Section ─── */}
       <AnimatedSection>
         <section className="max-w-7xl mx-auto px-3 md:px-4 py-6 md:py-8">
+          {/* HasatAI CTA Banner */}
+          <Link
+            to="/ai-teshis"
+            className="mb-6 flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 border border-emerald-500/20 hover:border-emerald-500/40 transition-all group"
+          >
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0 group-hover:scale-110 transition-transform">
+              <Sparkles size={22} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-[15px] font-bold text-[var(--text-primary)] tracking-tight">
+                HasatAI — {lang === 'tr' ? 'Yapay Zeka Tarim Asistani' : 'AI Agriculture Assistant'}
+              </h3>
+              <p className="text-[12px] text-[var(--text-secondary)] mt-0.5">
+                {lang === 'tr'
+                  ? 'Bitki doktoru, hastalik kutuphanesi, hasat tahmini ve akilli yonlendirme'
+                  : 'Plant doctor, disease library, harvest prediction & smart matching'}
+              </p>
+            </div>
+            <ArrowRight size={18} className="text-emerald-500 shrink-0 group-hover:translate-x-1 transition-transform" />
+          </Link>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <AIDiagnosisPanel />
             <div className="surface-card-lg p-4 overflow-hidden">
@@ -651,7 +672,18 @@ export default function HomePage() {
         </section>
       </AnimatedSection>
 
-      {/* ─── FAB + Listing Form ─── */}
+      {/* ─── FABs: Create Listing + HasatAI ─── */}
+      {/* HasatAI Button */}
+      <Link
+        to="/ai-teshis"
+        className="fixed bottom-20 left-4 md:bottom-8 md:left-8 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-lg shadow-emerald-500/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform group"
+      >
+        <Sparkles size={22} className="text-white" />
+        <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-gray-900/90 text-white text-[10px] font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          HasatAI
+        </span>
+      </Link>
+      {/* Create Listing FAB */}
       <FAB onClick={() => user ? setShowForm(true) : navigate('/giris')} icon={<Plus size={24} />} />
       {user && (
         <ListingForm
