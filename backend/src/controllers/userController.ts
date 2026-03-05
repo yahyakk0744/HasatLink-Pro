@@ -246,12 +246,21 @@ export const updateAccount = async (req: Request, res: Response): Promise<void> 
 };
 
 // ─── Toggle Favorite ───
+interface ToggleFavoriteBody {
+  listingId: string;
+}
+
+interface ToggleFavoriteResponse {
+  favorites: string[];
+  isFavorited: boolean;
+}
+
 export const toggleFavorite = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).userId;
-    const { listingId } = req.body;
+    const userId = (req as any).userId as string;
+    const { listingId } = req.body as ToggleFavoriteBody;
 
-    if (!listingId) {
+    if (!listingId || typeof listingId !== 'string') {
       res.status(400).json({ message: 'listingId gerekli' });
       return;
     }
@@ -263,24 +272,38 @@ export const toggleFavorite = async (req: Request, res: Response): Promise<void>
     }
 
     const index = user.favorites.indexOf(listingId);
-    if (index > -1) {
-      user.favorites.splice(index, 1);
-    } else {
+    const isFavorited = index === -1;
+    if (isFavorited) {
       user.favorites.push(listingId);
+    } else {
+      user.favorites.splice(index, 1);
     }
     await user.save();
 
-    // Emit socket event
+    // Emit socket event to the user
     const { getIO } = require('../socket');
     try {
       getIO().to(`user:${userId}`).emit('favorite:toggle', {
         listingId,
-        isFavorited: index === -1,
+        isFavorited,
         totalFavorites: user.favorites.length,
       });
+
+      // Notify listing owner ONLY if it's NOT the user's own listing (self-notification filter)
+      if (isFavorited) {
+        const listing = await Listing.findById(listingId).select('userId');
+        if (listing && listing.userId !== userId) {
+          getIO().to(`user:${listing.userId}`).emit('notification:favorite', {
+            listingId,
+            userName: user.name,
+            type: 'new_favorite',
+          });
+        }
+      }
     } catch {}
 
-    res.json({ favorites: user.favorites, isFavorited: index === -1 });
+    const response: ToggleFavoriteResponse = { favorites: user.favorites, isFavorited };
+    res.json(response);
   } catch (error) {
     res.status(500).json({ message: 'Favori guncellenemedi', error });
   }

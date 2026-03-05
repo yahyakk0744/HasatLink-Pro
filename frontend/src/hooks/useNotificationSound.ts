@@ -3,22 +3,33 @@ import { useCallback } from 'react';
 export const useNotificationSound = () => {
   const playSound = useCallback(() => {
     try {
-      // Use Web Audio API for notification sound
+      // iPhone Tri-tone inspired chime using Web Audio API
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
+      const now = audioCtx.currentTime;
 
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
+      // Three-note sequence mimicking iPhone tri-tone
+      const notes = [
+        { freq: 1174.66, start: 0, duration: 0.08 },     // D6
+        { freq: 1396.91, start: 0.1, duration: 0.08 },    // F6
+        { freq: 1760.00, start: 0.2, duration: 0.12 },    // A6
+      ];
 
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-      oscillator.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); // C#6
+      notes.forEach(({ freq, start, duration }) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
 
-      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + start);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
 
-      oscillator.start(audioCtx.currentTime);
-      oscillator.stop(audioCtx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0, now + start);
+        gain.gain.linearRampToValueAtTime(0.25, now + start + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + start + duration + 0.15);
+
+        osc.start(now + start);
+        osc.stop(now + start + duration + 0.2);
+      });
     } catch {}
   }, []);
 

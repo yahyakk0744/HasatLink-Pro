@@ -46,8 +46,11 @@ export const getOgImage = async (req: Request, res: Response): Promise<void> => 
   <text x="100" y="370" font-family="system-ui,-apple-system,sans-serif" font-size="24" fill="rgba(255,255,255,0.6)">${location}</text>
   <rect x="80" y="460" width="300" height="60" rx="16" fill="rgba(255,255,255,0.1)"/>
   <text x="230" y="498" font-family="system-ui,-apple-system,sans-serif" font-size="22" font-weight="700" fill="#52B788" text-anchor="middle">HasatLink</text>
-  <circle cx="1060" cy="500" r="40" fill="rgba(82,183,136,0.2)"/>
-  <text x="1060" y="510" font-family="system-ui,-apple-system,sans-serif" font-size="28" fill="#52B788" text-anchor="middle">H</text>
+  <!-- Logo stamp bottom-right -->
+  <rect x="1000" y="470" width="120" height="60" rx="16" fill="rgba(45,106,79,0.9)"/>
+  <circle cx="1030" cy="500" r="14" fill="#52B788"/>
+  <text x="1030" y="506" font-family="system-ui,-apple-system,sans-serif" font-size="16" font-weight="800" fill="white" text-anchor="middle">H</text>
+  <text x="1080" y="506" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="700" fill="white" text-anchor="middle">asatLink</text>
 </svg>`;
 
     res.setHeader('Content-Type', 'image/svg+xml');
@@ -92,9 +95,16 @@ export const getStoryImage = async (req: Request, res: Response): Promise<void> 
   <text x="120" y="890" font-family="system-ui,-apple-system,sans-serif" font-size="44" font-weight="800" fill="white" letter-spacing="-1">${title}</text>
   <text x="120" y="1020" font-family="system-ui,-apple-system,sans-serif" font-size="72" font-weight="800" fill="#52B788">${price}</text>
   <text x="120" y="1100" font-family="system-ui,-apple-system,sans-serif" font-size="28" fill="rgba(255,255,255,0.5)">${location}</text>
-  <rect x="120" y="1180" width="840" height="70" rx="35" fill="#52B788"/>
-  <text x="540" y="1225" font-family="system-ui,-apple-system,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">hasatlink.com'da incele</text>
-  <text x="540" y="1780" font-family="system-ui,-apple-system,sans-serif" font-size="20" fill="rgba(255,255,255,0.3)" text-anchor="middle">hasatlink.com</text>
+  <!-- Slogan -->
+  <text x="540" y="1180" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="600" fill="rgba(255,255,255,0.4)" text-anchor="middle" font-style="italic">Mut'un En Taze Urunleri</text>
+  <rect x="120" y="1220" width="840" height="70" rx="35" fill="#52B788"/>
+  <text x="540" y="1265" font-family="system-ui,-apple-system,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">hasatlink.com'da incele</text>
+  <!-- Logo stamp bottom-right -->
+  <rect x="820" y="1700" width="180" height="70" rx="20" fill="rgba(45,106,79,0.9)"/>
+  <circle cx="860" cy="1735" r="18" fill="#52B788"/>
+  <text x="860" y="1742" font-family="system-ui,-apple-system,sans-serif" font-size="20" font-weight="800" fill="white" text-anchor="middle">H</text>
+  <text x="940" y="1742" font-family="system-ui,-apple-system,sans-serif" font-size="16" font-weight="700" fill="white" text-anchor="middle">asatLink</text>
+  <text x="540" y="1840" font-family="system-ui,-apple-system,sans-serif" font-size="20" fill="rgba(255,255,255,0.3)" text-anchor="middle">hasatlink.com</text>
 </svg>`;
 
     res.setHeader('Content-Type', 'image/svg+xml');

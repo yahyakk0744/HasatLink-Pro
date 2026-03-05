@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle, CheckCircle, Pill, Activity,
-  TrendingUp, AlertOctagon, Leaf, Camera,
+  TrendingUp, AlertOctagon, Leaf, Camera, Sprout, Bug,
+  Sun, ZoomIn, ImageOff,
 } from 'lucide-react';
 import type { AIDiagnosisResult } from '../../types';
 import DealerList from '../ads/DealerList';
@@ -41,13 +42,56 @@ export default function DiagnosisResult({ result }: DiagnosisResultProps) {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Low confidence warning */}
+      {/* Crop Type + Disease badges */}
+      <div className="flex flex-wrap gap-2">
+        {result.detected_crop && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/50 text-emerald-700 text-[12px] font-semibold">
+            <Sprout size={13} />
+            {result.detected_crop}
+          </span>
+        )}
+        {!isHealthy && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200/50 text-orange-700 text-[12px] font-semibold">
+            <Bug size={13} />
+            {result.disease.split('(')[0].trim()}
+          </span>
+        )}
+        {isHealthy && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/50 text-emerald-700 text-[12px] font-semibold">
+            <CheckCircle size={13} />
+            {isTr ? 'Sağlıklı' : 'Healthy'}
+          </span>
+        )}
+      </div>
+
+      {/* Low confidence warning with explanation */}
       {result.needs_better_photo && (
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200">
-          <Camera size={20} className="text-amber-600 shrink-0" />
-          <p className="text-[13px] text-amber-800 font-medium leading-relaxed">
-            {result.warning}
-          </p>
+        <div className="rounded-2xl bg-amber-50 border border-amber-200 overflow-hidden">
+          <div className="flex items-center gap-3 p-4">
+            <Camera size={20} className="text-amber-600 shrink-0" />
+            <p className="text-[13px] text-amber-800 font-medium leading-relaxed">
+              {result.warning}
+            </p>
+          </div>
+          <div className="px-4 pb-4 pt-0">
+            <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider mb-2">
+              {isTr ? 'Olası Nedenler' : 'Possible Reasons'}
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-amber-100/50">
+                <Sun size={16} className="text-amber-600" />
+                <span className="text-[10px] text-amber-700 font-medium text-center">{isTr ? 'Işık yetersiz' : 'Low light'}</span>
+              </div>
+              <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-amber-100/50">
+                <ZoomIn size={16} className="text-amber-600" />
+                <span className="text-[10px] text-amber-700 font-medium text-center">{isTr ? 'Bitki uzakta' : 'Too far'}</span>
+              </div>
+              <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-amber-100/50">
+                <ImageOff size={16} className="text-amber-600" />
+                <span className="text-[10px] text-amber-700 font-medium text-center">{isTr ? 'Bulanık görsel' : 'Blurry image'}</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

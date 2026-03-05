@@ -2,7 +2,6 @@ import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Upload, Cpu, X } from 'lucide-react';
 import Button from '../ui/Button';
-import LoadingSpinner from '../ui/LoadingSpinner';
 import DiagnosisResult from './DiagnosisResult';
 import { useAIDiagnosis } from '../../hooks/useAIDiagnosis';
 export default function AIDiagnosisPanel() {
@@ -66,12 +65,18 @@ export default function AIDiagnosisPanel() {
         </div>
       )}
 
-      {/* Loading */}
+      {/* Loading with Apple-style progress */}
       {loading && (
-        <div className="py-10 text-center">
-          <LoadingSpinner size="lg" className="mb-3" />
-          <p className="text-[14px] font-semibold text-[var(--text-primary)]">{t('ai.analyzing')}</p>
-          <p className="text-[12px] text-[var(--text-secondary)] mt-1">AI modeli analiz ediyor...</p>
+        <div className="py-10 text-center space-y-4">
+          <div className="w-full max-w-xs mx-auto">
+            <div className="h-1.5 rounded-full bg-[var(--bg-input)] overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-[var(--accent-green)] to-emerald-400 animate-progress" />
+            </div>
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold text-[var(--text-primary)]">{t('ai.analyzing')}</p>
+            <p className="text-[12px] text-[var(--text-secondary)] mt-1">AI modeli analiz ediyor...</p>
+          </div>
         </div>
       )}
 

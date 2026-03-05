@@ -15,7 +15,7 @@ export const useShare = () => {
       try {
         await navigator.share({
           title: `HasatLink - ${title}`,
-          text: `${title} - HasatLink'te bu ilana goz atin!`,
+          text: `${title} - HasatLink'te bu ilana goz atin! #HasatLink #Mut #Tarim`,
           url,
         });
       } catch (err: any) {

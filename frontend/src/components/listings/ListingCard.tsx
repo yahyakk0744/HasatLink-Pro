@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Shield, Clock3, ArrowRight, Heart, Star, Sparkles } from 'lucide-react';
@@ -32,6 +32,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const { isFavorited, toggleFavorite } = useFavorites();
   const liked = isFavorited(listing._id);
+  const heartRef = useRef<HTMLButtonElement>(null);
 
   const catLabel = CATEGORY_LABELS[listing.type];
   const catColor = CATEGORY_BADGE_COLORS[listing.type] || '#2D6A4F';
@@ -83,7 +84,15 @@ export default function ListingCard({ listing }: ListingCardProps) {
               </Badge>
             )}
             <button
-              onClick={e => { e.preventDefault(); e.stopPropagation(); toggleFavorite(listing._id); }}
+              ref={heartRef}
+              onClick={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFavorite(listing._id);
+                heartRef.current?.classList.remove('animate-haptic');
+                void heartRef.current?.offsetWidth;
+                heartRef.current?.classList.add('animate-haptic');
+              }}
               className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
                 liked ? 'bg-red-500 text-white scale-110' : 'bg-black/30 backdrop-blur text-white hover:bg-red-500'
               }`}
