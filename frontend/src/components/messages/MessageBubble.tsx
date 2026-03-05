@@ -3,6 +3,7 @@ import type { Message } from '../../types';
 interface MessageBubbleProps {
   message: Message;
   isOwn: boolean;
+  showTail?: boolean;
 }
 
 function formatTime(timestamp: any): string {
@@ -13,49 +14,46 @@ function formatTime(timestamp: any): string {
 
 function ReadReceipt({ read, delivered }: { read: boolean; delivered?: boolean }) {
   if (read) {
-    // Double blue tick — read
     return (
-      <span className="inline-flex ml-1 text-blue-400">
-        <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
-          <path d="M1 5l3 3L10 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M6 5l3 3L15 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <span className="inline-flex ml-1.5 text-[#34B7F1]">
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="none">
+          <path d="M1.5 5.5l2.5 3L9.5 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M5.5 5.5l2.5 3L13.5 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
     );
   }
   if (delivered) {
-    // Double gray tick — delivered
     return (
-      <span className="inline-flex ml-1 text-white/50">
-        <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
-          <path d="M1 5l3 3L10 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M6 5l3 3L15 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <span className="inline-flex ml-1.5 text-white/50">
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="none">
+          <path d="M1.5 5.5l2.5 3L9.5 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M5.5 5.5l2.5 3L13.5 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
     );
   }
-  // Single gray tick — sent
   return (
-    <span className="inline-flex ml-1 text-white/40">
-      <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-        <path d="M1 5l3 3L10 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <span className="inline-flex ml-1.5 text-white/35">
+      <svg width="12" height="11" viewBox="0 0 12 11" fill="none">
+        <path d="M1.5 5.5l2.5 3L9.5 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
   );
 }
 
-export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
+export default function MessageBubble({ message, isOwn, showTail = true }: MessageBubbleProps) {
   return (
-    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}>
+    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} ${showTail ? 'mt-2' : 'mt-0.5'}`}>
       <div
-        className={`max-w-[75%] px-4 py-2.5 ${
+        className={`relative max-w-[75%] px-3.5 py-2 shadow-sm ${
           isOwn
-            ? 'bg-[#2D6A4F] text-white rounded-2xl rounded-br-md'
-            : 'bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl rounded-bl-md'
+            ? `bg-[#2D6A4F] text-white ${showTail ? 'rounded-[20px] rounded-br-[6px]' : 'rounded-[20px]'}`
+            : `bg-[#E9E9EB] text-[#1C1C1E] ${showTail ? 'rounded-[20px] rounded-bl-[6px]' : 'rounded-[20px]'}`
         }`}
       >
-        <p className="text-sm leading-relaxed break-words">{message.text}</p>
-        <div className={`flex items-center justify-end gap-0.5 mt-1 ${isOwn ? 'text-white/60' : 'text-[#6B6560]'}`}>
+        <p className="text-[15px] leading-[1.35] break-words whitespace-pre-wrap">{message.text}</p>
+        <div className={`flex items-center justify-end gap-0.5 mt-0.5 -mb-0.5 ${isOwn ? 'text-white/55' : 'text-[#8E8E93]'}`}>
           <span className="text-[10px]">{formatTime(message.createdAt)}</span>
           {isOwn && <ReadReceipt read={message.read} delivered={message.delivered} />}
         </div>

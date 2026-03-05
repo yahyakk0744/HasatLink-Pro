@@ -2,6 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import Notification from './models/Notification';
 import { sendPushToUser } from './utils/pushNotification';
+import { getPusher } from './config/pusher';
 
 let io: Server;
 
@@ -59,10 +60,30 @@ export function initSocket(httpServer: HttpServer) {
       socket.leave(`conversation:${conversationId}`);
     });
 
-    // New message — relay to conversation room + create notification
+    // New message — relay via Socket.IO + Pusher + create notification
     socket.on('message:new', (data: { conversationId: string; message: any; recipientId?: string; senderName?: string }) => {
-      // Relay message to other participants in the conversation
+      // Relay message to other participants in the conversation via Socket.IO
       socket.to(`conversation:${data.conversationId}`).emit('message:new', data);
+
+      // Pusher: instant delivery to conversation channel
+      try {
+        const pusher = getPusher();
+        pusher.trigger(`conversation-${data.conversationId}`, 'message:new', {
+          message: data.message,
+          senderName: data.senderName,
+        });
+        // Also notify recipient's personal channel for unread badge updates
+        if (data.recipientId) {
+          pusher.trigger(`user-${data.recipientId}`, 'conversation:update', {
+            conversationId: data.conversationId,
+            lastMessage: data.message?.text,
+            senderName: data.senderName,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      } catch (err) {
+        console.error('[Pusher] Trigger error:', err);
+      }
 
       // Send delivery confirmation back to sender
       if (data.message?.id || data.message?.createdAt) {
@@ -76,7 +97,6 @@ export function initSocket(httpServer: HttpServer) {
           timestamp: new Date().toISOString(),
         });
 
-        // If recipient is online and in the conversation room, notify them too
         if (recipientOnline && data.recipientId) {
           io.to(`user:${data.recipientId}`).emit('message:delivered', {
             conversationId: data.conversationId,
@@ -106,9 +126,12 @@ export function initSocket(httpServer: HttpServer) {
       }
     });
 
-    // Message read
+    // Message read — relay via Socket.IO + Pusher
     socket.on('message:read', (data: { conversationId: string; messageIds: string[]; readBy: string }) => {
       socket.to(`conversation:${data.conversationId}`).emit('message:read', data);
+      try {
+        getPusher().trigger(`conversation-${data.conversationId}`, 'message:read', data);
+      } catch {}
     });
 
     // Check if user is online

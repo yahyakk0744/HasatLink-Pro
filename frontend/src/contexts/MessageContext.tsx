@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { collection, query, where, orderBy, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { getPusherClient } from '../config/pusher';
 import { useAuth } from './AuthContext';
 import type { Conversation } from '../types';
 
@@ -18,11 +19,12 @@ const MessageContext = createContext<MessageContextType>({
 });
 
 export const MessageProvider = ({ children }: { children: ReactNode }) => {
-  const { firebaseUid } = useAuth();
+  const { firebaseUid, user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  // Firestore subscription for conversations
   useEffect(() => {
     if (!firebaseUid) {
       setConversations([]);
@@ -46,7 +48,6 @@ export const MessageProvider = ({ children }: { children: ReactNode }) => {
       setConversations(convs);
       setLoading(false);
 
-      // Count unread messages across all conversations
       let total = 0;
       for (const conv of convs) {
         try {
@@ -58,7 +59,7 @@ export const MessageProvider = ({ children }: { children: ReactNode }) => {
           const msgSnap = await getDocs(messagesQuery);
           total += msgSnap.size;
         } catch {
-          // Unread count query failed for this conversation
+          // ignore
         }
       }
       setUnreadCount(total);
@@ -66,6 +67,39 @@ export const MessageProvider = ({ children }: { children: ReactNode }) => {
 
     return () => unsubscribe();
   }, [firebaseUid]);
+
+  // Pusher subscription for instant conversation updates
+  useEffect(() => {
+    const userId = user?.userId;
+    if (!userId) return;
+
+    const pusher = getPusherClient();
+    const channel = pusher.subscribe(`user-${userId}`);
+
+    channel.bind('conversation:update', (data: { conversationId: string; lastMessage: string; senderName: string }) => {
+      // Update the conversation list with new last message
+      setConversations(prev => {
+        const updated = prev.map(c =>
+          c.id === data.conversationId
+            ? { ...c, lastMessage: data.lastMessage, lastMessageAt: new Date() }
+            : c
+        );
+        // Sort by lastMessageAt descending (move updated conversation to top)
+        return updated.sort((a, b) => {
+          const aTime = a.lastMessageAt?.toDate ? a.lastMessageAt.toDate().getTime() : new Date(a.lastMessageAt).getTime();
+          const bTime = b.lastMessageAt?.toDate ? b.lastMessageAt.toDate().getTime() : new Date(b.lastMessageAt).getTime();
+          return bTime - aTime;
+        });
+      });
+      // Increment unread count
+      setUnreadCount(prev => prev + 1);
+    });
+
+    return () => {
+      channel.unbind_all();
+      pusher.unsubscribe(`user-${userId}`);
+    };
+  }, [user?.userId]);
 
   return (
     <MessageContext.Provider value={{ conversations, unreadCount, loading }}>

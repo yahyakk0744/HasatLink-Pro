@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send } from 'lucide-react';
+import { Send, Plus, MapPin, Camera, X } from 'lucide-react';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { containsProfanity } from '../../utils/profanityFilter';
@@ -17,6 +17,7 @@ export default function MessageInput({ onSend, disabled, conversationId }: Messa
   const { socket } = useSocket();
   const { user } = useAuth();
   const [text, setText] = useState('');
+  const [showAttach, setShowAttach] = useState(false);
   const typingRef = useRef(false);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -47,11 +48,10 @@ export default function MessageInput({ onSend, disabled, conversationId }: Messa
     if (!trimmed || disabled) return;
 
     if (containsProfanity(trimmed)) {
-      toast.error('Uygunsuz içerik tespit edildi, lütfen düzenleyin');
+      toast.error('Uygunsuz icerik tespit edildi, lutfen duzenleyin');
       return;
     }
 
-    // Stop typing indicator
     if (typingRef.current) {
       typingRef.current = false;
       emitTyping(false);
@@ -60,25 +60,73 @@ export default function MessageInput({ onSend, disabled, conversationId }: Messa
 
     onSend(trimmed);
     setText('');
+    setShowAttach(false);
   };
 
+  const handleAttachAction = (type: 'location' | 'photo') => {
+    toast(`${type === 'location' ? 'Konum' : 'Fotograf'} paylasimi yakinda aktif olacak`, { icon: 'info' });
+    setShowAttach(false);
+  };
+
+  const isTr = user?.language?.startsWith('tr') !== false;
+
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3 border-t border-[var(--bg-input)]">
-      <input
-        type="text"
-        value={text}
-        onChange={handleChange}
-        placeholder={t('messages.typeMessage')}
-        disabled={disabled}
-        className="flex-1 px-4 py-2.5 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]"
-      />
-      <button
-        type="submit"
-        disabled={!text.trim() || disabled}
-        className="w-10 h-10 flex items-center justify-center bg-[#2D6A4F] text-white rounded-full hover:bg-[#1B4332] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-      >
-        <Send size={16} />
-      </button>
-    </form>
+    <div className="relative">
+      {/* Attachment menu */}
+      {showAttach && (
+        <div className="absolute bottom-full left-3 mb-2 flex gap-2 animate-fade-in">
+          <button
+            type="button"
+            onClick={() => handleAttachAction('photo')}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] shadow-lg text-[12px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] transition-colors"
+          >
+            <Camera size={15} className="text-[#2D6A4F]" />
+            {isTr ? 'Fotograf' : 'Photo'}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleAttachAction('location')}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] shadow-lg text-[12px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] transition-colors"
+          >
+            <MapPin size={15} className="text-blue-500" />
+            {isTr ? 'Konum' : 'Location'}
+          </button>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3 border-t border-[var(--border-default)] bg-[var(--bg-surface)]">
+        {/* Plus button */}
+        <button
+          type="button"
+          onClick={() => setShowAttach(!showAttach)}
+          className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 shrink-0 ${
+            showAttach
+              ? 'bg-[#2D6A4F] text-white rotate-45'
+              : 'bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'
+          }`}
+        >
+          {showAttach ? <X size={18} /> : <Plus size={18} />}
+        </button>
+
+        {/* Input */}
+        <input
+          type="text"
+          value={text}
+          onChange={handleChange}
+          placeholder={t('messages.typeMessage')}
+          disabled={disabled}
+          className="flex-1 px-4 py-2.5 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-full text-[15px] focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/30 placeholder:text-[var(--text-tertiary)]"
+        />
+
+        {/* Send button */}
+        <button
+          type="submit"
+          disabled={!text.trim() || disabled}
+          className="w-9 h-9 flex items-center justify-center bg-[#2D6A4F] text-white rounded-full hover:bg-[#1B4332] transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed shrink-0 active:scale-95"
+        >
+          <Send size={15} className="ml-0.5" />
+        </button>
+      </form>
+    </div>
   );
 }
