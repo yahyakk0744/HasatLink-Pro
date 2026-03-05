@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../components/admin/AdminLayout';
-import { Shield, Flag, AlertTriangle, CheckCircle, XCircle, ChevronLeft, ChevronRight, Trash2, Eye } from 'lucide-react';
+import { Shield, Flag, AlertTriangle, CheckCircle, XCircle, ChevronLeft, ChevronRight, Trash2, Eye, Star, ShieldCheck } from 'lucide-react';
 import api from '../config/api';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Modal from '../components/ui/Modal';
@@ -18,6 +18,21 @@ interface Report {
   description: string;
   status: 'pending' | 'resolved' | 'dismissed';
   resolvedBy: string;
+  createdAt: string;
+}
+
+interface AdminRating {
+  _id: string;
+  fromUserId: string;
+  toUserId: string;
+  listingId?: string;
+  score: number;
+  comment: string;
+  seller_reply?: string;
+  isUpdated?: boolean;
+  commentDeleted?: boolean;
+  fromUserName: string;
+  fromUserImage: string;
   createdAt: string;
 }
 
@@ -74,7 +89,7 @@ const fieldLabels: Record<string, string> = {
   bio: 'Biyografi',
 };
 
-type Tab = 'reports' | 'profanity';
+type Tab = 'reports' | 'profanity' | 'ratings';
 
 export default function AdminModerationPage() {
   const [activeTab, setActiveTab] = useState<Tab>('reports');
@@ -92,6 +107,13 @@ export default function AdminModerationPage() {
   const [logsLoading, setLogsLoading] = useState(true);
   const [logsPage, setLogsPage] = useState(1);
   const [logsTotalPages, setLogsTotalPages] = useState(1);
+
+  /* ─── Ratings state ─── */
+  const [ratings, setRatings] = useState<AdminRating[]>([]);
+  const [ratingsLoading, setRatingsLoading] = useState(true);
+  const [ratingsPage, setRatingsPage] = useState(1);
+  const [ratingsTotalPages, setRatingsTotalPages] = useState(1);
+  const [ratingsTotal, setRatingsTotal] = useState(0);
 
   /* ─── Modal state ─── */
   const [deleteReportId, setDeleteReportId] = useState<string | null>(null);
@@ -136,6 +158,18 @@ export default function AdminModerationPage() {
     }
   }, [logsPage]);
 
+  /* ─── Fetch Ratings ─── */
+  const fetchRatings = useCallback(async () => {
+    setRatingsLoading(true);
+    try {
+      const { data } = await api.get('/admin/ratings', { params: { page: ratingsPage, limit: 20 } });
+      setRatings(data.ratings || []);
+      setRatingsTotalPages(data.totalPages || 1);
+      setRatingsTotal(data.total || 0);
+    } catch { toast.error('Değerlendirmeler yüklenemedi'); }
+    finally { setRatingsLoading(false); }
+  }, [ratingsPage]);
+
   useEffect(() => {
     if (activeTab === 'reports') {
       fetchReports();
@@ -147,6 +181,10 @@ export default function AdminModerationPage() {
       fetchLogs();
     }
   }, [fetchLogs, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'ratings') fetchRatings();
+  }, [fetchRatings, activeTab]);
 
   /* ─── Report actions ─── */
   const handleResolve = async (id: string) => {
@@ -183,6 +221,23 @@ export default function AdminModerationPage() {
       setDeleting(false);
       setDeleteReportId(null);
     }
+  };
+
+  /* ─── Rating actions ─── */
+  const handleHardDeleteRating = async (id: string) => {
+    try {
+      await api.delete(`/admin/ratings/${id}`);
+      setRatings(prev => prev.filter(r => r._id !== id));
+      setRatingsTotal(t => t - 1);
+      toast.success('Değerlendirme tamamen silindi');
+    } catch { toast.error('Silme başarısız'); }
+  };
+
+  const handleToggleVerify = async (userId: string) => {
+    try {
+      const { data } = await api.put(`/admin/users/${userId}/verify`);
+      toast.success(data.isVerified ? 'Lider Üretici onaylandı' : 'Onay kaldırıldı');
+    } catch { toast.error('İşlem başarısız'); }
   };
 
   /* ─── Pending count for tab badge ─── */
@@ -222,6 +277,20 @@ export default function AdminModerationPage() {
         >
           <AlertTriangle size={16} />
           Küfür Logları
+        </button>
+        <button
+          onClick={() => setActiveTab('ratings')}
+          className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 w-full sm:w-auto ${
+            activeTab === 'ratings'
+              ? 'bg-[#2D6A4F] text-white shadow-sm'
+              : 'bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'
+          }`}
+        >
+          <Star size={16} />
+          Değerlendirmeler
+          <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+            activeTab === 'ratings' ? 'bg-white/20 text-white' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
+          }`}>{ratingsTotal}</span>
         </button>
       </div>
 
@@ -468,6 +537,87 @@ export default function AdminModerationPage() {
                     disabled={logsPage >= logsTotalPages}
                     className="p-2 rounded-xl hover:bg-[var(--bg-input)] disabled:opacity-30 transition-colors"
                   >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* ═══════════════════════════ TAB 3: Ratings ═══════════════════════════ */}
+      {activeTab === 'ratings' && (
+        <>
+          {ratingsLoading ? (
+            <LoadingSpinner size="lg" className="py-20" />
+          ) : ratings.length === 0 ? (
+            <div className="text-center py-20">
+              <Star size={40} className="text-[var(--text-secondary)] mx-auto mb-3 opacity-40" />
+              <p className="text-sm text-[var(--text-secondary)]">Değerlendirme bulunamadı</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3">
+                {ratings.map(r => (
+                  <div key={r._id} className="p-4 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl shadow-sm">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="text-xs font-semibold">{r.fromUserName || 'Anonim'}</span>
+                      <span className="text-[10px] text-[var(--text-secondary)]">→</span>
+                      <span className="text-xs font-mono bg-[var(--bg-input)] px-2 py-0.5 rounded-md">{r.toUserId}</span>
+                      <div className="flex items-center gap-0.5 ml-auto">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={i} size={12} className={i < r.score ? 'text-amber-400 fill-amber-400' : 'text-gray-300'} />
+                        ))}
+                      </div>
+                      {r.isUpdated && (
+                        <span className="text-[9px] font-semibold text-[#0077B6] bg-[#0077B6]/10 px-1.5 py-0.5 rounded-full">Güncellendi</span>
+                      )}
+                      <span className="text-[10px] text-[var(--text-secondary)]">
+                        {new Date(r.createdAt).toLocaleDateString('tr-TR')}
+                      </span>
+                    </div>
+                    {r.comment && !r.commentDeleted && (
+                      <p className="text-sm text-[var(--text-primary)] mb-1">{r.comment}</p>
+                    )}
+                    {r.commentDeleted && (
+                      <p className="text-[11px] italic text-[var(--text-secondary)] mb-1">Yorum silindi (puan korundu)</p>
+                    )}
+                    {r.seller_reply && (
+                      <div className="pl-3 border-l-2 border-[var(--accent-green)]/30 mt-1 mb-2">
+                        <p className="text-[10px] font-semibold text-[var(--accent-green)]">Satıcı Yanıtı:</p>
+                        <p className="text-[12px] text-[var(--text-primary)]">{r.seller_reply}</p>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-default)]">
+                      <button
+                        onClick={() => handleToggleVerify(r.toUserId)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#2D6A4F]/10 text-[#2D6A4F] hover:bg-[#2D6A4F]/20 transition-colors"
+                        title="Satıcıyı Lider Üretici yap"
+                      >
+                        <ShieldCheck size={14} />
+                        Lider Üretici
+                      </button>
+                      <div className="flex-1" />
+                      <button
+                        onClick={() => handleHardDeleteRating(r._id)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#C1341B] hover:bg-red-50 transition-colors"
+                        title="Tamamen sil"
+                      >
+                        <Trash2 size={14} />
+                        Sil
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {ratingsTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-6">
+                  <button onClick={() => setRatingsPage(p => Math.max(1, p - 1))} disabled={ratingsPage <= 1} className="p-2 rounded-xl hover:bg-[var(--bg-input)] disabled:opacity-30 transition-colors">
+                    <ChevronLeft size={18} />
+                  </button>
+                  <span className="text-sm font-medium">{ratingsPage} / {ratingsTotalPages}</span>
+                  <button onClick={() => setRatingsPage(p => Math.min(ratingsTotalPages, p + 1))} disabled={ratingsPage >= ratingsTotalPages} className="p-2 rounded-xl hover:bg-[var(--bg-input)] disabled:opacity-30 transition-colors">
                     <ChevronRight size={18} />
                   </button>
                 </div>

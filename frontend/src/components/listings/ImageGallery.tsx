@@ -14,14 +14,14 @@ export default function ImageGallery({ images, title }: ImageGalleryProps) {
 
   if (!images.length) {
     return (
-      <div className="aspect-video bg-[var(--bg-input)] rounded-[2rem] flex items-center justify-center text-6xl">
+      <div className="aspect-video bg-[var(--bg-input)] rounded-none flex items-center justify-center text-6xl">
         🌾
       </div>
     );
   }
 
   return (
-    <div className="relative aspect-video bg-[var(--bg-input)] rounded-[2rem] overflow-hidden">
+    <div className="relative aspect-video bg-[var(--bg-input)] rounded-none overflow-hidden">
       <img
         src={images[current]}
         alt={title}

@@ -8,6 +8,9 @@ export interface IRating extends Document {
   comment: string;
   fromUserName: string;
   fromUserImage: string;
+  seller_reply: string;
+  isUpdated: boolean;
+  commentDeleted: boolean;
   createdAt: Date;
 }
 
@@ -19,6 +22,9 @@ const RatingSchema = new Schema<IRating>({
   comment: { type: String, default: '' },
   fromUserName: { type: String, default: '' },
   fromUserImage: { type: String, default: '' },
+  seller_reply: { type: String, default: '' },
+  isUpdated: { type: Boolean, default: false },
+  commentDeleted: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 

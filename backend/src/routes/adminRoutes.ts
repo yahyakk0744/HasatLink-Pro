@@ -26,7 +26,9 @@ import {
   resolveReport,
   deleteReport,
   getProfanityLogs,
+  getAdminRatings,
 } from '../controllers/adminController';
+import { adminHardDeleteRating } from '../controllers/ratingController';
 
 const router = Router();
 
@@ -67,5 +69,9 @@ router.delete('/admin/reports/:id', auth, admin, deleteReport);
 
 // Moderation
 router.get('/admin/profanity-logs', auth, admin, getProfanityLogs);
+
+// Ratings
+router.get('/admin/ratings', auth, admin, getAdminRatings);
+router.delete('/admin/ratings/:id', auth, admin, adminHardDeleteRating);
 
 export default router;

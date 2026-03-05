@@ -8,6 +8,7 @@ import Notification from '../models/Notification';
 import Comment from '../models/Comment';
 import Report from '../models/Report';
 import ProfanityLog from '../models/ProfanityLog';
+import Rating from '../models/Rating';
 import { sendPushToUser } from '../utils/pushNotification';
 
 // GET /api/admin/stats — dashboard stats
@@ -643,5 +644,20 @@ export const getNotificationHistory = async (_req: Request, res: Response): Prom
     res.json(notifications);
   } catch (error) {
     res.status(500).json({ message: 'Bildirim geçmişi alınamadı', error });
+  }
+};
+
+// GET /api/admin/ratings — list all ratings for moderation
+export const getAdminRatings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const [ratings, total] = await Promise.all([
+      Rating.find().sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit),
+      Rating.countDocuments(),
+    ]);
+    res.json({ ratings, total, page, totalPages: Math.ceil(total / limit) });
+  } catch (error) {
+    res.status(500).json({ message: 'Değerlendirmeler alınamadı', error });
   }
 };

@@ -42,7 +42,7 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
 
 export default function ListingDetailView({ listing, onWaClick, onShare: _onShare, isOwner, onEdit, onDelete, onMessage }: ListingDetailViewProps) {
   const { t, i18n } = useTranslation();
-  const { shareListing, shareAsStory } = useShare();
+  const { shareListing } = useShare();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const statusInfo = STATUS_LABELS[listing.status] || STATUS_LABELS.active;
 
@@ -53,7 +53,24 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
 
   return (
     <div className="space-y-4">
-      <ImageGallery images={listing.images || []} title={listing.title} />
+      {/* Hero Section */}
+      <div className="relative">
+        <div className="rounded-b-[40px] overflow-hidden">
+          <ImageGallery images={listing.images || []} title={listing.title} />
+        </div>
+        {/* Glassmorphism floating badges */}
+        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+          <div className="px-4 py-2 rounded-2xl bg-black/30 backdrop-blur-md border border-white/10">
+            <p className={`text-xl font-bold ${listing.listingMode === 'buy' ? 'text-[#7EC8E3]' : 'text-white'}`}>
+              {formatPrice(listing.price)}
+            </p>
+            {listing.amount > 0 && <p className="text-[10px] text-white/70">{listing.amount} {listing.unit}</p>}
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-black/30 backdrop-blur-md border border-white/10">
+            <p className="text-[11px] text-white/90 flex items-center gap-1"><MapPin size={10} />{listing.location}</p>
+          </div>
+        </div>
+      </div>
 
       {/* Header */}
       <div className="bg-[var(--bg-surface)] rounded-2xl p-4 space-y-3">
@@ -78,13 +95,40 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
               <p className="text-[10px] font-medium text-[#0077B6] uppercase">{t('listing.priceBudget')}</p>
             )}
             <p className={`text-2xl font-semibold ${listing.listingMode === 'buy' ? 'text-[#0077B6]' : 'text-[#2D6A4F]'}`}>{formatPrice(listing.price)}</p>
-            {listing.amount > 0 && <p className="text-xs text-[#6B6560]">{listing.amount} {listing.unit}</p>}
           </div>
         </div>
 
         {listing.description && (
           <p className="text-sm text-[#6B6560] leading-relaxed">{listing.description}</p>
         )}
+
+        {/* Spec Grid */}
+        <div className="flex flex-wrap gap-2">
+          {listing.amount > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-input)] rounded-xl">
+              <Weight size={12} strokeWidth={1.5} className="text-[var(--text-secondary)]" />
+              <span className="text-[11px] font-medium">{listing.amount} {listing.unit}</span>
+            </div>
+          )}
+          {listing.subCategory && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-input)] rounded-xl">
+              <Box size={12} strokeWidth={1.5} className="text-[var(--text-secondary)]" />
+              <span className="text-[11px] font-medium">{listing.subCategory}</span>
+            </div>
+          )}
+          {listing.type === 'pazar' && listing.isOrganic && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2D6A4F]/10 rounded-xl">
+              <Leaf size={12} strokeWidth={1.5} className="text-[#2D6A4F]" />
+              <span className="text-[11px] font-medium text-[#2D6A4F]">Organik</span>
+            </div>
+          )}
+          {listing.type === 'lojistik' && listing.isFrigo && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0077B6]/10 rounded-xl">
+              <Thermometer size={12} strokeWidth={1.5} className="text-[#0077B6]" />
+              <span className="text-[11px] font-medium text-[#0077B6]">Frigorifik</span>
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-4 text-xs text-[#6B6560]">
           <span className="flex items-center gap-1"><MapPin size={12} />{listing.location}</span>
@@ -190,55 +234,50 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
         </DetailSection>
       )}
 
-      {/* Actions */}
-      <div className="flex gap-3">
-        {isOwner ? (
-          <>
-            <Button onClick={onEdit} className="flex-1 flex items-center justify-center gap-2 bg-[var(--accent-blue)] hover:opacity-90">
-              <Pencil size={16} />
-              {t('listing.edit')}
-            </Button>
-            <button onClick={onDelete} className="flex items-center justify-center w-12 h-12 bg-[var(--accent-red)] text-white rounded-2xl hover:opacity-90 active:scale-95 transition-all duration-300">
-              <Trash2 size={18} />
-            </button>
-          </>
-        ) : (
-          <>
-            {onMessage && (
-              <button
-                onClick={onMessage}
-                className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-[var(--accent-green)] text-white font-semibold text-sm rounded-2xl hover:opacity-90 active:scale-[0.95] transition-all duration-300"
-              >
-                <MessageSquare size={16} />
-                {t('listing.message')}
+      {/* Sticky Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-surface)]/80 backdrop-blur-xl border-t border-[var(--border-default)] px-4 py-3 safe-area-bottom">
+        <div className="max-w-4xl mx-auto flex items-center gap-3">
+          {isOwner ? (
+            <>
+              <Button onClick={onEdit} className="flex-1 flex items-center justify-center gap-2 bg-[var(--accent-blue)] hover:opacity-90">
+                <Pencil size={16} />
+                {t('listing.edit')}
+              </Button>
+              <button onClick={onDelete} className="flex items-center justify-center w-12 h-12 bg-[var(--accent-red)] text-white rounded-2xl hover:opacity-90 active:scale-95 transition-all duration-300">
+                <Trash2 size={18} />
               </button>
-            )}
-            <Button onClick={handleWhatsApp} className="flex-1 flex items-center justify-center gap-2">
-              <MessageCircle size={16} />
-              {listing.listingMode === 'buy' ? t('listing.contactBuyer') : t('listing.whatsapp')}
-            </Button>
-            {listing.phone && (
-              <a href={`tel:${listing.phone}`} className="flex items-center justify-center w-12 h-12 bg-[var(--bg-input)] rounded-2xl hover:bg-[var(--bg-surface-hover)] transition-colors">
-                <Phone size={18} />
-              </a>
-            )}
-          </>
-        )}
-        <button
-          onClick={() => shareListing(listing._id, listing.title)}
-          className="flex items-center justify-center w-12 h-12 bg-[var(--bg-input)] rounded-2xl hover:bg-[var(--bg-surface-hover)] active:scale-95 transition-all"
-          title="Paylas"
-        >
-          <Share2 size={18} />
-        </button>
-        <button
-          onClick={() => shareAsStory(listing._id)}
-          className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-2xl hover:opacity-90 active:scale-95 transition-all"
-          title="Story olarak indir"
-        >
-          <Share2 size={16} />
-        </button>
+            </>
+          ) : (
+            <>
+              {onMessage && (
+                <button
+                  onClick={onMessage}
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-[var(--accent-green)] text-white font-semibold text-sm rounded-2xl hover:opacity-90 active:scale-[0.95] transition-all duration-300"
+                >
+                  <MessageSquare size={16} />
+                  {t('listing.message')}
+                </button>
+              )}
+              <button onClick={handleWhatsApp} className="flex items-center justify-center w-12 h-12 bg-[#25D366] text-white rounded-2xl hover:opacity-90 active:scale-95 transition-all">
+                <MessageCircle size={18} />
+              </button>
+              {listing.phone && (
+                <a href={`tel:${listing.phone}`} className="flex items-center justify-center w-12 h-12 bg-[var(--bg-input)] rounded-2xl hover:bg-[var(--bg-surface-hover)] transition-colors">
+                  <Phone size={18} />
+                </a>
+              )}
+            </>
+          )}
+          <button
+            onClick={() => shareListing(listing._id, listing.title)}
+            className="flex items-center justify-center w-12 h-12 bg-[var(--bg-input)] rounded-2xl hover:bg-[var(--bg-surface-hover)] active:scale-95 transition-all"
+          >
+            <Share2 size={18} />
+          </button>
+        </div>
       </div>
+      {/* Spacer for sticky bar */}
+      <div className="h-20" />
     </div>
   );
 }

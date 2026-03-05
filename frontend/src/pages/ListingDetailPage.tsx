@@ -235,7 +235,7 @@ export default function ListingDetailPage() {
               />
             )}
             {ratings.length > 0 ? (
-              ratings.map(r => <ReviewCard key={r._id} rating={r} />)
+              ratings.map(r => <ReviewCard key={r._id} rating={r} currentUserId={user?.userId} sellerId={listing.userId} onRefresh={() => fetchRatings(listing.userId)} />)
             ) : (
               <p className="text-xs text-[var(--text-secondary)]">{t('rating.noReviews')}</p>
             )}

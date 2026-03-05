@@ -152,6 +152,9 @@ export interface Rating {
   comment: string;
   fromUserName: string;
   fromUserImage: string;
+  seller_reply?: string;
+  isUpdated?: boolean;
+  commentDeleted?: boolean;
   createdAt: string;
 }
 
