@@ -20,6 +20,8 @@ import adRoutes from './routes/adRoutes';
 import adminRoutes from './routes/adminRoutes';
 import commentRoutes from './routes/commentRoutes';
 import blogRoutes from './routes/blogRoutes';
+import dealerRoutes from './routes/dealerRoutes';
+import { expireOutdatedDealers } from './controllers/dealerController';
 
 dotenv.config();
 
@@ -83,6 +85,7 @@ app.use('/api', adRoutes);
 app.use('/api', adminRoutes);
 app.use('/api', commentRoutes);
 app.use('/api', blogRoutes);
+app.use('/api', dealerRoutes);
 
 // VAPID public key endpoint
 app.get('/api/push/vapid-key', (_req, res) => {
@@ -93,4 +96,12 @@ app.get('/api/push/vapid-key', (_req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => console.log(`HasatLink Backend running on port ${PORT}`));
+httpServer.listen(PORT, () => {
+  console.log(`HasatLink Backend running on port ${PORT}`);
+
+  // Auto-expire dealers every hour
+  setInterval(async () => {
+    const count = await expireOutdatedDealers();
+    if (count > 0) console.log(`[CRON] ${count} bayi süresi dolduğu için devre dışı bırakıldı`);
+  }, 60 * 60 * 1000);
+});

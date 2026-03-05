@@ -164,14 +164,61 @@ export interface Comment {
 
 export interface AIDiagnosisResult {
   disease: string;
+  disease_code: string;
   confidence: number;
   treatment: string;
+  stage: 'early' | 'mid' | 'advanced';
+  spread_risk: 'low' | 'medium' | 'high';
+  urgency: 'low' | 'medium' | 'critical';
+  crop_type: string;
+  needs_better_photo: boolean;
+  warning: string | null;
 }
 
 export interface AIDiagnosisHistory extends AIDiagnosisResult {
   _id: string;
   userId: string;
   createdAt: string;
+}
+
+export interface Dealer {
+  _id: string;
+  name: string;
+  companyName: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  address: string;
+  coordinates: { lat: number; lng: number };
+  profileImage: string;
+  coverImage: string;
+  description: string;
+  specialization_tags: string[];
+  ad_status: 'active' | 'pending' | 'rejected' | 'expired';
+  is_premium_partner: boolean;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  commission_rate: number;
+  website: string;
+  google_maps_url: string;
+  impressionCount: number;
+  clickCount: number;
+  contactCount: number;
+  createdAt: string;
+}
+
+export interface NearbyDealerItem {
+  dealer: Dealer;
+  distance: number;
+  matchScore?: number;
+}
+
+export interface DealersResponse {
+  dealers: NearbyDealerItem[];
+  total: number;
+  page: number;
+  totalPages: number;
 }
 
 export interface WeatherData {

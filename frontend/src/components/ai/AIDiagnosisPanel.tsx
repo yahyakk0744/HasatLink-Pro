@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, Cpu } from 'lucide-react';
+import { Upload, Cpu, X } from 'lucide-react';
 import Button from '../ui/Button';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import DiagnosisResult from './DiagnosisResult';
@@ -33,43 +33,66 @@ export default function AIDiagnosisPanel() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A2520] rounded-[2.5rem] p-6 text-white">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 bg-[#2D6A4F] rounded-2xl flex items-center justify-center">
-          <Cpu size={20} />
+    <div className="relative overflow-hidden rounded-2xl bg-white/70 backdrop-blur-md border border-white/20 shadow-sm p-6">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center shadow-sm">
+          <Cpu size={20} className="text-white" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold tracking-tight">{t('ai.title')}</h3>
-          <p className="text-xs text-white/50">{t('ai.subtitle')}</p>
+          <h3 className="text-[17px] font-semibold text-gray-900 tracking-tight">{t('ai.title')}</h3>
+          <p className="text-[12px] text-gray-500">{t('ai.subtitle')}</p>
         </div>
       </div>
 
+      {/* Upload area */}
       {!preview && !loading && !result && (
         <label className="block cursor-pointer">
-          <div className="border-2 border-dashed border-white/20 rounded-2xl p-8 text-center hover:border-[#2D6A4F] transition-colors">
-            <Upload size={32} className="mx-auto mb-3 text-white/50" />
-            <p className="text-sm font-semibold">{t('ai.upload')}</p>
-            <p className="text-xs text-white/40 mt-1">{t('ai.uploadDescription')}</p>
+          <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center hover:border-emerald-400 hover:bg-emerald-50/30 transition-all">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gray-100 flex items-center justify-center">
+              <Upload size={24} className="text-gray-400" />
+            </div>
+            <p className="text-[14px] font-semibold text-gray-700">{t('ai.upload')}</p>
+            <p className="text-[12px] text-gray-400 mt-1">{t('ai.uploadDescription')}</p>
           </div>
           <input ref={inputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
         </label>
       )}
 
+      {/* Preview */}
       {preview && (
-        <img src={preview} alt="Preview" className="w-full aspect-video object-cover rounded-2xl mb-4" />
-      )}
-
-      {loading && (
-        <div className="py-8 text-center">
-          <LoadingSpinner size="lg" className="mb-3" />
-          <p className="text-sm font-semibold">{t('ai.analyzing')}</p>
+        <div className="relative mb-4">
+          <img src={preview} alt="Preview" className="w-full aspect-video object-cover rounded-2xl" />
+          {!loading && !result && (
+            <button
+              onClick={handleReset}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
       )}
 
+      {/* Loading */}
+      {loading && (
+        <div className="py-10 text-center">
+          <LoadingSpinner size="lg" className="mb-3" />
+          <p className="text-[14px] font-semibold text-gray-700">{t('ai.analyzing')}</p>
+          <p className="text-[12px] text-gray-400 mt-1">AI modeli analiz ediyor...</p>
+        </div>
+      )}
+
+      {/* Result */}
       {result && <DiagnosisResult result={result} />}
 
-      {(preview || result) && (
-        <Button variant="outline" onClick={handleReset} className="w-full mt-4 border-white/20 text-white hover:bg-white/10 hover:text-white">
+      {/* Reset */}
+      {(preview || result) && !loading && (
+        <Button
+          variant="outline"
+          onClick={handleReset}
+          className="w-full mt-5 border-gray-200 text-gray-700 hover:bg-gray-50"
+        >
           {t('ai.tryAgain')}
         </Button>
       )}

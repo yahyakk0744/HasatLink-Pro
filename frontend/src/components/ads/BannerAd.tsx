@@ -32,7 +32,18 @@ export default function BannerAd({ slot, className = '' }: BannerAdProps) {
   };
 
   return (
-    <div className={`cursor-pointer overflow-hidden rounded-xl ${className}`} onClick={handleClick}>
+    <div
+      className={`
+        cursor-pointer overflow-hidden rounded-2xl
+        bg-white/70 backdrop-blur-md
+        border border-white/20
+        shadow-sm hover:shadow-md
+        transition-all duration-300
+        hover:-translate-y-0.5
+        ${className}
+      `}
+      onClick={handleClick}
+    >
       <img src={ad.imageUrl} alt="" className="w-full h-auto object-cover" />
     </div>
   );

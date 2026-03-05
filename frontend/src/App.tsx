@@ -29,6 +29,7 @@ const AdminContactsPage = lazy(() => import('./pages/AdminContactsPage'));
 const AdminSettingsPage = lazy(() => import('./pages/AdminSettingsPage'));
 const AdminRevenuePage = lazy(() => import('./pages/AdminRevenuePage'));
 const AdminAdsPage = lazy(() => import('./pages/AdminAdsPage'));
+const AdminDealersPage = lazy(() => import('./pages/AdminDealersPage'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
 const AdminListingsPage = lazy(() => import('./pages/AdminListingsPage'));
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
@@ -97,6 +98,7 @@ export default function App() {
             <Route path="/admin/ayarlar" element={<AdminSettingsPage />} />
             <Route path="/admin/gelir" element={<AdminRevenuePage />} />
             <Route path="/admin/reklamlar" element={<AdminAdsPage />} />
+            <Route path="/admin/bayiler" element={<AdminDealersPage />} />
             <Route path="/admin/bildirimler" element={<AdminNotificationsPage />} />
             <Route path="/admin/blog" element={<AdminBlogPage />} />
             <Route path="/admin/moderasyon" element={<AdminModerationPage />} />
