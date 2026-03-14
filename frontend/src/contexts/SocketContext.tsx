@@ -17,7 +17,7 @@ const SocketContext = createContext<SocketContextType>({
   isUserOnline: () => false,
 });
 
-const SOCKET_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.PROD ? 'http://187.77.87.107:5000' : 'http://localhost:5000');
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
