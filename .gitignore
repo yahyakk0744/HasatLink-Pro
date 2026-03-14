@@ -3,9 +3,13 @@ dist
 dist-ssr
 *.local
 .env
+.env.production
+.env.local
+.env.*.local
 *.log
 .DS_Store
 .claude/
+uploads/
 
 # Capacitor Android build outputs
 frontend/android/app/build/

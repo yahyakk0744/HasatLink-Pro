@@ -127,25 +127,14 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
     let geminiResult = await analyzeWithGemini(imagePath);
     let usedGemini = !!geminiResult;
 
-    // Fallback to local DB if Gemini fails
+    // If Gemini fails, return error instead of fake data
     if (!geminiResult) {
-      const cropTypes = [...new Set(DISEASES.map(d => d.crop_type).filter(c => c !== 'Genel'))];
-      const crop = cropTypes[Math.floor(Math.random() * cropTypes.length)];
-      const candidates = DISEASES.filter(d => d.crop_type === crop || d.crop_type === 'Genel');
-      const picked = candidates[Math.floor(Math.random() * candidates.length)];
-      geminiResult = {
-        crop_type: picked.crop_type,
-        disease: picked.disease,
-        disease_code: picked.disease_code,
-        confidence: picked.confidence,
-        stage: picked.stage,
-        spread_risk: picked.spread_risk,
-        urgency: picked.urgency,
-        treatment: picked.treatment,
-        recommended_products: picked.recommended_products,
-        prevention: picked.prevention,
-        detailed_analysis: picked.treatment,
-      };
+      res.status(503).json({
+        message: 'AI analiz servisi su an kullanilamamaktadir. Lutfen daha sonra tekrar deneyin.',
+        ai_engine: 'none',
+        error_code: 'GEMINI_UNAVAILABLE',
+      });
+      return;
     }
 
     const isHealthy = geminiResult.disease_code === 'saglikli' || geminiResult.disease?.toLowerCase().includes('saglikli');
