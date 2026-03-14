@@ -17,7 +17,7 @@ const SocketContext = createContext<SocketContextType>({
   isUserOnline: () => false,
 });
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.PROD ? 'https://hasatlink-api.onrender.com' : 'http://localhost:5000');
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
@@ -38,10 +38,9 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const isProd = import.meta.env.PROD;
     const s = io(SOCKET_URL, {
       query: { userId: user.userId },
-      transports: isProd ? ['polling'] : ['websocket', 'polling'],
+      transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 10000,

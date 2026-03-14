@@ -1,8 +1,8 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "http://187.77.87.107:5000/api/:path*" },
-    { "source": "/uploads/:path*", "destination": "http://187.77.87.107:5000/uploads/:path*" },
-    { "source": "/socket.io/:path*", "destination": "http://187.77.87.107:5000/socket.io/:path*" },
+    { "source": "/api/:path*", "destination": "https://hasatlink-api.onrender.com/api/:path*" },
+    { "source": "/uploads/:path*", "destination": "https://hasatlink-api.onrender.com/uploads/:path*" },
+    { "source": "/socket.io/:path*", "destination": "https://hasatlink-api.onrender.com/socket.io/:path*" },
     { "source": "/__/auth/(.*)", "destination": "https://hasatlink-33.firebaseapp.com/__/auth/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
