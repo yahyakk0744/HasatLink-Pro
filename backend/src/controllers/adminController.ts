@@ -11,6 +11,7 @@ import ProfanityLog from '../models/ProfanityLog';
 import Rating from '../models/Rating';
 import { sendPushToUser } from '../utils/pushNotification';
 import { awardPoints, POINT_VALUES } from '../utils/pointsService';
+import ListingView from '../models/ListingView';
 
 // GET /api/admin/stats — dashboard stats
 export const getDashboardStats = async (_req: Request, res: Response): Promise<void> => {
@@ -688,5 +689,106 @@ export const getAdminRatings = async (req: Request, res: Response): Promise<void
     res.json({ ratings, total, page, totalPages: Math.ceil(total / limit) });
   } catch (error) {
     res.status(500).json({ message: 'Değerlendirmeler alınamadı', error });
+  }
+};
+
+// GET /api/admin/stats/daily-visitors — daily unique visitors from ListingView
+export const getDailyVisitors = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const days = parseInt(req.query.days as string) || 30;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+
+    const dailyVisitors = await ListingView.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: {
+            date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            identifier: '$identifier',
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$_id.date',
+          uniqueVisitors: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+      { $project: { _id: 0, date: '$_id', uniqueVisitors: 1 } },
+    ]);
+
+    const totalViewsPerDay = await ListingView.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          totalViews: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+      { $project: { _id: 0, date: '$_id', totalViews: 1 } },
+    ]);
+
+    // Merge unique visitors and total views
+    const viewsMap = new Map(totalViewsPerDay.map((v: any) => [v.date, v.totalViews]));
+    const merged = dailyVisitors.map((d: any) => ({
+      date: d.date,
+      uniqueVisitors: d.uniqueVisitors,
+      totalViews: viewsMap.get(d.date) || 0,
+    }));
+
+    const totalUniqueAllTime = await ListingView.distinct('identifier').then(ids => ids.length);
+
+    res.json({ daily: merged, totalUniqueAllTime, days });
+  } catch (error) {
+    res.status(500).json({ message: 'Ziyaretci istatistikleri alinamadi', error });
+  }
+};
+
+// GET /api/admin/stats/active-users — users active in last N hours
+export const getActiveUsers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const hours = parseInt(req.query.hours as string) || 24;
+    const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+
+    const [activeUsers, totalUsers, onlineNow] = await Promise.all([
+      User.countDocuments({ lastActiveAt: { $gte: since } }),
+      User.countDocuments(),
+      User.countDocuments({ lastActiveAt: { $gte: new Date(Date.now() - 15 * 60 * 1000) } }), // last 15 min
+    ]);
+
+    // Hourly breakdown for chart
+    const hourlyActive = await User.aggregate([
+      { $match: { lastActiveAt: { $gte: since } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d %H:00', date: '$lastActiveAt' } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+      { $project: { _id: 0, hour: '$_id', count: 1 } },
+    ]);
+
+    // Recent active users list (top 10)
+    const recentActiveList = await User.find({ lastActiveAt: { $gte: since } })
+      .sort({ lastActiveAt: -1 })
+      .limit(10)
+      .select('name email profileImage lastActiveAt location')
+      .lean();
+
+    res.json({
+      activeInLast24h: activeUsers,
+      onlineNow,
+      totalUsers,
+      activityRate: totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0,
+      hourlyActive,
+      recentActiveList,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Aktif kullanici istatistikleri alinamadi', error });
   }
 };

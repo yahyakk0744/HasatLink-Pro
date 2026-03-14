@@ -28,6 +28,8 @@ import {
   getProfanityLogs,
   getAdminRatings,
   adjustUserPoints,
+  getDailyVisitors,
+  getActiveUsers,
 } from '../controllers/adminController';
 import { adminHardDeleteRating } from '../controllers/ratingController';
 
@@ -36,6 +38,8 @@ const router = Router();
 // Dashboard
 router.get('/admin/stats', auth, admin, getDashboardStats);
 router.get('/admin/stats/enhanced', auth, admin, getEnhancedStats);
+router.get('/admin/stats/daily-visitors', auth, admin, getDailyVisitors);
+router.get('/admin/stats/active-users', auth, admin, getActiveUsers);
 
 // Listings
 router.get('/admin/listings', auth, admin, getAdminListings);

@@ -22,6 +22,7 @@ export interface IUser extends Document {
   trust_score: number;
   points: number;
   favorites: string[];
+  lastActiveAt: Date;
   createdAt: Date;
 }
 
@@ -47,6 +48,7 @@ const UserSchema = new Schema<IUser>({
   trust_score: { type: Number, default: 0 },
   points: { type: Number, default: 0 },
   favorites: [{ type: String }],
+  lastActiveAt: { type: Date, default: Date.now },
   createdAt: { type: Date, default: Date.now },
 });
 

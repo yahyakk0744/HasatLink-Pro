@@ -60,6 +60,10 @@ app.use(rateLimit);
 import { sanitize } from './middleware/sanitize';
 app.use(sanitize);
 
+// Track user activity (lastActiveAt)
+import trackActivity from './middleware/trackActivity';
+app.use(trackActivity);
+
 // Security headers + cache control for public GET endpoints
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');

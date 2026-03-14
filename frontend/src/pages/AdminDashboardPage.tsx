@@ -40,6 +40,21 @@ interface EnhancedStats {
   cityDistribution: { name: string; value: number }[];
 }
 
+interface VisitorStats {
+  daily: { date: string; uniqueVisitors: number; totalViews: number }[];
+  totalUniqueAllTime: number;
+  days: number;
+}
+
+interface ActiveUserStats {
+  activeInLast24h: number;
+  onlineNow: number;
+  totalUsers: number;
+  activityRate: number;
+  hourlyActive: { hour: string; count: number }[];
+  recentActiveList: { name: string; email: string; profileImage: string; lastActiveAt: string; location: string }[];
+}
+
 const typeLabels: Record<string, string> = {
   pazar: 'Pazar',
   lojistik: 'Lojistik',
@@ -78,16 +93,22 @@ export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [enhanced, setEnhanced] = useState<EnhancedStats | null>(null);
+  const [visitors, setVisitors] = useState<VisitorStats | null>(null);
+  const [activeUsers, setActiveUsers] = useState<ActiveUserStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       api.get('/admin/stats').then(({ data }) => data),
       api.get('/admin/stats/enhanced').then(({ data }) => data).catch(() => null),
+      api.get('/admin/stats/daily-visitors?days=30').then(({ data }) => data).catch(() => null),
+      api.get('/admin/stats/active-users').then(({ data }) => data).catch(() => null),
     ])
-      .then(([statsData, enhancedData]) => {
+      .then(([statsData, enhancedData, visitorData, activeData]) => {
         setStats(statsData);
         setEnhanced(enhancedData);
+        setVisitors(visitorData);
+        setActiveUsers(activeData);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -121,20 +142,20 @@ export default function AdminDashboardPage() {
       icon: Users,
     },
     {
-      label: 'Toplam Görüntüleme',
-      value: stats?.totalListings ? stats.totalListings * 12 : 0,
-      sub: 'Tüm ilanların toplamı',
-      trend: 8,
-      trendSuffix: '% haftalık',
+      label: 'Günlük Ziyaretçi',
+      value: visitors?.daily?.length ? visitors.daily[visitors.daily.length - 1]?.uniqueVisitors ?? 0 : 0,
+      sub: `${visitors?.totalUniqueAllTime ?? 0} toplam tekil ziyaretçi`,
+      trend: 0,
+      trendSuffix: '',
       color: '#0077B6',
       icon: Eye,
     },
     {
-      label: 'Gelen Teklifler',
-      value: stats?.pendingListings ?? 0,
-      sub: 'Bekleyen teklifler',
-      trend: 0,
-      trendSuffix: '',
+      label: 'Aktif Kullanıcı',
+      value: activeUsers?.activeInLast24h ?? 0,
+      sub: `${activeUsers?.onlineNow ?? 0} şu an çevrimiçi`,
+      trend: activeUsers?.activityRate ?? 0,
+      trendSuffix: '% aktivite',
       color: '#F59E0B',
       icon: HandCoins,
     },
@@ -279,6 +300,66 @@ export default function AdminDashboardPage() {
                   />
                 </AreaChart>
               </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Daily Visitors Chart */}
+        {visitors?.daily && visitors.daily.length > 0 && (
+          <div className="bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur-xl border border-white/40 dark:border-[var(--border-default)] rounded-[32px] p-6 shadow-sm">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-4">
+              Günlük Ziyaretçiler (Son 30 Gün)
+            </h2>
+            <div className="min-h-[220px]">
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={visitors.daily}>
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                  <YAxis width={28} tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', fontSize: 12 }}
+                    formatter={(value: number, name: string) => [value, name === 'uniqueVisitors' ? 'Tekil Ziyaretçi' : 'Toplam Görüntüleme']}
+                  />
+                  <Bar dataKey="uniqueVisitors" fill="#0077B6" radius={[6, 6, 0, 0]} name="uniqueVisitors" />
+                  <Bar dataKey="totalViews" fill="#0077B630" radius={[6, 6, 0, 0]} name="totalViews" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Active Users - Recent List */}
+        {activeUsers?.recentActiveList && activeUsers.recentActiveList.length > 0 && (
+          <div className="bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur-xl border border-white/40 dark:border-[var(--border-default)] rounded-[32px] p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                Son Aktif Kullanıcılar
+              </h2>
+              <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+                {activeUsers.onlineNow} çevrimiçi
+              </span>
+            </div>
+            <div className="space-y-2">
+              {activeUsers.recentActiveList.map((user, i) => (
+                <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-[var(--bg-input)] hover:bg-[var(--bg-input-hover)] transition-colors">
+                  <div className="relative">
+                    {user.profileImage ? (
+                      <img src={user.profileImage} alt="" className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-[10px] font-bold text-emerald-700">
+                        {user.name?.charAt(0)?.toUpperCase()}
+                      </div>
+                    )}
+                    <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold truncate">{user.name}</p>
+                    <p className="text-[10px] text-[var(--text-secondary)]">{user.location || user.email}</p>
+                  </div>
+                  <span className="text-[10px] text-[var(--text-secondary)] shrink-0">
+                    {new Date(user.lastActiveAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )}
