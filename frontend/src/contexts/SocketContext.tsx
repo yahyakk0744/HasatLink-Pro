@@ -42,7 +42,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       query: { userId: user.userId },
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionDelay: 1000,
+      reconnectionDelay: 1000 + Math.random() * 500,
       reconnectionDelayMax: 10000,
       reconnectionAttempts: Infinity,
       timeout: 20000,

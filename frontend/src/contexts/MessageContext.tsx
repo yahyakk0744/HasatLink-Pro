@@ -76,7 +76,7 @@ export const MessageProvider = ({ children }: { children: ReactNode }) => {
     const pusher = getPusherClient();
     const channel = pusher.subscribe(`user-${userId}`);
 
-    channel.bind('conversation:update', (data: { conversationId: string; lastMessage: string; senderName: string }) => {
+    channel.bind('conversation:update', (data: { conversationId: string; lastMessage: string; senderName: string; senderId?: string }) => {
       // Update the conversation list with new last message
       setConversations(prev => {
         const updated = prev.map(c =>
@@ -91,15 +91,17 @@ export const MessageProvider = ({ children }: { children: ReactNode }) => {
           return bTime - aTime;
         });
       });
-      // Increment unread count
-      setUnreadCount(prev => prev + 1);
+      // Only increment unread count if message sender is NOT the current user
+      if (data.senderId !== userId && data.senderId !== firebaseUid) {
+        setUnreadCount(prev => prev + 1);
+      }
     });
 
     return () => {
       channel.unbind_all();
       pusher.unsubscribe(`user-${userId}`);
     };
-  }, [user?.userId]);
+  }, [user?.userId, firebaseUid]);
 
   return (
     <MessageContext.Provider value={{ conversations, unreadCount, loading }}>

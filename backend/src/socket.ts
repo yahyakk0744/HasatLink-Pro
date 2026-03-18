@@ -9,6 +9,25 @@ let io: Server;
 // Track online users: userId -> Set of socketIds
 const onlineUsers = new Map<string, Set<string>>();
 
+// Per-user rate limiting for message:new events (max 10 messages per 5 seconds)
+const messageRateLimit = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 5000;
+
+function checkMessageRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = messageRateLimit.get(userId);
+  if (!entry || now >= entry.resetAt) {
+    messageRateLimit.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+  entry.count++;
+  return true;
+}
+
 export function initSocket(httpServer: HttpServer) {
   io = new Server(httpServer, {
     cors: {
@@ -62,6 +81,12 @@ export function initSocket(httpServer: HttpServer) {
 
     // New message — relay via Socket.IO + Pusher + create notification
     socket.on('message:new', (data: { conversationId: string; message: any; recipientId?: string; senderName?: string }) => {
+      // Rate limit check
+      if (userId && !checkMessageRateLimit(userId)) {
+        socket.emit('error', { message: 'Rate limit exceeded. Max 10 messages per 5 seconds.' });
+        return;
+      }
+
       // Relay message to other participants in the conversation via Socket.IO
       socket.to(`conversation:${data.conversationId}`).emit('message:new', data);
 
@@ -78,6 +103,7 @@ export function initSocket(httpServer: HttpServer) {
             conversationId: data.conversationId,
             lastMessage: data.message?.text,
             senderName: data.senderName,
+            senderId: data.message?.senderId || userId,
             timestamp: new Date().toISOString(),
           });
         }
@@ -85,22 +111,23 @@ export function initSocket(httpServer: HttpServer) {
         console.error('[Pusher] Trigger error:', err);
       }
 
-      // Send delivery confirmation back to sender
-      if (data.message?.id || data.message?.createdAt) {
+      // Send delivery confirmation back to sender — only if message has a valid ID
+      const messageId = data.message?.id || data.message?._id;
+      if (messageId && data.conversationId) {
         const recipientOnline = data.recipientId
           ? onlineUsers.has(data.recipientId) && onlineUsers.get(data.recipientId)!.size > 0
           : false;
 
         socket.emit('message:delivered', {
           conversationId: data.conversationId,
-          messageId: data.message?.id,
+          messageId,
           timestamp: new Date().toISOString(),
         });
 
         if (recipientOnline && data.recipientId) {
           io.to(`user:${data.recipientId}`).emit('message:delivered', {
             conversationId: data.conversationId,
-            messageId: data.message?.id,
+            messageId,
             timestamp: new Date().toISOString(),
           });
         }
@@ -122,7 +149,9 @@ export function initSocket(httpServer: HttpServer) {
             body: msgPreview,
             url: '/mesajlar',
           }, notif);
-        }).catch(() => {});
+        }).catch((error) => {
+          console.error('[Socket.IO] Failed to create notification for recipient:', error);
+        });
       }
     });
 
@@ -131,7 +160,9 @@ export function initSocket(httpServer: HttpServer) {
       socket.to(`conversation:${data.conversationId}`).emit('message:read', data);
       try {
         getPusher().trigger(`conversation-${data.conversationId}`, 'message:read', data);
-      } catch {}
+      } catch (error) {
+        console.error('[Socket.IO] Pusher trigger error for message:read:', error);
+      }
     });
 
     // Check if user is online

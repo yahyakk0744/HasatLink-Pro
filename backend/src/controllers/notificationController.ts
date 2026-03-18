@@ -22,7 +22,17 @@ export const getUnreadCount = async (req: Request, res: Response): Promise<void>
 
 export const markAsRead = async (req: Request, res: Response): Promise<void> => {
   try {
-    await Notification.findByIdAndUpdate(req.params.id, { isRead: true });
+    const notification = await Notification.findById(req.params.id);
+    if (!notification) {
+      res.status(404).json({ message: 'Bildirim bulunamadı' });
+      return;
+    }
+    if (notification.userId !== (req as any).userId) {
+      res.status(403).json({ message: 'Bu bildirimi okuma yetkiniz yok' });
+      return;
+    }
+    notification.isRead = true;
+    await notification.save();
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ message: 'Hata', error });
@@ -51,7 +61,7 @@ export const pushSubscribe = async (req: Request, res: Response): Promise<void> 
       {
         endpoint: subscription.endpoint,
         keys: subscription.keys,
-        userId: (req as any).userId || '',
+        userId: (req as any).userId,
       },
       { upsert: true, new: true }
     );

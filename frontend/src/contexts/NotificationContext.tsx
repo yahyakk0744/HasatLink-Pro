@@ -66,12 +66,16 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const fetchNotifications = useCallback(async () => {
     if (!user?.userId) return;
     try {
-      const [notifsRes, countRes] = await Promise.all([
+      const [notifsResult, countResult] = await Promise.allSettled([
         api.get<Notification[]>(`/notifications/${user.userId}`),
         api.get<{ count: number }>(`/notifications/${user.userId}/unread-count`),
       ]);
-      setNotifications(notifsRes.data);
-      setUnreadCount(countRes.data.count);
+      if (notifsResult.status === 'fulfilled') {
+        setNotifications(notifsResult.value.data);
+      }
+      if (countResult.status === 'fulfilled') {
+        setUnreadCount(countResult.value.data.count);
+      }
     } catch {
       // Silently fail — notifications are non-critical
     }
@@ -288,6 +292,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       };
     } else {
       weatherCheckedRef.current = false;
+      // Close AudioContext when user logs out
+      if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') {
+        sharedAudioCtx.close().catch(() => {});
+        sharedAudioCtx = null;
+      }
     }
   }, [user?.userId, fetchNotifications, checkWeatherAlerts, permission, requestPermission]);
 

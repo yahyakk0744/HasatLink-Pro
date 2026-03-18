@@ -22,7 +22,7 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const otherUid = conversation.participantUids.find((uid) => uid !== currentUid) || '';
+  const otherUid = conversation.participantUids?.find((uid) => uid !== currentUid) || '';
   const otherParticipant = conversation.participants?.[otherUid];
   const otherName = otherParticipant?.name || 'Kullanici';
   const otherOnline = isUserOnline(otherParticipant?.userId || otherUid);
@@ -50,8 +50,11 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
           delivered: true,
         };
         setMessages(prev => {
-          // Avoid duplicates (Firestore onSnapshot may also add this)
-          if (prev.some(m => m.text === newMsg.text && m.senderId === newMsg.senderId && Math.abs(new Date(m.createdAt?.seconds ? m.createdAt.seconds * 1000 : m.createdAt).getTime() - new Date(newMsg.createdAt).getTime()) < 3000)) {
+          // Avoid duplicates: prefer ID-based dedup, fall back to content+timestamp
+          const isDuplicate = newMsg.id && !newMsg.id.startsWith('pusher-')
+            ? prev.some(m => m.id === newMsg.id)
+            : prev.some(m => m.text === newMsg.text && m.senderId === newMsg.senderId && Math.abs(new Date(m.createdAt?.seconds ? m.createdAt.seconds * 1000 : m.createdAt).getTime() - new Date(newMsg.createdAt).getTime()) < 3000);
+          if (isDuplicate) {
             return prev;
           }
           return [...prev, newMsg];
