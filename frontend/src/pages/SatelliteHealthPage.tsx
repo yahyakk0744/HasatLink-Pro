@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate } from 'react-router-dom';
 import {
   Satellite, MapPin, Scan, Loader2, Leaf, TrendingUp,
   AlertTriangle, CheckCircle, XCircle, Sun, Droplets,
   Search, LocateFixed, Minus, Plus, Pencil, Trash2, RotateCcw,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Polygon as LeafletPolygon, Polyline, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
-import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from '../contexts/LocationContext';
 import { useSatellite, getHealthLabel } from '../hooks/useSatellite';
 import type { NDVIDataPoint } from '../hooks/useSatellite';
@@ -167,7 +165,6 @@ function HealthCard({ status, color, ndvi }: { status: string; color: string; nd
 export default function SatelliteHealthPage() {
   const { i18n } = useTranslation();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
-  const { user } = useAuth();
   const { location: geoLocation } = useLocation();
   const { analysis, loading, error, analyze, clear } = useSatellite();
 
@@ -182,7 +179,7 @@ export default function SatelliteHealthPage() {
   const [searching, setSearching] = useState(false);
   const [mapType, setMapType] = useState<'satellite' | 'street'>('satellite');
 
-  if (!user) return <Navigate to="/giris" replace />;
+  // Auth not required — anyone can analyze fields
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
     if (!drawMode || isPolygonClosed) return;

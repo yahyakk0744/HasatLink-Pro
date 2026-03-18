@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import auth from '../middleware/auth';
+import optionalAuth from '../middleware/optionalAuth';
 import {
   createPolygon,
   getSatelliteImagery,
@@ -12,11 +13,11 @@ import {
 
 const router = Router();
 
-// TKGM parcel query by coordinate
-router.get('/satellite/parcel', auth, getParcelByCoordinate);
+// TKGM parcel query by coordinate (public)
+router.get('/satellite/parcel', optionalAuth, getParcelByCoordinate);
 
-// Quick one-shot analysis (create temp polygon → get NDVI → cleanup)
-router.post('/satellite/analyze', auth, quickAnalyze);
+// Quick one-shot analysis — public so anyone can try (create temp polygon → get NDVI → cleanup)
+router.post('/satellite/analyze', optionalAuth, quickAnalyze);
 
 // Polygon CRUD
 router.post('/satellite/polygon', auth, createPolygon);
