@@ -240,8 +240,8 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
         dt: img.dt,
         date: new Date(img.dt * 1000).toISOString().split('T')[0],
         cloudCoverage: img.cl,
-        trueColor: img.image?.truecolor,
-        ndvi: img.image?.ndvi,
+        trueColor: img.image?.truecolor?.replace('http://', 'https://'),
+        ndvi: img.image?.ndvi?.replace('http://', 'https://'),
       }))
       .sort((a: any, b: any) => b.dt - a.dt);
 
