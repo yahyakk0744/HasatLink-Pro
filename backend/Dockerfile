@@ -1,13 +1,12 @@
-## ─── Builder Stage ───
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 
-# Sharp needs these native deps on Alpine
-RUN apk add --no-cache python3 make g++ vips-dev
+# Sharp native dependency
+RUN apk add --no-cache vips-dev python3 make g++
 
 WORKDIR /app
 
-# Install ALL dependencies (including devDeps for TypeScript compilation)
-COPY package*.json ./
+# Install dependencies
+COPY package.json ./
 RUN npm install --legacy-peer-deps
 
 # Copy source (exclude tests)
@@ -18,20 +17,10 @@ RUN rm -rf src/__tests__
 # Build TypeScript
 RUN npx tsc
 
-## ─── Production Stage ───
-FROM node:20-alpine
-
-# Sharp runtime dependency
-RUN apk add --no-cache vips
-
-WORKDIR /app
-
-# Install only production dependencies
-COPY package*.json ./
-RUN npm install --omit=dev --legacy-peer-deps
-
-# Copy compiled output from builder
-COPY --from=builder /app/dist ./dist
+# Cleanup dev stuff to reduce image size
+RUN rm -rf src tsconfig.json
+RUN npm prune --production --legacy-peer-deps
+RUN apk del python3 make g++
 
 # Create uploads directory
 RUN mkdir -p uploads
