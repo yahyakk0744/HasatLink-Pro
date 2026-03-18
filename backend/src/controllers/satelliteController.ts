@@ -3,6 +3,23 @@ import { AuthRequest } from '../middleware/auth';
 import axios from 'axios';
 
 const AGRO_API_KEY = () => process.env.AGROMONITORING_API_KEY || '';
+
+/** Calculate polygon area in hectares using Shoelace formula (approximate) */
+function calcPolygonAreaHa(coords: number[][]): number {
+  const R = 6371000;
+  const toRad = (d: number) => d * Math.PI / 180;
+  let area = 0;
+  const n = coords[0][0] === coords[coords.length - 1][0] && coords[0][1] === coords[coords.length - 1][1]
+    ? coords.length - 1 : coords.length;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    const lat1 = toRad(coords[i][1]);
+    const lat2 = toRad(coords[j][1]);
+    const dLng = toRad(coords[j][0] - coords[i][0]);
+    area += dLng * (2 + Math.sin(lat1) + Math.sin(lat2));
+  }
+  return Math.abs(area * R * R / 2) / 10000;
+}
 const AGRO_BASE = 'https://api.agromonitoring.com/agro/1.0';
 const TKGM_BASE = 'https://cbsapi.tkgm.gov.tr/megsiswebapi.v3/api/parsel';
 
@@ -162,8 +179,24 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       if (first[0] !== last[0] || first[1] !== last[1]) {
         coordinates.push(first);
       }
+
+      // Agromonitoring requires min 1 hectare — if polygon too small, expand it
+      const area = calcPolygonAreaHa(coordinates);
+      if (area < 1.0) {
+        // Scale up polygon from centroid to reach ~1.1 ha
+        const scale = Math.sqrt(1.1 / area);
+        const centLng = coordinates.reduce((s, c) => s + c[0], 0) / (coordinates.length - 1);
+        const centLat = coordinates.reduce((s, c) => s + c[1], 0) / (coordinates.length - 1);
+        coordinates = coordinates.map(c => [
+          centLng + (c[0] - centLng) * scale,
+          centLat + (c[1] - centLat) * scale,
+        ]);
+      }
     } else {
-      const r = radiusKm / 111.32;
+      // Ensure minimum ~1.1 ha with radius fallback
+      const minRadiusKm = 0.06; // ~1.1 ha square
+      const effectiveRadius = Math.max(radiusKm, minRadiusKm);
+      const r = effectiveRadius / 111.32;
       const rLng = r / Math.cos(lat * Math.PI / 180);
       coordinates = [
         [lng - rLng, lat - r],
