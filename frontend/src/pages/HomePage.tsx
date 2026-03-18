@@ -130,7 +130,25 @@ export default function HomePage() {
     const timer = setTimeout(() => {
       fetchAllPrices();
       fetchHasatlinkPrices();
-      api.get('/stats/platform').then(({ data }) => setPlatformStats(data)).catch(() => {});
+      // Render free tier may sleep — retry up to 3 times with delay
+      const fetchStats = async (retries = 3) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            const { data } = await api.get('/stats/platform');
+            setPlatformStats(data);
+            try { localStorage.setItem('hasatlink_stats', JSON.stringify(data)); } catch {}
+            return;
+          } catch {
+            if (i < retries - 1) await new Promise(r => setTimeout(r, 3000));
+          }
+        }
+        // Fallback: show cached stats if API unreachable
+        try {
+          const cached = localStorage.getItem('hasatlink_stats');
+          if (cached) setPlatformStats(JSON.parse(cached));
+        } catch {}
+      };
+      fetchStats();
       api.get('/blog?limit=3').then(({ data }) => setBlogPosts(data.blogs || [])).catch(() => {});
     }, 300);
     return () => clearTimeout(timer);
@@ -526,7 +544,7 @@ export default function HomePage() {
             <StatCounter end={platformStats.activeListings} suffix="" label={lang === 'tr' ? 'Toplam İlan' : 'Total Listings'} icon={<Layers size={22} className="text-[var(--accent-green)]" />} />
             <StatCounter end={platformStats.registeredUsers} suffix="" label={lang === 'tr' ? 'Kayıtlı Kullanıcı' : 'Registered Users'} icon={<Users size={22} className="text-[#0077B6]" />} />
             <StatCounter end={platformStats.cities} suffix="" label={lang === 'tr' ? 'Aktif Şehir' : 'Active Cities'} icon={<Building2 size={22} className="text-[var(--accent-orange)]" />} />
-            <StatCounter end={6} suffix="" label={lang === 'tr' ? 'Kategori' : 'Categories'} icon={<BarChart3 size={22} className="text-[#52796F]" />} />
+            <StatCounter end={Object.keys(platformStats.categoryCounts).length || 6} suffix="" label={lang === 'tr' ? 'Kategori' : 'Categories'} icon={<BarChart3 size={22} className="text-[#52796F]" />} />
           </div>
         </section>
       </AnimatedSection>
