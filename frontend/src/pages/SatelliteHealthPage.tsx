@@ -189,11 +189,11 @@ export default function SatelliteHealthPage() {
 
   const [selectedPos, setSelectedPos] = useState<[number, number] | null>(null);
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
-  const [radius, setRadius] = useState('0.5');
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
 
-  const radiusMeters = parseFloat(radius) * 1000;
+  const DEFAULT_RADIUS_KM = 0.5;
+  const radiusMeters = DEFAULT_RADIUS_KM * 1000;
 
   if (!user) return <Navigate to="/giris" replace />;
 
@@ -249,7 +249,7 @@ export default function SatelliteHealthPage() {
 
   const handleAnalyze = () => {
     if (!selectedPos) return;
-    analyze(selectedPos[0], selectedPos[1], parseFloat(radius));
+    analyze(selectedPos[0], selectedPos[1], DEFAULT_RADIUS_KM);
   };
 
   const defaultCenter: [number, number] = geoLocation?.lat && geoLocation?.lng
@@ -371,41 +371,8 @@ export default function SatelliteHealthPage() {
           )}
         </div>
 
-        {/* Radius + Analyze Button */}
+        {/* Analyze Button */}
         <div className="p-4 pt-3 space-y-3 border-t border-[var(--border-default)]">
-          {/* Radius Selector - Visual Chips */}
-          <div>
-            <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-2 block">
-              {lang === 'tr' ? 'Tarama Yaricapi' : 'Scan Radius'}
-            </label>
-            <div className="flex gap-2">
-              {[
-                { value: '0.25', label: '250m', desc: lang === 'tr' ? 'Kucuk Tarla' : 'Small Field' },
-                { value: '0.5', label: '500m', desc: lang === 'tr' ? 'Orta Tarla' : 'Medium Field' },
-                { value: '1', label: '1 km', desc: lang === 'tr' ? 'Buyuk Tarla' : 'Large Field' },
-                { value: '2', label: '2 km', desc: lang === 'tr' ? 'Ciftlik' : 'Farm' },
-              ].map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setRadius(opt.value)}
-                  className={`flex-1 py-2 px-2 rounded-xl text-center transition-all ${
-                    radius === opt.value
-                      ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
-                      : 'bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-indigo-300'
-                  }`}
-                >
-                  <p className={`text-[13px] font-bold ${radius === opt.value ? 'text-white' : 'text-[var(--text-primary)]'}`}>
-                    {opt.label}
-                  </p>
-                  <p className={`text-[9px] ${radius === opt.value ? 'text-indigo-100' : 'text-[var(--text-tertiary)]'}`}>
-                    {opt.desc}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Analyze Button */}
           <button
             onClick={handleAnalyze}
             disabled={loading || !selectedPos}
