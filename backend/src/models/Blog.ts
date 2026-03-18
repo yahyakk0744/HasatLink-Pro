@@ -22,6 +22,7 @@ const blogSchema = new Schema<IBlog>({
   createdAt: { type: Date, default: Date.now },
 });
 
+blogSchema.index({ slug: 1 }, { unique: true });
 blogSchema.index({ published: 1, createdAt: -1 });
 
 export default mongoose.model<IBlog>('Blog', blogSchema);

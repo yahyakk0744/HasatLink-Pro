@@ -317,7 +317,7 @@ export default function AdminDashboardPage() {
                   <YAxis width={28} tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', fontSize: 12 }}
-                    formatter={(value: number, name: string) => [value, name === 'uniqueVisitors' ? 'Tekil Ziyaretçi' : 'Toplam Görüntüleme']}
+                    formatter={((value: any, name: any) => [value ?? 0, name === 'uniqueVisitors' ? 'Tekil Ziyaretçi' : 'Toplam Görüntüleme']) as any}
                   />
                   <Bar dataKey="uniqueVisitors" fill="#0077B6" radius={[6, 6, 0, 0]} name="uniqueVisitors" />
                   <Bar dataKey="totalViews" fill="#0077B630" radius={[6, 6, 0, 0]} name="totalViews" />

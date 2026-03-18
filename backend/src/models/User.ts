@@ -52,4 +52,7 @@ const UserSchema = new Schema<IUser>({
   createdAt: { type: Date, default: Date.now },
 });
 
+// firebaseUid already has sparse index via schema field option
+UserSchema.index({ lastActiveAt: -1 });
+
 export default mongoose.model<IUser>('User', UserSchema);

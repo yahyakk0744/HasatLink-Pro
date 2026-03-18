@@ -13,5 +13,6 @@ const ListingViewSchema = new Schema<IListingView>({
 });
 
 ListingViewSchema.index({ listingId: 1, identifier: 1 }, { unique: true });
+ListingViewSchema.index({ listingId: 1, createdAt: -1 });
 
 export default mongoose.model<IListingView>('ListingView', ListingViewSchema);

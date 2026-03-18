@@ -147,5 +147,9 @@ const ListingSchema = new Schema<IListing>({
 
 ListingSchema.index({ type: 1, listingMode: 1, status: 1 });
 ListingSchema.index({ title: 'text', description: 'text' });
+ListingSchema.index({ status: 1, type: 1, createdAt: -1 });
+ListingSchema.index({ status: 1, createdAt: -1 });
+ListingSchema.index({ userId: 1, status: 1 });
+ListingSchema.index({ 'coordinates.lat': 1, 'coordinates.lng': 1 });
 
 export default mongoose.model<IListing>('Listing', ListingSchema);

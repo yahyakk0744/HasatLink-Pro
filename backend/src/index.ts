@@ -1,9 +1,14 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
+import { initSentry, Sentry } from './config/sentry';
+initSentry();
+
 import express from 'express';
 import { createServer } from 'http';
 import path from 'path';
 import cors from 'cors';
 import compression from 'compression';
-import dotenv from 'dotenv';
 import connectDB from './config/db';
 import errorHandler from './middleware/errorHandler';
 import { initSocket } from './socket';
@@ -28,8 +33,6 @@ import uploadRoutes from './routes/uploadRoutes';
 import offerRoutes from './routes/offerRoutes';
 import satelliteRoutes from './routes/satelliteRoutes';
 import { expireOutdatedDealers } from './controllers/dealerController';
-
-dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
@@ -107,6 +110,9 @@ app.use('/api', satelliteRoutes);
 app.get('/api/push/vapid-key', (_req, res) => {
   res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || 'BBQR8Itsvely1iLKMQrjuNbs3pCFq_m1x9KF3vrODBzLaPpSAd7cyOSJ_RibGPC1R6PKtBTGIWUX06HwgnlVbJA' });
 });
+
+// Sentry error handler (must be before custom errorHandler)
+Sentry.setupExpressErrorHandler(app);
 
 // Error handler
 app.use(errorHandler);

@@ -1,15 +1,72 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate } from 'react-router-dom';
 import {
   Satellite, MapPin, Scan, Loader2, Leaf, TrendingUp,
   AlertTriangle, CheckCircle, XCircle, Sun, Droplets,
+  Crosshair, Search, LocateFixed, Minus, Plus,
 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from '../contexts/LocationContext';
 import { useSatellite, getHealthLabel } from '../hooks/useSatellite';
 import type { NDVIDataPoint } from '../hooks/useSatellite';
 import SEO from '../components/ui/SEO';
+
+// Custom pin icon for the marker
+const pinIcon = new L.Icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+/* ─── Harita İçi Bileşenler ─── */
+
+function MapClickHandler({ onSelect }: { onSelect: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onSelect(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+function FlyToPosition({ position, zoom }: { position: [number, number] | null; zoom?: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, zoom || 15, { duration: 1.2 });
+    }
+  }, [map, position, zoom]);
+  return null;
+}
+
+function MapZoomControls() {
+  const map = useMap();
+  return (
+    <div className="absolute bottom-3 right-3 z-[1000] flex flex-col gap-1">
+      <button
+        onClick={() => map.zoomIn()}
+        className="w-9 h-9 bg-white rounded-xl shadow-md flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all"
+      >
+        <Plus size={16} className="text-gray-700" />
+      </button>
+      <button
+        onClick={() => map.zoomOut()}
+        className="w-9 h-9 bg-white rounded-xl shadow-md flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all"
+      >
+        <Minus size={16} className="text-gray-700" />
+      </button>
+    </div>
+  );
+}
+
+/* ─── Alt Bileşenler ─── */
 
 function NDVIBar({ value, label }: { value: number; label: string }) {
   const pct = Math.max(0, Math.min(100, value * 100));
@@ -40,21 +97,17 @@ function NDVIChart({ history }: { history: NDVIDataPoint[] }) {
       </div>
       <div className="relative h-32">
         <svg viewBox="0 0 100 40" className="w-full h-full" preserveAspectRatio="none">
-          {/* Grid lines */}
           {[0.2, 0.4, 0.6, 0.8].map(v => (
             <line key={v} x1="0" x2="100" y1={40 - (v / maxVal) * 40} y2={40 - (v / maxVal) * 40} stroke="var(--border-default)" strokeWidth="0.3" strokeDasharray="2,2" />
           ))}
-          {/* Area fill */}
           <path
             d={`M0,40 ${history.map((h, i) => `L${i * w + w / 2},${40 - (h.mean / maxVal) * 38}`).join(' ')} L100,40 Z`}
             fill="url(#ndviGrad)" opacity="0.3"
           />
-          {/* Line */}
           <polyline
             points={history.map((h, i) => `${i * w + w / 2},${40 - (h.mean / maxVal) * 38}`).join(' ')}
             fill="none" stroke="#2D6A4F" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round"
           />
-          {/* Dots */}
           {history.map((h, i) => (
             <circle key={i} cx={i * w + w / 2} cy={40 - (h.mean / maxVal) * 38} r="1" fill="#2D6A4F" />
           ))}
@@ -125,6 +178,8 @@ function HealthCard({ status, color, ndvi }: { status: string; color: string; nd
   );
 }
 
+/* ─── Ana Sayfa ─── */
+
 export default function SatelliteHealthPage() {
   const { i18n } = useTranslation();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
@@ -132,33 +187,81 @@ export default function SatelliteHealthPage() {
   const { location: geoLocation } = useLocation();
   const { analysis, loading, error, analyze, clear } = useSatellite();
 
-  const [lat, setLat] = useState(() => geoLocation?.lat?.toString() || '36.65');
-  const [lng, setLng] = useState(() => geoLocation?.lng?.toString() || '33.44');
+  const [selectedPos, setSelectedPos] = useState<[number, number] | null>(null);
+  const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
   const [radius, setRadius] = useState('0.5');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+
+  const radiusMeters = parseFloat(radius) * 1000;
 
   if (!user) return <Navigate to="/giris" replace />;
 
-  const handleAnalyze = () => {
-    const latN = parseFloat(lat);
-    const lngN = parseFloat(lng);
-    const radN = parseFloat(radius);
-    if (isNaN(latN) || isNaN(lngN)) return;
-    analyze(latN, lngN, radN);
-  };
+  const handleMapSelect = useCallback((lat: number, lng: number) => {
+    setSelectedPos([lat, lng]);
+  }, []);
 
-  const useMyLocation = () => {
+  const handleMyLocation = () => {
     if (geoLocation?.lat && geoLocation?.lng) {
-      setLat(geoLocation.lat.toString());
-      setLng(geoLocation.lng.toString());
+      const pos: [number, number] = [geoLocation.lat, geoLocation.lng];
+      setSelectedPos(pos);
+      setFlyTarget(pos);
+    } else {
+      navigator.geolocation?.getCurrentPosition(
+        (p) => {
+          const pos: [number, number] = [p.coords.latitude, p.coords.longitude];
+          setSelectedPos(pos);
+          setFlyTarget(pos);
+        },
+        () => {}
+      );
     }
   };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    try {
+      // Nominatim (OpenStreetMap) geocoding — free, no API key
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1&countrycodes=tr`
+      );
+      const data = await res.json();
+      if (data.length > 0) {
+        const pos: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+        setSelectedPos(pos);
+        setFlyTarget(pos);
+        setSearchQuery(data[0].display_name.split(',').slice(0, 2).join(', '));
+      }
+    } catch {
+      // Geocoding failed silently
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearch();
+    }
+  };
+
+  const handleAnalyze = () => {
+    if (!selectedPos) return;
+    analyze(selectedPos[0], selectedPos[1], parseFloat(radius));
+  };
+
+  const defaultCenter: [number, number] = geoLocation?.lat && geoLocation?.lng
+    ? [geoLocation.lat, geoLocation.lng]
+    : [39.0, 35.0];
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
       <SEO
         title={lang === 'tr' ? 'Uydu Tarla Analizi' : 'Satellite Field Analysis'}
         description="Sentinel-2 uydu verileriyle tarlanizin saglik durumunu analiz edin."
-        keywords="uydu, NDVI, tarla sagligi, sentinel, tarim, bitki indeksi"
+        keywords="uydu, NDVI, tarla sagligi, sentinel, tarim, bitki indeksi, parsel sorgulama"
       />
 
       {/* Header */}
@@ -171,90 +274,168 @@ export default function SatelliteHealthPage() {
             {lang === 'tr' ? 'Uydu Tarla Analizi' : 'Satellite Field Analysis'}
           </h1>
           <p className="text-[13px] text-[var(--text-secondary)]">
-            {lang === 'tr' ? 'Sentinel-2 uydu verileriyle bitki sagligi' : 'Crop health via Sentinel-2 satellite data'}
+            {lang === 'tr' ? 'Haritadan tarlanizi secin, uydu analizi baslat' : 'Select your field on the map, start satellite analysis'}
           </p>
         </div>
       </div>
 
-      {/* Input Section */}
-      <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] p-5 mb-6 space-y-4">
-        <div className="flex items-center gap-2 mb-1">
-          <MapPin size={16} className="text-[var(--accent-green)]" />
-          <h2 className="text-[14px] font-semibold">
-            {lang === 'tr' ? 'Tarla Konumu' : 'Field Location'}
-          </h2>
-          {geoLocation?.lat && (
-            <button onClick={useMyLocation} className="ml-auto text-[11px] font-medium text-[var(--accent-green)] hover:underline">
-              {lang === 'tr' ? 'Konumumu Kullan' : 'Use My Location'}
+      {/* Map Section */}
+      <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden mb-6">
+        {/* Search Bar */}
+        <div className="p-4 pb-3 space-y-3">
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder={lang === 'tr' ? 'Sehir, ilce veya konum ara...' : 'Search city, district or location...'}
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[var(--bg-input)] border border-[var(--border-default)] text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50"
+              />
+            </div>
+            <button
+              onClick={handleSearch}
+              disabled={searching || !searchQuery.trim()}
+              className="px-4 py-2.5 rounded-xl bg-indigo-500 text-white text-[13px] font-medium flex items-center gap-1.5 hover:bg-indigo-600 transition-colors disabled:opacity-50"
+            >
+              {searching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+              {lang === 'tr' ? 'Ara' : 'Search'}
             </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Enlem (Lat)</label>
-            <input
-              type="number"
-              step="any"
-              value={lat}
-              onChange={e => setLat(e.target.value)}
-              placeholder="36.6500"
-              className="w-full mt-1 px-3 py-2.5 rounded-xl bg-[var(--bg-input)] border border-[var(--border-default)] text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50"
-            />
+            <button
+              onClick={handleMyLocation}
+              className="px-3 py-2.5 rounded-xl bg-emerald-500 text-white flex items-center gap-1.5 hover:bg-emerald-600 transition-colors text-[13px] font-medium"
+              title={lang === 'tr' ? 'Konumumu Kullan' : 'Use My Location'}
+            >
+              <LocateFixed size={16} />
+              <span className="hidden sm:inline">{lang === 'tr' ? 'Konumum' : 'My Location'}</span>
+            </button>
           </div>
-          <div>
-            <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Boylam (Lng)</label>
-            <input
-              type="number"
-              step="any"
-              value={lng}
-              onChange={e => setLng(e.target.value)}
-              placeholder="33.4400"
-              className="w-full mt-1 px-3 py-2.5 rounded-xl bg-[var(--bg-input)] border border-[var(--border-default)] text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50"
-            />
+
+          {/* Instructions */}
+          <div className="flex items-center gap-2 px-1">
+            <Crosshair size={14} className="text-indigo-500 shrink-0" />
+            <p className="text-[11px] text-[var(--text-secondary)]">
+              {lang === 'tr'
+                ? 'Haritaya tiklayarak veya arama yaparak tarlanizin konumunu secin'
+                : 'Click on the map or search to select your field location'}
+            </p>
           </div>
         </div>
 
-        <div>
-          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
-            {lang === 'tr' ? 'Tarama Yaricapi' : 'Scan Radius'}
-          </label>
-          <select
-            value={radius}
-            onChange={e => setRadius(e.target.value)}
-            className="w-full mt-1 px-3 py-2.5 rounded-xl bg-[var(--bg-input)] border border-[var(--border-default)] text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+        {/* Interactive Map */}
+        <div className="relative h-[350px] sm:h-[420px]">
+          <MapContainer
+            center={defaultCenter}
+            zoom={geoLocation?.lat ? 12 : 6}
+            className="w-full h-full z-0"
+            scrollWheelZoom={true}
+            zoomControl={false}
           >
-            <option value="0.25">250m (Kucuk Tarla)</option>
-            <option value="0.5">500m (Orta Tarla)</option>
-            <option value="1">1 km (Buyuk Tarla)</option>
-            <option value="2">2 km (Ciftlik)</option>
-          </select>
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <MapClickHandler onSelect={handleMapSelect} />
+            <FlyToPosition position={flyTarget} zoom={15} />
+            <MapZoomControls />
+            {selectedPos && (
+              <>
+                <Marker position={selectedPos} icon={pinIcon} />
+                <Circle
+                  center={selectedPos}
+                  radius={radiusMeters}
+                  pathOptions={{
+                    color: '#6366f1',
+                    fillColor: '#6366f1',
+                    fillOpacity: 0.1,
+                    weight: 2,
+                    dashArray: '8, 4',
+                  }}
+                />
+              </>
+            )}
+          </MapContainer>
+
+          {/* Selected Location Badge */}
+          {selectedPos && (
+            <div className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg border border-gray-200/50">
+              <div className="flex items-center gap-2">
+                <MapPin size={14} className="text-indigo-500" />
+                <span className="text-[12px] font-medium text-gray-700">
+                  {selectedPos[0].toFixed(5)}, {selectedPos[1].toFixed(5)}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
-        <button
-          onClick={handleAnalyze}
-          disabled={loading}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 text-white font-semibold text-[14px] flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-indigo-500/20 transition-all disabled:opacity-50"
-        >
-          {loading ? (
-            <>
-              <Loader2 size={18} className="animate-spin" />
-              {lang === 'tr' ? 'Uydu Verisi Aliniyor...' : 'Fetching Satellite Data...'}
-            </>
-          ) : (
-            <>
-              <Scan size={18} />
-              {lang === 'tr' ? 'Tarlami Analiz Et' : 'Analyze My Field'}
-            </>
-          )}
-        </button>
+        {/* Radius + Analyze Button */}
+        <div className="p-4 pt-3 space-y-3 border-t border-[var(--border-default)]">
+          {/* Radius Selector - Visual Chips */}
+          <div>
+            <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-2 block">
+              {lang === 'tr' ? 'Tarama Yaricapi' : 'Scan Radius'}
+            </label>
+            <div className="flex gap-2">
+              {[
+                { value: '0.25', label: '250m', desc: lang === 'tr' ? 'Kucuk Tarla' : 'Small Field' },
+                { value: '0.5', label: '500m', desc: lang === 'tr' ? 'Orta Tarla' : 'Medium Field' },
+                { value: '1', label: '1 km', desc: lang === 'tr' ? 'Buyuk Tarla' : 'Large Field' },
+                { value: '2', label: '2 km', desc: lang === 'tr' ? 'Ciftlik' : 'Farm' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setRadius(opt.value)}
+                  className={`flex-1 py-2 px-2 rounded-xl text-center transition-all ${
+                    radius === opt.value
+                      ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
+                      : 'bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-indigo-300'
+                  }`}
+                >
+                  <p className={`text-[13px] font-bold ${radius === opt.value ? 'text-white' : 'text-[var(--text-primary)]'}`}>
+                    {opt.label}
+                  </p>
+                  <p className={`text-[9px] ${radius === opt.value ? 'text-indigo-100' : 'text-[var(--text-tertiary)]'}`}>
+                    {opt.desc}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
 
-        {/* Info text */}
-        <p className="text-[10px] text-[var(--text-tertiary)] text-center leading-relaxed">
-          {lang === 'tr'
-            ? 'Sentinel-2 uydu goruntuleri kullanilarak NDVI bitki sagligi indeksi hesaplanir. Son 30 gunluk veri analiz edilir.'
-            : 'NDVI vegetation health index is calculated using Sentinel-2 satellite imagery. Last 30 days of data is analyzed.'}
-        </p>
+          {/* Analyze Button */}
+          <button
+            onClick={handleAnalyze}
+            disabled={loading || !selectedPos}
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 text-white font-semibold text-[14px] flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-indigo-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                {lang === 'tr' ? 'Uydu Verisi Aliniyor...' : 'Fetching Satellite Data...'}
+              </>
+            ) : !selectedPos ? (
+              <>
+                <MapPin size={18} />
+                {lang === 'tr' ? 'Once haritadan konum secin' : 'First select a location on the map'}
+              </>
+            ) : (
+              <>
+                <Scan size={18} />
+                {lang === 'tr' ? 'Tarlami Analiz Et' : 'Analyze My Field'}
+              </>
+            )}
+          </button>
+
+          {/* Info text */}
+          <p className="text-[10px] text-[var(--text-tertiary)] text-center leading-relaxed">
+            {lang === 'tr'
+              ? 'Sentinel-2 uydu goruntuleri kullanilarak NDVI bitki sagligi indeksi hesaplanir. Son 30 gunluk veri analiz edilir.'
+              : 'NDVI vegetation health index is calculated using Sentinel-2 satellite imagery. Last 30 days of data is analyzed.'}
+          </p>
+        </div>
       </div>
 
       {/* Error */}

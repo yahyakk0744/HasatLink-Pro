@@ -22,4 +22,6 @@ const MarketPriceSchema = new Schema<IMarketPrice>({
   updatedAt: { type: Date, default: Date.now },
 });
 
+MarketPriceSchema.index({ category: 1, name: 1 });
+
 export default mongoose.model<IMarketPrice>('MarketPrice', MarketPriceSchema);
