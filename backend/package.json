@@ -20,9 +20,6 @@
     "@aws-sdk/s3-request-presigner": "^3.1011.0",
     "@google/generative-ai": "^0.24.1",
     "@sentry/node": "^10.44.0",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/multer": "^2.0.0",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.1",
@@ -40,9 +37,12 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
     "@types/node": "^25.3.2",
     "@types/supertest": "^7.2.0",
     "@types/web-push": "^3.6.4",
