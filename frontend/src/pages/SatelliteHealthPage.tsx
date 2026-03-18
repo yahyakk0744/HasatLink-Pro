@@ -191,6 +191,7 @@ export default function SatelliteHealthPage() {
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
+  const [mapType, setMapType] = useState<'satellite' | 'street'>('satellite');
 
   const DEFAULT_RADIUS_KM = 0.5;
   const radiusMeters = DEFAULT_RADIUS_KM * 1000;
@@ -333,10 +334,25 @@ export default function SatelliteHealthPage() {
             scrollWheelZoom={true}
             zoomControl={false}
           >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            {mapType === 'satellite' ? (
+              <TileLayer
+                attribution='&copy; Esri'
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                maxZoom={19}
+              />
+            ) : (
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+            )}
+            {/* Uydu modunda yol/yer isimlerini üste çiz */}
+            {mapType === 'satellite' && (
+              <TileLayer
+                url="https://stamen-tiles.a.ssl.fastly.net/toner-labels/{z}/{x}/{y}.png"
+                opacity={0.7}
+              />
+            )}
             <MapClickHandler onSelect={handleMapSelect} />
             <FlyToPosition position={flyTarget} zoom={15} />
             <MapZoomControls />
@@ -357,6 +373,20 @@ export default function SatelliteHealthPage() {
               </>
             )}
           </MapContainer>
+
+          {/* Map Type Toggle */}
+          <div className="absolute top-3 right-3 z-[1000]">
+            <button
+              onClick={() => setMapType(t => t === 'satellite' ? 'street' : 'satellite')}
+              className="bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg border border-gray-200/50 text-[11px] font-semibold text-gray-700 hover:bg-white transition-colors flex items-center gap-1.5"
+            >
+              {mapType === 'satellite' ? (
+                <><MapPin size={12} /> {lang === 'tr' ? 'Harita' : 'Map'}</>
+              ) : (
+                <><Satellite size={12} /> {lang === 'tr' ? 'Uydu' : 'Satellite'}</>
+              )}
+            </button>
+          </div>
 
           {/* Selected Location Badge */}
           {selectedPos && (

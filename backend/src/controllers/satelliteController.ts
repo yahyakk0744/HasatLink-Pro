@@ -146,6 +146,11 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       return;
     }
 
+    if (!AGRO_API_KEY()) {
+      res.status(503).json({ message: 'Uydu analiz servisi yapilandirmasi eksik. Lutfen yoneticiyle iletisime gecin.' });
+      return;
+    }
+
     // Create a square polygon around the point
     const r = radiusKm / 111.32; // rough degree offset
     const rLng = r / Math.cos(lat * Math.PI / 180);
@@ -232,8 +237,13 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       images: images.slice(0, 5),
     });
   } catch (error: any) {
-    const msg = error.response?.data?.message || error.message;
-    res.status(error.response?.status || 500).json({ message: `Analiz yapilamadi: ${msg}` });
+    const status = error.response?.status;
+    if (status === 401) {
+      res.status(503).json({ message: 'Uydu servisi API anahtari gecersiz veya suresi dolmus. Yonetici yeni anahtar tanimlamali.' });
+    } else {
+      const msg = error.response?.data?.message || error.message;
+      res.status(status || 500).json({ message: `Analiz yapilamadi: ${msg}` });
+    }
   }
 };
 
