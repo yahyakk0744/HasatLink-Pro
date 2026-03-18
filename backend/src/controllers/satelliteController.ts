@@ -4,6 +4,22 @@ import axios from 'axios';
 
 const AGRO_API_KEY = () => process.env.AGROMONITORING_API_KEY || '';
 
+/** Keep only the latest polygon, delete older ones to stay under free tier limit */
+async function cleanupOldPolygons(keepId: string) {
+  try {
+    const { data: polygons } = await axios.get(`${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}`);
+    if (!Array.isArray(polygons) || polygons.length <= 8) return; // Only cleanup above 8
+    // Sort by created_at, delete oldest ones keeping latest 5
+    const sorted = polygons.sort((a: any, b: any) => (a.created_at || 0) - (b.created_at || 0));
+    const toDelete = sorted.slice(0, sorted.length - 5);
+    for (const p of toDelete) {
+      if (p.id !== keepId) {
+        await axios.delete(`${AGRO_BASE}/polygons/${p.id}?appid=${AGRO_API_KEY()}`).catch(() => {});
+      }
+    }
+  } catch {}
+}
+
 /** Calculate polygon area in hectares using Shoelace formula (approximate) */
 function calcPolygonAreaHa(coords: number[][]): number {
   const R = 6371000;
@@ -268,8 +284,9 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       else { healthStatus = 'critical'; healthColor = '#991B1B'; }
     }
 
-    // Clean up polygon after analysis (free tier: max 10 polygons)
-    axios.delete(`${AGRO_BASE}/polygons/${polyId}?appid=${AGRO_API_KEY()}`).catch(() => {});
+    // Keep polygon alive so image URLs remain accessible.
+    // Clean up old polygons if approaching free tier limit (10 max).
+    cleanupOldPolygons(polyId).catch(() => {});
 
     res.json({
       polygonId: polyId,
