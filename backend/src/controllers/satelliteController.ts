@@ -4,6 +4,7 @@ import axios from 'axios';
 
 const AGRO_API_KEY = () => process.env.AGROMONITORING_API_KEY || '';
 const AGRO_BASE = 'https://api.agromonitoring.com/agro/1.0';
+const TKGM_BASE = 'https://cbsapi.tkgm.gov.tr/megsiswebapi.v3/api/parsel';
 
 /**
  * Create a polygon (field) on Agromonitoring and return its id.
@@ -140,7 +141,7 @@ export const getNDVIStats = async (req: AuthRequest, res: Response): Promise<voi
  */
 export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { lat, lng, radiusKm = 0.5 } = req.body;
+    const { lat, lng, radiusKm = 0.5, polygon: customPolygon } = req.body;
     if (!lat || !lng) {
       res.status(400).json({ message: 'Koordinat (lat, lng) gerekli' });
       return;
@@ -151,16 +152,27 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       return;
     }
 
-    // Create a square polygon around the point
-    const r = radiusKm / 111.32; // rough degree offset
-    const rLng = r / Math.cos(lat * Math.PI / 180);
-    const coordinates = [
-      [lng - rLng, lat - r],
-      [lng + rLng, lat - r],
-      [lng + rLng, lat + r],
-      [lng - rLng, lat + r],
-      [lng - rLng, lat - r],
-    ];
+    // Use parcel polygon if provided, otherwise create square from radius
+    let coordinates: number[][];
+    if (customPolygon && Array.isArray(customPolygon) && customPolygon.length >= 3) {
+      coordinates = [...customPolygon];
+      // Close the ring if not closed
+      const first = coordinates[0];
+      const last = coordinates[coordinates.length - 1];
+      if (first[0] !== last[0] || first[1] !== last[1]) {
+        coordinates.push(first);
+      }
+    } else {
+      const r = radiusKm / 111.32;
+      const rLng = r / Math.cos(lat * Math.PI / 180);
+      coordinates = [
+        [lng - rLng, lat - r],
+        [lng + rLng, lat - r],
+        [lng + rLng, lat + r],
+        [lng - rLng, lat + r],
+        [lng - rLng, lat - r],
+      ];
+    }
 
     // 1. Create polygon
     const { data: polygon } = await axios.post(`${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}`, {
@@ -282,3 +294,89 @@ export const deletePolygon = async (req: AuthRequest, res: Response): Promise<vo
     res.status(error.response?.status || 500).json({ message: `Polygon silinemedi: ${msg}` });
   }
 };
+
+/**
+ * Query TKGM cadastral parcel by coordinate
+ * GET /api/satellite/parcel?lat=X&lng=Y
+ * Returns parcel info + polygon boundary from Turkey's Land Registry (TKGM)
+ */
+export const getParcelByCoordinate = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { lat, lng } = req.query;
+    if (!lat || !lng) {
+      res.status(400).json({ message: 'lat ve lng parametreleri gerekli' });
+      return;
+    }
+
+    // TKGM API: koordinat ile parsel sorgulama
+    const { data } = await axios.get(`${TKGM_BASE}/koordinat/${lng}/${lat}`, {
+      headers: {
+        'User-Agent': 'HasatLink/1.0',
+        'Accept': 'application/json',
+      },
+      timeout: 10000,
+    });
+
+    if (!data || !data.features || data.features.length === 0) {
+      // Fallback: try alternative TKGM endpoint format
+      try {
+        const { data: altData } = await axios.get(`${TKGM_BASE}/koordinat`, {
+          params: { x: lng, y: lat },
+          headers: { 'User-Agent': 'HasatLink/1.0', 'Accept': 'application/json' },
+          timeout: 10000,
+        });
+        if (altData?.features?.length > 0) {
+          const feature = altData.features[0];
+          res.json(formatParcelResponse(feature));
+          return;
+        }
+      } catch {}
+
+      res.status(404).json({ message: 'Bu koordinatta parsel bulunamadi' });
+      return;
+    }
+
+    const feature = data.features[0];
+    res.json(formatParcelResponse(feature));
+  } catch (error: any) {
+    // TKGM API unreachable — return helpful error
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      res.status(504).json({ message: 'TKGM servisi yanit vermiyor, lutfen tekrar deneyin' });
+    } else {
+      res.status(error.response?.status || 500).json({
+        message: 'Parsel sorgulanamadi. TKGM servisi gecici olarak kullanilamiyor olabilir.',
+      });
+    }
+  }
+};
+
+function formatParcelResponse(feature: any) {
+  const props = feature.properties || {};
+  const geometry = feature.geometry;
+
+  // Convert coordinates to [lat, lng] format for Leaflet
+  let coordinates: number[][][] = [];
+  if (geometry?.type === 'Polygon') {
+    coordinates = geometry.coordinates;
+  } else if (geometry?.type === 'MultiPolygon') {
+    coordinates = geometry.coordinates[0];
+  }
+
+  return {
+    parcel: {
+      il: props.il || props.IL || '',
+      ilce: props.ilce || props.ILCE || '',
+      mahalle: props.mahalle || props.MAHALLE || props.mapiMahalle || '',
+      ada: props.ada || props.ADA || '',
+      parsel: props.parsel || props.PARSEL || '',
+      alan: props.alan || props.ALAN || 0,
+      mevkii: props.mevkii || props.MEVKII || '',
+      nitelik: props.nitelik || props.NITELIK || '',
+      ozellekKod: props.ozellikKod || '',
+    },
+    geometry: {
+      type: geometry?.type || 'Polygon',
+      coordinates,
+    },
+  };
+}

@@ -6,12 +6,12 @@ import {
   AlertTriangle, CheckCircle, XCircle, Sun, Droplets,
   Crosshair, Search, LocateFixed, Minus, Plus,
 } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Circle, Polygon as LeafletPolygon, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from '../contexts/LocationContext';
 import { useSatellite, getHealthLabel } from '../hooks/useSatellite';
-import type { NDVIDataPoint } from '../hooks/useSatellite';
+import type { NDVIDataPoint, ParcelInfo } from '../hooks/useSatellite';
 import SEO from '../components/ui/SEO';
 
 // Custom pin icon for the marker
@@ -185,7 +185,7 @@ export default function SatelliteHealthPage() {
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const { user } = useAuth();
   const { location: geoLocation } = useLocation();
-  const { analysis, loading, error, analyze, clear } = useSatellite();
+  const { analysis, parcelInfo, loading, parcelLoading, error, analyze, queryParcel, clear } = useSatellite();
 
   const [selectedPos, setSelectedPos] = useState<[number, number] | null>(null);
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
@@ -194,13 +194,19 @@ export default function SatelliteHealthPage() {
   const [mapType, setMapType] = useState<'satellite' | 'street'>('satellite');
 
   const DEFAULT_RADIUS_KM = 0.5;
-  const radiusMeters = DEFAULT_RADIUS_KM * 1000;
 
   if (!user) return <Navigate to="/giris" replace />;
 
+  // Convert GeoJSON [lng, lat] polygon to Leaflet [lat, lng] for display
+  const parcelPolygonLatLngs = parcelInfo?.geometry?.coordinates?.[0]?.map(
+    (coord: number[]) => [coord[1], coord[0]] as [number, number]
+  ) || null;
+
   const handleMapSelect = useCallback((lat: number, lng: number) => {
     setSelectedPos([lat, lng]);
-  }, []);
+    // Query TKGM for parcel at this coordinate
+    queryParcel(lat, lng);
+  }, [queryParcel]);
 
   const handleMyLocation = () => {
     if (geoLocation?.lat && geoLocation?.lng) {
@@ -250,7 +256,9 @@ export default function SatelliteHealthPage() {
 
   const handleAnalyze = () => {
     if (!selectedPos) return;
-    analyze(selectedPos[0], selectedPos[1], DEFAULT_RADIUS_KM);
+    // Send parcel polygon if available, otherwise fallback to radius
+    const polygon = parcelInfo?.geometry?.coordinates?.[0] || undefined;
+    analyze(selectedPos[0], selectedPos[1], DEFAULT_RADIUS_KM, polygon);
   };
 
   const defaultCenter: [number, number] = geoLocation?.lat && geoLocation?.lng
@@ -359,17 +367,31 @@ export default function SatelliteHealthPage() {
             {selectedPos && (
               <>
                 <Marker position={selectedPos} icon={pinIcon} />
-                <Circle
-                  center={selectedPos}
-                  radius={radiusMeters}
-                  pathOptions={{
-                    color: '#6366f1',
-                    fillColor: '#6366f1',
-                    fillOpacity: 0.1,
-                    weight: 2,
-                    dashArray: '8, 4',
-                  }}
-                />
+                {parcelPolygonLatLngs ? (
+                  /* Gerçek parsel sınırları (TKGM) */
+                  <LeafletPolygon
+                    positions={parcelPolygonLatLngs}
+                    pathOptions={{
+                      color: '#f59e0b',
+                      fillColor: '#f59e0b',
+                      fillOpacity: 0.15,
+                      weight: 3,
+                    }}
+                  />
+                ) : parcelLoading ? null : (
+                  /* Fallback: parsel bulunamadıysa daire göster */
+                  <Circle
+                    center={selectedPos}
+                    radius={DEFAULT_RADIUS_KM * 1000}
+                    pathOptions={{
+                      color: '#6366f1',
+                      fillColor: '#6366f1',
+                      fillOpacity: 0.1,
+                      weight: 2,
+                      dashArray: '8, 4',
+                    }}
+                  />
+                )}
               </>
             )}
           </MapContainer>
@@ -388,15 +410,39 @@ export default function SatelliteHealthPage() {
             </button>
           </div>
 
-          {/* Selected Location Badge */}
+          {/* Selected Location / Parcel Badge */}
           {selectedPos && (
-            <div className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg border border-gray-200/50">
-              <div className="flex items-center gap-2">
-                <MapPin size={14} className="text-indigo-500" />
-                <span className="text-[12px] font-medium text-gray-700">
-                  {selectedPos[0].toFixed(5)}, {selectedPos[1].toFixed(5)}
-                </span>
-              </div>
+            <div className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg border border-gray-200/50 max-w-[220px]">
+              {parcelLoading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 size={14} className="text-amber-500 animate-spin" />
+                  <span className="text-[11px] text-gray-600">{lang === 'tr' ? 'Parsel sorgulanıyor...' : 'Querying parcel...'}</span>
+                </div>
+              ) : parcelInfo ? (
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin size={12} className="text-amber-500 shrink-0" />
+                    <span className="text-[11px] font-bold text-gray-800 truncate">
+                      {parcelInfo.parcel.mahalle} {parcelInfo.parcel.ada}/{parcelInfo.parcel.parsel}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 truncate">
+                    {parcelInfo.parcel.ilce}, {parcelInfo.parcel.il}
+                  </p>
+                  {parcelInfo.parcel.alan > 0 && (
+                    <p className="text-[10px] text-amber-600 font-medium">
+                      {(parcelInfo.parcel.alan / 10000).toFixed(2)} hektar
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <MapPin size={14} className="text-indigo-500" />
+                  <span className="text-[11px] font-medium text-gray-700">
+                    {selectedPos[0].toFixed(5)}, {selectedPos[1].toFixed(5)}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -413,15 +459,22 @@ export default function SatelliteHealthPage() {
                 <Loader2 size={18} className="animate-spin" />
                 {lang === 'tr' ? 'Uydu Verisi Aliniyor...' : 'Fetching Satellite Data...'}
               </>
+            ) : parcelLoading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                {lang === 'tr' ? 'Parsel Sorgulanıyor...' : 'Querying Parcel...'}
+              </>
             ) : !selectedPos ? (
               <>
                 <MapPin size={18} />
-                {lang === 'tr' ? 'Once haritadan konum secin' : 'First select a location on the map'}
+                {lang === 'tr' ? 'Haritadan tarlanıza tıklayın' : 'Click on your field on the map'}
               </>
             ) : (
               <>
                 <Scan size={18} />
-                {lang === 'tr' ? 'Tarlami Analiz Et' : 'Analyze My Field'}
+                {parcelInfo
+                  ? (lang === 'tr' ? `${parcelInfo.parcel.ada}/${parcelInfo.parcel.parsel} Parseli Analiz Et` : `Analyze Parcel ${parcelInfo.parcel.ada}/${parcelInfo.parcel.parsel}`)
+                  : (lang === 'tr' ? 'Secili Alani Analiz Et' : 'Analyze Selected Area')}
               </>
             )}
           </button>

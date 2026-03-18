@@ -29,6 +29,23 @@ export interface SatelliteAnalysis {
   images: SatelliteImage[];
 }
 
+export interface ParcelInfo {
+  parcel: {
+    il: string;
+    ilce: string;
+    mahalle: string;
+    ada: string;
+    parsel: string;
+    alan: number;
+    mevkii: string;
+    nitelik: string;
+  };
+  geometry: {
+    type: string;
+    coordinates: number[][][];
+  };
+}
+
 const HEALTH_LABELS: Record<string, { tr: string; en: string }> = {
   excellent: { tr: 'Mukemmel', en: 'Excellent' },
   good: { tr: 'Saglikli', en: 'Good' },
@@ -43,15 +60,39 @@ export const getHealthLabel = (status: string, lang: 'tr' | 'en' = 'tr') =>
 
 export const useSatellite = () => {
   const [analysis, setAnalysis] = useState<SatelliteAnalysis | null>(null);
+  const [parcelInfo, setParcelInfo] = useState<ParcelInfo | null>(null);
   const [loading, setLoading] = useState(false);
+  const [parcelLoading, setParcelLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const analyze = useCallback(async (lat: number, lng: number, radiusKm = 0.5) => {
+  /** Query TKGM for parcel boundary at given coordinate */
+  const queryParcel = useCallback(async (lat: number, lng: number) => {
+    setParcelLoading(true);
+    setParcelInfo(null);
+    try {
+      const { data } = await api.get<ParcelInfo>('/satellite/parcel', { params: { lat, lng } });
+      setParcelInfo(data);
+      return data;
+    } catch {
+      // Parcel query failed — not critical, user can still analyze with fallback
+      setParcelInfo(null);
+      return null;
+    } finally {
+      setParcelLoading(false);
+    }
+  }, []);
+
+  /** Run satellite NDVI analysis — uses parcel polygon if available, otherwise radius fallback */
+  const analyze = useCallback(async (lat: number, lng: number, radiusKm = 0.5, polygon?: number[][]) => {
     setLoading(true);
     setError(null);
     setAnalysis(null);
     try {
-      const { data } = await api.post<SatelliteAnalysis>('/satellite/analyze', { lat, lng, radiusKm });
+      const body: any = { lat, lng, radiusKm };
+      if (polygon && polygon.length >= 3) {
+        body.polygon = polygon;
+      }
+      const { data } = await api.post<SatelliteAnalysis>('/satellite/analyze', body);
       setAnalysis(data);
       return data;
     } catch (err: any) {
@@ -65,8 +106,9 @@ export const useSatellite = () => {
 
   const clear = useCallback(() => {
     setAnalysis(null);
+    setParcelInfo(null);
     setError(null);
   }, []);
 
-  return { analysis, loading, error, analyze, clear };
+  return { analysis, parcelInfo, loading, parcelLoading, error, analyze, queryParcel, clear };
 };

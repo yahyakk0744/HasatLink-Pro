@@ -7,9 +7,13 @@ import {
   quickAnalyze,
   listPolygons,
   deletePolygon,
+  getParcelByCoordinate,
 } from '../controllers/satelliteController';
 
 const router = Router();
+
+// TKGM parcel query by coordinate
+router.get('/satellite/parcel', auth, getParcelByCoordinate);
 
 // Quick one-shot analysis (create temp polygon → get NDVI → cleanup)
 router.post('/satellite/analyze', auth, quickAnalyze);
