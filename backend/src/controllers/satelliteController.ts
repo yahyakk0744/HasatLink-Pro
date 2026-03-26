@@ -4,21 +4,43 @@ import axios from 'axios';
 
 const AGRO_API_KEY = () => process.env.AGROMONITORING_API_KEY || '';
 
-/** Delete old QuickScan polygons, keep only the latest `keep` ones */
-async function cleanupQuickScans(keepId?: string, keep = 3) {
+/** Delete ALL polygons on the account to free up quota */
+async function deleteAllPolygons() {
   try {
     const { data: polygons } = await axios.get(`${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}`);
     if (!Array.isArray(polygons)) return;
-    const quickScans = polygons.filter((p: any) => p.name?.startsWith('QuickScan-'));
-    if (quickScans.length <= keep) return;
-    const sorted = quickScans.sort((a: any, b: any) => (a.created_at || 0) - (b.created_at || 0));
-    const toDelete = sorted.slice(0, sorted.length - keep);
-    for (const p of toDelete) {
-      if (p.id !== keepId) {
-        await axios.delete(`${AGRO_BASE}/polygons/${p.id}?appid=${AGRO_API_KEY()}`).catch(() => {});
-      }
+    for (const p of polygons) {
+      await axios.delete(`${AGRO_BASE}/polygons/${p.id}?appid=${AGRO_API_KEY()}`).catch(() => {});
     }
   } catch {}
+}
+
+/** Create polygon with auto-retry: if limit hit, delete all and retry once */
+async function createPolygonWithRetry(coordinates: number[][], name: string): Promise<any> {
+  const body = {
+    name,
+    geo_json: {
+      type: 'Feature',
+      properties: {},
+      geometry: { type: 'Polygon', coordinates: [coordinates] },
+    },
+  };
+
+  try {
+    const { data } = await axios.post(`${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}&duplicated=true`, body);
+    return data;
+  } catch (err: any) {
+    const msg = err.response?.data?.message || '';
+    // "You can not create polygons anymore" = quota full
+    if (msg.includes('can not create') || msg.includes('PayloadTooLarge') || err.response?.status === 413) {
+      // Nuclear option: delete everything and retry
+      await deleteAllPolygons();
+      await new Promise(r => setTimeout(r, 1000));
+      const { data } = await axios.post(`${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}&duplicated=true`, body);
+      return data;
+    }
+    throw err;
+  }
 }
 
 /** Wait a bit and retry fetching data — new polygons need processing time */
@@ -238,25 +260,8 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       ];
     }
 
-    // 0. Cleanup old QuickScan polygons before creating new one
-    await cleanupQuickScans(undefined, 3);
-
-    // 1. Create polygon (duplicated=true to allow same-area re-analysis)
-    const { data: polygon } = await axios.post(
-      `${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}&duplicated=true`,
-      {
-        name: `QuickScan-${Date.now()}`,
-        geo_json: {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'Polygon',
-            coordinates: [coordinates],
-          },
-        },
-      },
-    );
-
+    // 1. Create polygon (auto-retries on quota limit by deleting old ones)
+    const polygon = await createPolygonWithRetry(coordinates, `QuickScan-${Date.now()}`);
     const polyId = polygon.id;
 
     // 2. Get satellite images (last 90 days for better chance of clear images)
@@ -316,8 +321,8 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       else { healthStatus = 'critical'; healthColor = '#991B1B'; }
     }
 
-    // Clean up old QuickScans in background, keep this one
-    cleanupQuickScans(polyId, 3).catch(() => {});
+    // Delete polygon immediately after fetching data to preserve quota
+    axios.delete(`${AGRO_BASE}/polygons/${polyId}?appid=${AGRO_API_KEY()}`).catch(() => {});
 
     // Build static satellite map URL (Esri + polygon overlay) for preview
     const centerZoom = 15;
@@ -343,8 +348,16 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
     } else {
       // Extract readable error message — Agromonitoring may return string or object
       const rd = error.response?.data;
-      const msg = typeof rd === 'string' ? rd
+      const rawMsg = typeof rd === 'string' ? rd
         : rd?.message || rd?.error || error.message || 'Bilinmeyen hata';
+
+      // Translate known Agromonitoring errors to Turkish
+      let msg = rawMsg;
+      if (rawMsg.includes('can not create')) {
+        msg = 'Uydu servisi kullanim limiti doldu. Lutfen daha sonra tekrar deneyin.';
+      } else if (rawMsg.includes('duplicated')) {
+        msg = 'Bu alan zaten analiz edildi, lutfen yeni bir alan secin.';
+      }
       res.status(status || 500).json({ message: `Analiz yapilamadi: ${msg}` });
     }
   }
