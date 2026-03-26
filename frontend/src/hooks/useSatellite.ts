@@ -60,7 +60,8 @@ export const useSatellite = () => {
       setAnalysis(data);
       return data;
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Uydu analizi yapilamadi';
+      const raw = err.response?.data?.message || err.response?.data || 'Uydu analizi yapilamadi';
+      const msg = typeof raw === 'object' ? (raw.message || JSON.stringify(raw)) : String(raw);
       setError(msg);
       return null;
     } finally {

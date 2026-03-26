@@ -19,6 +19,8 @@ export interface User {
   isSuspended?: boolean;
   firebaseUid?: string;
   favorites?: string[];
+  authProvider?: string;
+  deletionScheduledAt?: string | null;
   createdAt: string;
 }
 

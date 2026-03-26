@@ -121,10 +121,16 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
     };
   }, [socket, currentUid, conversation.id]);
 
-  // Firestore subscription (persistence layer)
+  // Firestore subscription (persistence layer) — replaces optimistic messages with real ones
   useEffect(() => {
     const unsubscribe = subscribeToMessages(conversation.id, (msgs) => {
-      setMessages(msgs);
+      setMessages(prev => {
+        // Keep optimistic messages that haven't appeared in Firestore yet
+        const pendingOptimistic = prev.filter(
+          m => m.id.startsWith('opt-') && !msgs.some(fm => fm.text === m.text && fm.senderId === m.senderId)
+        );
+        return [...msgs, ...pendingOptimistic];
+      });
 
       const unreadIds = msgs
         .filter((m) => m.senderId !== currentUid && !m.read)
@@ -147,10 +153,11 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const handleSend = (text: string) => {
+  const handleSend = async (text: string) => {
+    const msgId = `opt-${Date.now()}`;
     // Optimistic: add message to UI immediately
     const optimisticMsg: Message = {
-      id: `opt-${Date.now()}`,
+      id: msgId,
       senderId: currentUid,
       text,
       createdAt: new Date().toISOString(),
@@ -159,15 +166,20 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
     };
     setMessages(prev => [...prev, optimisticMsg]);
 
-    sendMessage(conversation.id, currentUid, text);
-    if (socket) {
-      const currentParticipant = conversation.participants?.[currentUid];
-      socket.emit('message:new', {
-        conversationId: conversation.id,
-        message: { senderId: currentUid, text, createdAt: new Date().toISOString(), read: false },
-        recipientId: otherParticipant?.userId || otherUid,
-        senderName: currentParticipant?.name || 'Kullanici',
-      });
+    try {
+      await sendMessage(conversation.id, currentUid, text);
+      if (socket) {
+        const currentParticipant = conversation.participants?.[currentUid];
+        socket.emit('message:new', {
+          conversationId: conversation.id,
+          message: { senderId: currentUid, text, createdAt: new Date().toISOString(), read: false },
+          recipientId: otherParticipant?.userId || otherUid,
+          senderName: currentParticipant?.name || 'Kullanici',
+        });
+      }
+    } catch {
+      // Remove failed optimistic message
+      setMessages(prev => prev.filter(m => m.id !== msgId));
     }
   };
 

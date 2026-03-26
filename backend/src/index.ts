@@ -33,6 +33,7 @@ import uploadRoutes from './routes/uploadRoutes';
 import offerRoutes from './routes/offerRoutes';
 import satelliteRoutes from './routes/satelliteRoutes';
 import { expireOutdatedDealers } from './controllers/dealerController';
+import { processExpiredDeletions } from './controllers/userController';
 
 const app = express();
 const httpServer = createServer(app);
@@ -126,4 +127,10 @@ httpServer.listen(PORT, () => {
     const count = await expireOutdatedDealers();
     if (count > 0) console.log(`[CRON] ${count} bayi süresi dolduğu için devre dışı bırakıldı`);
   }, 60 * 60 * 1000);
+
+  // Process expired account deletions every 6 hours
+  setInterval(async () => {
+    const count = await processExpiredDeletions();
+    if (count > 0) console.log(`[CRON] ${count} hesap 30 günlük süre dolduğu için silindi`);
+  }, 6 * 60 * 60 * 1000);
 });

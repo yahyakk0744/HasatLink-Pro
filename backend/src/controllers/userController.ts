@@ -1,11 +1,20 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
 import Listing from '../models/Listing';
+import Offer from '../models/Offer';
+import Rating from '../models/Rating';
+import Comment from '../models/Comment';
+import Notification from '../models/Notification';
+import Report from '../models/Report';
+import PriceAlert from '../models/PriceAlert';
+import AIDiagnosis from '../models/AIDiagnosis';
+import ListingShare from '../models/ListingShare';
+import PushSubscription from '../models/PushSubscription';
+import ProfanityLog from '../models/ProfanityLog';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import admin from '../config/firebase';
 import { checkFieldsForProfanity } from '../utils/profanityFilter';
-import ProfanityLog from '../models/ProfanityLog';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -47,8 +56,16 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ message: 'Email veya şifre hatalı' });
       return;
     }
+
+    // If account has pending deletion, notify but still allow login
+    let deletionWarning: string | undefined;
+    if (user.deletionScheduledAt) {
+      const daysLeft = Math.ceil((new Date(user.deletionScheduledAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      deletionWarning = `Hesabiniz ${daysLeft} gun sonra silinecek. Iptal etmek icin hesap ayarlarinizi kontrol edin.`;
+    }
+
     const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET!, { expiresIn: '30d' });
-    res.json({ token, user: { userId: user.userId, username: user.username, name: user.name, email: user.email, location: user.location, profileImage: user.profileImage, averageRating: user.averageRating, firebaseUid: user.firebaseUid, role: user.role } });
+    res.json({ token, deletionWarning, user: { userId: user.userId, username: user.username, name: user.name, email: user.email, location: user.location, profileImage: user.profileImage, averageRating: user.averageRating, firebaseUid: user.firebaseUid, role: user.role, deletionScheduledAt: user.deletionScheduledAt } });
   } catch (error) {
     res.status(500).json({ message: 'Giriş hatası', error });
   }
@@ -350,4 +367,155 @@ export const getFavorites = async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     res.status(500).json({ message: 'Favoriler alinamadi', error });
   }
+};
+
+// ─── Request Account Deletion (30-day grace period) ───
+export const requestAccountDeletion = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).userId;
+    const { password, reason } = req.body;
+
+    const user = await User.findOne({ userId });
+    if (!user) {
+      res.status(404).json({ message: 'Kullanici bulunamadi' });
+      return;
+    }
+
+    // Admin accounts cannot self-delete
+    if (user.role === 'admin') {
+      res.status(403).json({ message: 'Admin hesabi silinemez' });
+      return;
+    }
+
+    // Verify password (skip for Google-only accounts)
+    if (user.authProvider === 'email') {
+      if (!password) {
+        res.status(400).json({ message: 'Sifrenizi girmelisiniz' });
+        return;
+      }
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        res.status(400).json({ message: 'Sifre hatali' });
+        return;
+      }
+    }
+
+    // Schedule deletion 30 days from now
+    const deletionDate = new Date();
+    deletionDate.setDate(deletionDate.getDate() + 30);
+
+    user.deletionScheduledAt = deletionDate;
+    user.deletionReason = reason || '';
+    user.isSuspended = true;
+    await user.save();
+
+    res.json({
+      message: 'Hesabiniz 30 gun sonra silinecek. Bu sure icinde giris yaparak iptal edebilirsiniz.',
+      deletionScheduledAt: deletionDate.toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Hesap silme istegi basarisiz', error });
+  }
+};
+
+// ─── Cancel Account Deletion ───
+export const cancelAccountDeletion = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).userId;
+    const user = await User.findOne({ userId });
+    if (!user) {
+      res.status(404).json({ message: 'Kullanici bulunamadi' });
+      return;
+    }
+
+    if (!user.deletionScheduledAt) {
+      res.status(400).json({ message: 'Aktif silme istegi yok' });
+      return;
+    }
+
+    user.deletionScheduledAt = null;
+    user.deletionReason = '';
+    user.isSuspended = false;
+    await user.save();
+
+    res.json({ message: 'Hesap silme istegi iptal edildi' });
+  } catch (error) {
+    res.status(500).json({ message: 'Iptal islemi basarisiz', error });
+  }
+};
+
+// ─── Purge All User Data (called by cron after 30 days) ───
+export const purgeUserData = async (userId: string): Promise<{ deletedCounts: Record<string, number> }> => {
+  const counts: Record<string, number> = {};
+
+  // Get user's listing IDs (as strings) for cascading deletes
+  const userListings = await Listing.find({ userId }).select('_id');
+  const listingIdStrings = userListings.map(l => String(l._id));
+
+  // Delete all user-related data across every model
+  const [
+    listings, offers, ratingsFrom, ratingsTo,
+    comments, notifications, reports,
+    priceAlerts, aiDiagnoses, shares,
+    pushSubs, profanityLogs,
+  ] = await Promise.all([
+    Listing.deleteMany({ userId }),
+    Offer.deleteMany({ $or: [{ fromUserId: userId }, { toUserId: userId }] }),
+    Rating.deleteMany({ fromUserId: userId }),
+    Rating.deleteMany({ toUserId: userId }),
+    Comment.deleteMany({ $or: [{ userId }, ...(listingIdStrings.length > 0 ? [{ listingId: { $in: listingIdStrings } }] : [])] }),
+    Notification.deleteMany({ userId }),
+    Report.deleteMany({ reporterUserId: userId }),
+    PriceAlert.deleteMany({ userId }),
+    AIDiagnosis.deleteMany({ userId }),
+    ListingShare.deleteMany({ userId }),
+    PushSubscription.deleteMany({ userId }),
+    ProfanityLog.deleteMany({ userId }),
+  ]);
+
+  counts.listings = listings.deletedCount;
+  counts.offers = offers.deletedCount;
+  counts.ratings = ratingsFrom.deletedCount + ratingsTo.deletedCount;
+  counts.comments = comments.deletedCount;
+  counts.notifications = notifications.deletedCount;
+  counts.reports = reports.deletedCount;
+  counts.priceAlerts = priceAlerts.deletedCount;
+  counts.aiDiagnoses = aiDiagnoses.deletedCount;
+  counts.shares = shares.deletedCount;
+  counts.pushSubscriptions = pushSubs.deletedCount;
+  counts.profanityLogs = profanityLogs.deletedCount;
+
+  // Delete Firebase Auth account
+  const user = await User.findOne({ userId });
+  if (user?.firebaseUid) {
+    try {
+      await admin.auth().deleteUser(user.firebaseUid);
+    } catch {}
+  }
+
+  // Finally delete the user document
+  await User.deleteOne({ userId });
+  counts.user = 1;
+
+  return { deletedCounts: counts };
+};
+
+// ─── Cron: Process Expired Deletion Requests ───
+export const processExpiredDeletions = async (): Promise<number> => {
+  const now = new Date();
+  const expiredUsers = await User.find({
+    deletionScheduledAt: { $ne: null, $lte: now },
+  }).select('userId');
+
+  let count = 0;
+  for (const user of expiredUsers) {
+    try {
+      await purgeUserData(user.userId);
+      count++;
+      console.log(`[CRON] Kullanici silindi: ${user.userId}`);
+    } catch (err) {
+      console.error(`[CRON] Kullanici silme hatasi: ${user.userId}`, err);
+    }
+  }
+  return count;
 };

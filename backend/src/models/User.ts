@@ -24,6 +24,8 @@ export interface IUser extends Document {
   favorites: string[];
   lastActiveAt: Date;
   createdAt: Date;
+  deletionScheduledAt: Date | null;
+  deletionReason: string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -50,6 +52,8 @@ const UserSchema = new Schema<IUser>({
   favorites: [{ type: String }],
   lastActiveAt: { type: Date, default: Date.now },
   createdAt: { type: Date, default: Date.now },
+  deletionScheduledAt: { type: Date, default: null },
+  deletionReason: { type: String, default: '' },
 });
 
 // firebaseUid already has sparse index via schema field option

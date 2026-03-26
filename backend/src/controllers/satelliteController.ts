@@ -4,20 +4,35 @@ import axios from 'axios';
 
 const AGRO_API_KEY = () => process.env.AGROMONITORING_API_KEY || '';
 
-/** Keep only the latest polygon, delete older ones to stay under free tier limit */
-async function cleanupOldPolygons(keepId: string) {
+/** Delete old QuickScan polygons, keep only the latest `keep` ones */
+async function cleanupQuickScans(keepId?: string, keep = 3) {
   try {
     const { data: polygons } = await axios.get(`${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}`);
-    if (!Array.isArray(polygons) || polygons.length <= 8) return; // Only cleanup above 8
-    // Sort by created_at, delete oldest ones keeping latest 5
-    const sorted = polygons.sort((a: any, b: any) => (a.created_at || 0) - (b.created_at || 0));
-    const toDelete = sorted.slice(0, sorted.length - 5);
+    if (!Array.isArray(polygons)) return;
+    const quickScans = polygons.filter((p: any) => p.name?.startsWith('QuickScan-'));
+    if (quickScans.length <= keep) return;
+    const sorted = quickScans.sort((a: any, b: any) => (a.created_at || 0) - (b.created_at || 0));
+    const toDelete = sorted.slice(0, sorted.length - keep);
     for (const p of toDelete) {
       if (p.id !== keepId) {
         await axios.delete(`${AGRO_BASE}/polygons/${p.id}?appid=${AGRO_API_KEY()}`).catch(() => {});
       }
     }
   } catch {}
+}
+
+/** Wait a bit and retry fetching data — new polygons need processing time */
+async function fetchWithRetry<T>(url: string, params: Record<string, any>, retries = 2, delayMs = 1500): Promise<T> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const { data } = await axios.get<T>(url, { params });
+      return data;
+    } catch (err: any) {
+      if (i === retries || (err.response?.status && err.response.status !== 404)) throw err;
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  throw new Error('Veri alinamadi');
 }
 
 /** Calculate polygon area in hectares using Shoelace formula (approximate) */
@@ -223,35 +238,37 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       ];
     }
 
-    // 1. Create polygon
-    const { data: polygon } = await axios.post(`${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}`, {
-      name: `QuickScan-${Date.now()}`,
-      geo_json: {
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'Polygon',
-          coordinates: [coordinates],
+    // 0. Cleanup old QuickScan polygons before creating new one
+    await cleanupQuickScans(undefined, 3);
+
+    // 1. Create polygon (duplicated=true to allow same-area re-analysis)
+    const { data: polygon } = await axios.post(
+      `${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}&duplicated=true`,
+      {
+        name: `QuickScan-${Date.now()}`,
+        geo_json: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'Polygon',
+            coordinates: [coordinates],
+          },
         },
       },
-    });
+    );
 
     const polyId = polygon.id;
 
-    // 2. Get satellite images (last 30 days)
+    // 2. Get satellite images (last 30 days) — retry on 404 (new polygon processing delay)
     const now = Math.floor(Date.now() / 1000);
     const start = now - 30 * 24 * 60 * 60;
 
-    const [imgRes, ndviRes] = await Promise.all([
-      axios.get(`${AGRO_BASE}/image/search`, {
-        params: { polyid: polyId, start, end: now, appid: AGRO_API_KEY() },
-      }),
-      axios.get(`${AGRO_BASE}/ndvi/history`, {
-        params: { polyid: polyId, start, end: now, appid: AGRO_API_KEY() },
-      }),
+    const [imgData, ndviData] = await Promise.all([
+      fetchWithRetry<any[]>(`${AGRO_BASE}/image/search`, { polyid: polyId, start, end: now, appid: AGRO_API_KEY() }),
+      fetchWithRetry<any[]>(`${AGRO_BASE}/ndvi/history`, { polyid: polyId, start, end: now, appid: AGRO_API_KEY() }),
     ]);
 
-    const images = (imgRes.data || [])
+    const images = (imgData || [])
       .map((img: any) => ({
         dt: img.dt,
         date: new Date(img.dt * 1000).toISOString().split('T')[0],
@@ -261,7 +278,7 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       }))
       .sort((a: any, b: any) => b.dt - a.dt);
 
-    const ndviHistory = (ndviRes.data || [])
+    const ndviHistory = (ndviData || [])
       .map((entry: any) => ({
         dt: entry.dt,
         date: new Date(entry.dt * 1000).toISOString().split('T')[0],
@@ -284,9 +301,8 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       else { healthStatus = 'critical'; healthColor = '#991B1B'; }
     }
 
-    // Keep polygon alive so image URLs remain accessible.
-    // Clean up old polygons if approaching free tier limit (10 max).
-    cleanupOldPolygons(polyId).catch(() => {});
+    // Clean up old QuickScans in background, keep this one
+    cleanupQuickScans(polyId, 3).catch(() => {});
 
     res.json({
       polygonId: polyId,
@@ -303,7 +319,10 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
     if (status === 401) {
       res.status(503).json({ message: 'Uydu servisi API anahtari gecersiz veya suresi dolmus. Yonetici yeni anahtar tanimlamali.' });
     } else {
-      const msg = error.response?.data?.message || error.message;
+      // Extract readable error message — Agromonitoring may return string or object
+      const rd = error.response?.data;
+      const msg = typeof rd === 'string' ? rd
+        : rd?.message || rd?.error || error.message || 'Bilinmeyen hata';
       res.status(status || 500).json({ message: `Analiz yapilamadi: ${msg}` });
     }
   }
