@@ -2,62 +2,90 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import axios from 'axios';
 
-const AGRO_API_KEY = () => process.env.AGROMONITORING_API_KEY || '';
+// ─── Copernicus Data Space Ecosystem (CDSE) — Sentinel Hub APIs ───
+const SH_AUTH_URL = 'https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token';
+const SH_PROCESS_URL = 'https://sh.dataspace.copernicus.eu/api/v1/process';
+const SH_CATALOG_URL = 'https://sh.dataspace.copernicus.eu/api/v1/catalog/1.0.0/search';
+const SH_STATS_URL = 'https://sh.dataspace.copernicus.eu/api/v1/statistics';
 
-/** Delete ALL polygons on the account to free up quota */
-async function deleteAllPolygons() {
-  try {
-    const { data: polygons } = await axios.get(`${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}`);
-    if (!Array.isArray(polygons)) return;
-    for (const p of polygons) {
-      await axios.delete(`${AGRO_BASE}/polygons/${p.id}?appid=${AGRO_API_KEY()}`).catch(() => {});
-    }
-  } catch {}
-}
+const TKGM_BASE = 'https://cbsapi.tkgm.gov.tr/megsiswebapi.v3/api/parsel';
 
-/** Create polygon with auto-retry: if limit hit, delete all and retry once */
-async function createPolygonWithRetry(coordinates: number[][], name: string): Promise<any> {
-  const body = {
-    name,
-    geo_json: {
-      type: 'Feature',
-      properties: {},
-      geometry: { type: 'Polygon', coordinates: [coordinates] },
-    },
+// ─── Token cache ───
+let tokenCache: { token: string; expiresAt: number } | null = null;
+
+async function getAccessToken(): Promise<string> {
+  // Return cached token if still valid (with 60s buffer)
+  if (tokenCache && Date.now() < tokenCache.expiresAt - 60000) {
+    return tokenCache.token;
+  }
+
+  const clientId = process.env.SH_CLIENT_ID || '';
+  const clientSecret = process.env.SH_CLIENT_SECRET || '';
+
+  if (!clientId || !clientSecret) {
+    throw new Error('SENTINEL_HUB_CREDENTIALS_MISSING');
+  }
+
+  const { data } = await axios.post(SH_AUTH_URL,
+    new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: clientId,
+      client_secret: clientSecret,
+    }).toString(),
+    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+  );
+
+  tokenCache = {
+    token: data.access_token,
+    expiresAt: Date.now() + data.expires_in * 1000,
   };
 
-  try {
-    const { data } = await axios.post(`${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}&duplicated=true`, body);
-    return data;
-  } catch (err: any) {
-    const msg = err.response?.data?.message || '';
-    // "You can not create polygons anymore" = quota full
-    if (msg.includes('can not create') || msg.includes('PayloadTooLarge') || err.response?.status === 413) {
-      // Nuclear option: delete everything and retry
-      await deleteAllPolygons();
-      await new Promise(r => setTimeout(r, 1000));
-      const { data } = await axios.post(`${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}&duplicated=true`, body);
-      return data;
-    }
-    throw err;
-  }
+  return data.access_token;
 }
 
-/** Wait a bit and retry fetching data — new polygons need processing time */
-async function fetchWithRetry<T>(url: string, params: Record<string, any>, retries = 2, delayMs = 1500): Promise<T> {
-  for (let i = 0; i <= retries; i++) {
-    try {
-      const { data } = await axios.get<T>(url, { params });
-      return data;
-    } catch (err: any) {
-      if (i === retries || (err.response?.status && err.response.status !== 404)) throw err;
-      await new Promise(r => setTimeout(r, delayMs));
-    }
-  }
-  throw new Error('Veri alinamadi');
+// ─── Evalscripts ───
+const EVALSCRIPT_TRUE_COLOR = `//VERSION=3
+function setup() {
+  return { input: ["B04","B03","B02","dataMask"], output: { bands: 4 } };
 }
+function evaluatePixel(s) {
+  return [2.5*s.B04, 2.5*s.B03, 2.5*s.B02, s.dataMask];
+}`;
 
-/** Calculate polygon area in hectares using Shoelace formula (approximate) */
+const EVALSCRIPT_NDVI = `//VERSION=3
+function setup() {
+  return { input: ["B04","B08","dataMask"], output: { bands: 4 } };
+}
+function evaluatePixel(s) {
+  let ndvi = (s.B08 - s.B04) / (s.B08 + s.B04 + 0.0001);
+  // Color ramp: red → yellow → green
+  let r, g, b;
+  if (ndvi < 0) { r=0.5; g=0; b=0; }
+  else if (ndvi < 0.2) { r=0.8; g=0.2; b=0.1; }
+  else if (ndvi < 0.4) { r=0.9; g=0.7; b=0.1; }
+  else if (ndvi < 0.6) { r=0.5; g=0.8; b=0.2; }
+  else { r=0.1; g=0.6; b=0.1; }
+  return [r, g, b, s.dataMask];
+}`;
+
+const EVALSCRIPT_FALSE_COLOR = `//VERSION=3
+function setup() {
+  return { input: ["B08","B04","B03","dataMask"], output: { bands: 4 } };
+}
+function evaluatePixel(s) {
+  return [2.5*s.B08, 2.5*s.B04, 2.5*s.B03, s.dataMask];
+}`;
+
+const EVALSCRIPT_NDVI_STATS = `//VERSION=3
+function setup() {
+  return { input: ["B04","B08","dataMask"], output: [{ id: "ndvi", bands: 1, sampleType: "FLOAT32" }, { id: "dataMask", bands: 1 }] };
+}
+function evaluatePixel(s) {
+  return { ndvi: [(s.B08 - s.B04) / (s.B08 + s.B04 + 0.0001)], dataMask: [s.dataMask] };
+}`;
+
+// ─── Helpers ───
+
 function calcPolygonAreaHa(coords: number[][]): number {
   const R = 6371000;
   const toRad = (d: number) => d * Math.PI / 180;
@@ -73,141 +101,99 @@ function calcPolygonAreaHa(coords: number[][]): number {
   }
   return Math.abs(area * R * R / 2) / 10000;
 }
-const AGRO_BASE = 'https://api.agromonitoring.com/agro/1.0';
-const TKGM_BASE = 'https://cbsapi.tkgm.gov.tr/megsiswebapi.v3/api/parsel';
 
-/**
- * Create a polygon (field) on Agromonitoring and return its id.
- * Free tier allows up to 10 polygons.
- * POST /api/satellite/polygon
- * Body: { name, coordinates: [[lng, lat], ...] }
- */
-export const createPolygon = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { name, coordinates } = req.body;
-    if (!coordinates || !Array.isArray(coordinates) || coordinates.length < 3) {
-      res.status(400).json({ message: 'En az 3 koordinat noktasi gerekli' });
-      return;
-    }
-
-    // Close the ring if not closed
-    const ring = [...coordinates];
-    const first = ring[0];
-    const last = ring[ring.length - 1];
-    if (first[0] !== last[0] || first[1] !== last[1]) {
-      ring.push(first);
-    }
-
-    const { data } = await axios.post(`${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}`, {
-      name: name || `Tarla-${Date.now()}`,
-      geo_json: {
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'Polygon',
-          coordinates: [ring],
+/** Get image from Sentinel Hub Process API, return as base64 data URL */
+async function getProcessImage(
+  token: string,
+  geometry: any,
+  evalscript: string,
+  from: string,
+  to: string,
+  width = 512,
+  height = 512,
+  maxCloudCoverage = 100,
+): Promise<Buffer> {
+  const { data } = await axios.post(SH_PROCESS_URL, {
+    input: {
+      bounds: {
+        geometry,
+        properties: { crs: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84' },
+      },
+      data: [{
+        type: 'sentinel-2-l2a',
+        dataFilter: {
+          timeRange: { from, to },
+          maxCloudCoverage,
         },
-      },
-    });
+      }],
+    },
+    output: {
+      width,
+      height,
+      responses: [{ identifier: 'default', format: { type: 'image/png' } }],
+    },
+    evalscript,
+  }, {
+    headers: { Authorization: `Bearer ${token}` },
+    responseType: 'arraybuffer',
+  });
+  return Buffer.from(data);
+}
 
-    res.json({
-      polygonId: data.id,
-      name: data.name,
-      area: data.area,
-      center: data.center,
-    });
-  } catch (error: any) {
-    const msg = error.response?.data?.message || error.message;
-    res.status(error.response?.status || 500).json({ message: `Polygon olusturulamadi: ${msg}` });
-  }
-};
+/** Search catalog for available Sentinel-2 scenes */
+async function searchScenes(token: string, geometry: any, from: string, to: string, maxCloud = 80): Promise<any[]> {
+  const { data } = await axios.post(SH_CATALOG_URL, {
+    collections: ['sentinel-2-l2a'],
+    datetime: `${from}/${to}`,
+    intersects: geometry,
+    limit: 50,
+    filter: `eo:cloud_cover < ${maxCloud}`,
+    'filter-lang': 'cql2-text',
+  }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return data.features || [];
+}
 
-/**
- * Get satellite imagery list for a polygon.
- * GET /api/satellite/imagery/:polygonId
- * Query: ?start=timestamp&end=timestamp
- */
-export const getSatelliteImagery = async (req: AuthRequest, res: Response): Promise<void> => {
+/** Get NDVI statistics over time using Statistical API */
+async function getNDVIStatistics(token: string, geometry: any, from: string, to: string): Promise<any[]> {
   try {
-    const { polygonId } = req.params;
-    // Default: last 30 days
-    const now = Math.floor(Date.now() / 1000);
-    const start = req.query.start ? Number(req.query.start) : now - 30 * 24 * 60 * 60;
-    const end = req.query.end ? Number(req.query.end) : now;
-
-    const { data } = await axios.get(`${AGRO_BASE}/image/search`, {
-      params: {
-        polyid: polygonId,
-        start,
-        end,
-        appid: AGRO_API_KEY(),
+    const { data } = await axios.post(SH_STATS_URL, {
+      input: {
+        bounds: {
+          geometry,
+          properties: { crs: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84' },
+        },
+        data: [{
+          type: 'sentinel-2-l2a',
+          dataFilter: {
+            timeRange: { from, to },
+            maxCloudCoverage: 80,
+          },
+        }],
       },
+      aggregation: {
+        timeRange: { from, to },
+        aggregationInterval: { of: 'P5D' },
+        evalscript: EVALSCRIPT_NDVI_STATS,
+        width: 100,
+        height: 100,
+      },
+    }, {
+      headers: { Authorization: `Bearer ${token}` },
     });
-
-    // Return sorted by date desc, with truecolor + NDVI urls
-    const images = (data || []).map((img: any) => ({
-      dt: img.dt,
-      date: new Date(img.dt * 1000).toISOString().split('T')[0],
-      type: img.type,
-      cloudCoverage: img.cl,
-      dataAvailable: img.dc,
-      trueColor: img.image?.truecolor,
-      ndvi: img.image?.ndvi,
-      evi: img.image?.evi,
-      stats: img.stats?.ndvi,
-    })).sort((a: any, b: any) => b.dt - a.dt);
-
-    res.json({ images, count: images.length });
-  } catch (error: any) {
-    const msg = error.response?.data?.message || error.message;
-    res.status(error.response?.status || 500).json({ message: `Uydu verisi alinamadi: ${msg}` });
+    return data.data || [];
+  } catch {
+    return [];
   }
-};
+}
+
+// ─── Route Handlers ───
 
 /**
- * Get NDVI statistics for a polygon at a specific date.
- * GET /api/satellite/ndvi/:polygonId
- * Query: ?start=timestamp&end=timestamp
- */
-export const getNDVIStats = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { polygonId } = req.params;
-    const now = Math.floor(Date.now() / 1000);
-    const start = req.query.start ? Number(req.query.start) : now - 30 * 24 * 60 * 60;
-    const end = req.query.end ? Number(req.query.end) : now;
-
-    const { data } = await axios.get(`${AGRO_BASE}/ndvi/history`, {
-      params: {
-        polyid: polygonId,
-        start,
-        end,
-        appid: AGRO_API_KEY(),
-      },
-    });
-
-    const history = (data || []).map((entry: any) => ({
-      dt: entry.dt,
-      date: new Date(entry.dt * 1000).toISOString().split('T')[0],
-      min: entry.data?.min ?? 0,
-      max: entry.data?.max ?? 0,
-      mean: entry.data?.mean ?? 0,
-      median: entry.data?.median ?? 0,
-      p25: entry.data?.p25 ?? 0,
-      p75: entry.data?.p75 ?? 0,
-    })).sort((a: any, b: any) => a.dt - b.dt);
-
-    res.json({ history, count: history.length });
-  } catch (error: any) {
-    const msg = error.response?.data?.message || error.message;
-    res.status(error.response?.status || 500).json({ message: `NDVI verisi alinamadi: ${msg}` });
-  }
-};
-
-/**
- * Quick analysis: create a rectangular polygon from center point + radius,
- * then get latest NDVI. All-in-one endpoint for simple usage.
+ * Quick satellite analysis — stateless, no polygon creation needed
  * POST /api/satellite/analyze
- * Body: { lat, lng, radiusKm? }
+ * Body: { lat, lng, radiusKm?, polygon?: [[lng,lat],...] }
  */
 export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -217,39 +203,17 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       return;
     }
 
-    if (!AGRO_API_KEY()) {
-      res.status(503).json({ message: 'Uydu analiz servisi yapilandirmasi eksik. Lutfen yoneticiyle iletisime gecin.' });
-      return;
-    }
-
-    // Use parcel polygon if provided, otherwise create square from radius
+    // Build GeoJSON geometry
     let coordinates: number[][];
     if (customPolygon && Array.isArray(customPolygon) && customPolygon.length >= 3) {
       coordinates = [...customPolygon];
-      // Close the ring if not closed
       const first = coordinates[0];
       const last = coordinates[coordinates.length - 1];
       if (first[0] !== last[0] || first[1] !== last[1]) {
         coordinates.push(first);
       }
-
-      // Agromonitoring requires min 1 hectare — if polygon too small, expand it
-      const area = calcPolygonAreaHa(coordinates);
-      if (area < 1.0) {
-        // Scale up polygon from centroid to reach ~1.1 ha
-        const scale = Math.sqrt(1.1 / area);
-        const centLng = coordinates.reduce((s, c) => s + c[0], 0) / (coordinates.length - 1);
-        const centLat = coordinates.reduce((s, c) => s + c[1], 0) / (coordinates.length - 1);
-        coordinates = coordinates.map(c => [
-          centLng + (c[0] - centLng) * scale,
-          centLat + (c[1] - centLat) * scale,
-        ]);
-      }
     } else {
-      // Ensure minimum ~1.1 ha with radius fallback
-      const minRadiusKm = 0.06; // ~1.1 ha square
-      const effectiveRadius = Math.max(radiusKm, minRadiusKm);
-      const r = effectiveRadius / 111.32;
+      const r = Math.max(radiusKm, 0.05) / 111.32;
       const rLng = r / Math.cos(lat * Math.PI / 180);
       coordinates = [
         [lng - rLng, lat - r],
@@ -260,53 +224,68 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       ];
     }
 
-    // 1. Create polygon (auto-retries on quota limit by deleting old ones)
-    const polygon = await createPolygonWithRetry(coordinates, `QuickScan-${Date.now()}`);
-    const polyId = polygon.id;
+    const geometry = { type: 'Polygon', coordinates: [coordinates] };
+    const areaHa = calcPolygonAreaHa(coordinates);
 
-    // 2. Get satellite images (last 90 days for better chance of clear images)
-    const now = Math.floor(Date.now() / 1000);
-    const start = now - 90 * 24 * 60 * 60;
+    let token: string;
+    try {
+      token = await getAccessToken();
+    } catch (err: any) {
+      if (err.message === 'SENTINEL_HUB_CREDENTIALS_MISSING') {
+        res.status(503).json({ message: 'Uydu servisi yapilandirmasi eksik (SH_CLIENT_ID / SH_CLIENT_SECRET). Yoneticiyle iletisime gecin.' });
+      } else {
+        res.status(503).json({ message: 'Uydu servisi baglantisi kurulamadi. Lutfen tekrar deneyin.' });
+      }
+      return;
+    }
 
-    const [imgData, ndviData] = await Promise.all([
-      fetchWithRetry<any[]>(`${AGRO_BASE}/image/search`, { polyid: polyId, start, end: now, appid: AGRO_API_KEY() }),
-      fetchWithRetry<any[]>(`${AGRO_BASE}/ndvi/history`, { polyid: polyId, start, end: now, appid: AGRO_API_KEY() }),
+    // Time range: last 90 days
+    const now = new Date();
+    const from = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] + 'T00:00:00Z';
+    const to = now.toISOString().split('T')[0] + 'T23:59:59Z';
+
+    // Run all requests in parallel
+    const imgSize = Math.min(Math.max(Math.round(Math.sqrt(areaHa) * 100), 256), 1024);
+
+    const [scenes, ndviStats, trueColorBuf, ndviBuf, falseColorBuf] = await Promise.all([
+      searchScenes(token, geometry, from, to, 80).catch(() => []),
+      getNDVIStatistics(token, geometry, from, to),
+      getProcessImage(token, geometry, EVALSCRIPT_TRUE_COLOR, from, to, imgSize, imgSize, 30).catch(() => null),
+      getProcessImage(token, geometry, EVALSCRIPT_NDVI, from, to, imgSize, imgSize, 30).catch(() => null),
+      getProcessImage(token, geometry, EVALSCRIPT_FALSE_COLOR, from, to, imgSize, imgSize, 30).catch(() => null),
     ]);
 
-    // Process all images — separate clear from cloudy
-    const allImages = (imgData || [])
-      .map((img: any) => ({
-        dt: img.dt,
-        date: new Date(img.dt * 1000).toISOString().split('T')[0],
-        cloudCoverage: img.cl ?? 100,
-        trueColor: img.image?.truecolor?.replace('http://', 'https://') || '',
-        ndvi: img.image?.ndvi?.replace('http://', 'https://') || '',
-        evi: img.image?.evi?.replace('http://', 'https://') || '',
-        falseColor: img.image?.false_color?.replace('http://', 'https://') || '',
-      }))
-      .filter((img: any) => img.trueColor); // must have trueColor URL
+    // Build image list from catalog scenes
+    const images = scenes
+      .sort((a: any, b: any) => (a.properties?.['eo:cloud_cover'] ?? 100) - (b.properties?.['eo:cloud_cover'] ?? 100))
+      .slice(0, 8)
+      .map((scene: any) => ({
+        dt: Math.floor(new Date(scene.properties?.datetime || '').getTime() / 1000),
+        date: (scene.properties?.datetime || '').split('T')[0],
+        cloudCoverage: scene.properties?.['eo:cloud_cover'] ?? 100,
+        platform: scene.properties?.['platform'] || 'sentinel-2',
+      }));
 
-    // Priority: clear images first (< 50% cloud), then least cloudy
-    const clearImages = allImages
-      .filter((img: any) => img.cloudCoverage < 50)
-      .sort((a: any, b: any) => a.cloudCoverage - b.cloudCoverage || b.dt - a.dt);
+    // Convert rendered images to base64 data URLs
+    const renderedImages: Record<string, string> = {};
+    if (trueColorBuf) renderedImages.trueColor = `data:image/png;base64,${trueColorBuf.toString('base64')}`;
+    if (ndviBuf) renderedImages.ndvi = `data:image/png;base64,${ndviBuf.toString('base64')}`;
+    if (falseColorBuf) renderedImages.falseColor = `data:image/png;base64,${falseColorBuf.toString('base64')}`;
 
-    const cloudyImages = allImages
-      .filter((img: any) => img.cloudCoverage >= 50)
-      .sort((a: any, b: any) => a.cloudCoverage - b.cloudCoverage);
-
-    // Take best clear images first, fill with least cloudy if needed
-    const images = [...clearImages, ...cloudyImages].slice(0, 8);
-
-    const ndviHistory = (ndviData || [])
-      .map((entry: any) => ({
-        dt: entry.dt,
-        date: new Date(entry.dt * 1000).toISOString().split('T')[0],
-        min: entry.data?.min ?? 0,
-        max: entry.data?.max ?? 0,
-        mean: entry.data?.mean ?? 0,
-        median: entry.data?.median ?? 0,
-      }))
+    // Process NDVI statistics
+    const ndviHistory = ndviStats
+      .filter((entry: any) => entry.outputs?.ndvi?.bands?.B0?.stats)
+      .map((entry: any) => {
+        const stats = entry.outputs.ndvi.bands.B0.stats;
+        return {
+          dt: Math.floor(new Date(entry.interval.from).getTime() / 1000),
+          date: entry.interval.from.split('T')[0],
+          min: stats.min ?? 0,
+          max: stats.max ?? 0,
+          mean: stats.mean ?? 0,
+          median: stats.median ?? stats.mean ?? 0,
+        };
+      })
       .sort((a: any, b: any) => a.dt - b.dt);
 
     // Latest NDVI assessment
@@ -321,88 +300,52 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       else { healthStatus = 'critical'; healthColor = '#991B1B'; }
     }
 
-    // Delete polygon immediately after fetching data to preserve quota
-    axios.delete(`${AGRO_BASE}/polygons/${polyId}?appid=${AGRO_API_KEY()}`).catch(() => {});
-
-    // Build static satellite map URL (Esri + polygon overlay) for preview
-    const centerZoom = 15;
-    const staticMapUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${centerZoom}/${Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * (1 << centerZoom))}/${Math.floor((lng + 180) / 360 * (1 << centerZoom))}`;
-
     res.json({
-      polygonId: polyId,
       center: { lat, lng },
-      area: polygon.area,
+      area: areaHa * 10000, // m²
       latestNDVI: latest || null,
       healthStatus,
       healthColor,
       ndviHistory,
       images,
-      staticMapUrl,
+      renderedImages,
       clearImageCount: images.filter((i: any) => i.cloudCoverage < 50).length,
-      totalImageCount: allImages.length,
+      totalImageCount: images.length,
     });
   } catch (error: any) {
     const status = error.response?.status;
-    if (status === 401) {
-      res.status(503).json({ message: 'Uydu servisi API anahtari gecersiz veya suresi dolmus. Yonetici yeni anahtar tanimlamali.' });
+    if (status === 401 || status === 403) {
+      tokenCache = null; // Clear stale token
+      res.status(503).json({ message: 'Uydu servisi yetkilendirme hatasi. API anahtarlari kontrol edilmeli.' });
     } else {
-      // Extract readable error message — Agromonitoring may return string or object
-      const rd = error.response?.data;
-      const rawMsg = typeof rd === 'string' ? rd
-        : rd?.message || rd?.error || error.message || 'Bilinmeyen hata';
-
-      // Translate known Agromonitoring errors to Turkish
-      let msg = rawMsg;
-      if (rawMsg.includes('can not create')) {
-        msg = 'Uydu servisi kullanim limiti doldu. Lutfen daha sonra tekrar deneyin.';
-      } else if (rawMsg.includes('duplicated')) {
-        msg = 'Bu alan zaten analiz edildi, lutfen yeni bir alan secin.';
-      }
+      const msg = error.response?.data?.message || error.response?.data?.error?.message || error.message || 'Bilinmeyen hata';
       res.status(status || 500).json({ message: `Analiz yapilamadi: ${msg}` });
     }
   }
 };
 
-/**
- * List user's polygons
- * GET /api/satellite/polygons
- */
-export const listPolygons = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { data } = await axios.get(`${AGRO_BASE}/polygons?appid=${AGRO_API_KEY()}`);
-    const polygons = (data || []).map((p: any) => ({
-      id: p.id,
-      name: p.name,
-      area: p.area,
-      center: p.center,
-      createdAt: new Date(p.created_at * 1000).toISOString(),
-    }));
-    res.json({ polygons });
-  } catch (error: any) {
-    const msg = error.response?.data?.message || error.message;
-    res.status(error.response?.status || 500).json({ message: `Polygon listesi alinamadi: ${msg}` });
-  }
+// ─── Legacy Agromonitoring endpoints (kept for backward compat, can be removed) ───
+export const createPolygon = async (_req: AuthRequest, res: Response): Promise<void> => {
+  res.status(410).json({ message: 'Bu endpoint kaldirildi. /satellite/analyze kullanin.' });
+};
+export const getSatelliteImagery = async (_req: AuthRequest, res: Response): Promise<void> => {
+  res.status(410).json({ message: 'Bu endpoint kaldirildi. /satellite/analyze kullanin.' });
+};
+export const getNDVIStats = async (_req: AuthRequest, res: Response): Promise<void> => {
+  res.status(410).json({ message: 'Bu endpoint kaldirildi. /satellite/analyze kullanin.' });
+};
+export const listPolygons = async (_req: AuthRequest, res: Response): Promise<void> => {
+  res.status(410).json({ message: 'Bu endpoint kaldirildi. /satellite/analyze kullanin.' });
+};
+export const deletePolygon = async (_req: AuthRequest, res: Response): Promise<void> => {
+  res.status(410).json({ message: 'Bu endpoint kaldirildi.' });
 };
 
-/**
- * Delete a polygon
- * DELETE /api/satellite/polygon/:polygonId
- */
-export const deletePolygon = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { polygonId } = req.params;
-    await axios.delete(`${AGRO_BASE}/polygons/${polygonId}?appid=${AGRO_API_KEY()}`);
-    res.json({ message: 'Polygon silindi' });
-  } catch (error: any) {
-    const msg = error.response?.data?.message || error.message;
-    res.status(error.response?.status || 500).json({ message: `Polygon silinemedi: ${msg}` });
-  }
-};
+// ─── TKGM Parcel Query (unchanged) ───
 
 /**
  * Query TKGM cadastral parcel by coordinate
  * GET /api/satellite/parcel?lat=X&lng=Y
- * Returns parcel info + polygon boundary from Turkey's Land Registry (TKGM)
  */
 export const getParcelByCoordinate = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -412,17 +355,12 @@ export const getParcelByCoordinate = async (req: AuthRequest, res: Response): Pr
       return;
     }
 
-    // TKGM API: koordinat ile parsel sorgulama
     const { data } = await axios.get(`${TKGM_BASE}/koordinat/${lng}/${lat}`, {
-      headers: {
-        'User-Agent': 'HasatLink/1.0',
-        'Accept': 'application/json',
-      },
+      headers: { 'User-Agent': 'HasatLink/1.0', 'Accept': 'application/json' },
       timeout: 10000,
     });
 
     if (!data || !data.features || data.features.length === 0) {
-      // Fallback: try alternative TKGM endpoint format
       try {
         const { data: altData } = await axios.get(`${TKGM_BASE}/koordinat`, {
           params: { x: lng, y: lat },
@@ -430,20 +368,16 @@ export const getParcelByCoordinate = async (req: AuthRequest, res: Response): Pr
           timeout: 10000,
         });
         if (altData?.features?.length > 0) {
-          const feature = altData.features[0];
-          res.json(formatParcelResponse(feature));
+          res.json(formatParcelResponse(altData.features[0]));
           return;
         }
       } catch {}
-
       res.status(404).json({ message: 'Bu koordinatta parsel bulunamadi' });
       return;
     }
 
-    const feature = data.features[0];
-    res.json(formatParcelResponse(feature));
+    res.json(formatParcelResponse(data.features[0]));
   } catch (error: any) {
-    // TKGM API unreachable — return helpful error
     if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
       res.status(504).json({ message: 'TKGM servisi yanit vermiyor, lutfen tekrar deneyin' });
     } else {
@@ -457,15 +391,12 @@ export const getParcelByCoordinate = async (req: AuthRequest, res: Response): Pr
 function formatParcelResponse(feature: any) {
   const props = feature.properties || {};
   const geometry = feature.geometry;
-
-  // Convert coordinates to [lat, lng] format for Leaflet
   let coordinates: number[][][] = [];
   if (geometry?.type === 'Polygon') {
     coordinates = geometry.coordinates;
   } else if (geometry?.type === 'MultiPolygon') {
     coordinates = geometry.coordinates[0];
   }
-
   return {
     parcel: {
       il: props.il || props.IL || '',

@@ -10,26 +10,26 @@ export interface NDVIDataPoint {
   median: number;
 }
 
-export interface SatelliteImage {
+export interface SatelliteScene {
   dt: number;
   date: string;
   cloudCoverage: number;
-  trueColor: string;
-  ndvi: string;
-  evi: string;
-  falseColor: string;
+  platform: string;
 }
 
 export interface SatelliteAnalysis {
-  polygonId: string;
   center: { lat: number; lng: number };
   area: number;
   latestNDVI: NDVIDataPoint | null;
   healthStatus: 'excellent' | 'good' | 'moderate' | 'poor' | 'critical' | 'unknown';
   healthColor: string;
   ndviHistory: NDVIDataPoint[];
-  images: SatelliteImage[];
-  staticMapUrl: string;
+  images: SatelliteScene[];
+  renderedImages: {
+    trueColor?: string;
+    ndvi?: string;
+    falseColor?: string;
+  };
   clearImageCount: number;
   totalImageCount: number;
 }
