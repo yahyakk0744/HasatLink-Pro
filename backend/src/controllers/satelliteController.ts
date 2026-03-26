@@ -132,12 +132,21 @@ async function computeNDVI(
   }
 }
 
-/** Proxy a remote image URL and return as base64 data URL */
-async function proxyImageAsBase64(url: string): Promise<string | null> {
+/** Get satellite image of exact polygon area from Esri World Imagery (free, no API key) */
+async function getFieldImage(bbox: [number, number, number, number], width = 512): Promise<string | null> {
   try {
-    const { data } = await axios.get(url, { responseType: 'arraybuffer', timeout: 10000 });
-    const contentType = url.endsWith('.png') ? 'image/png' : 'image/jpeg';
-    return `data:${contentType};base64,${Buffer.from(data).toString('base64')}`;
+    // Esri export map — renders exact bbox as image
+    const [minX, minY, maxX, maxY] = bbox;
+    // Add 10% padding around the polygon
+    const padX = (maxX - minX) * 0.1;
+    const padY = (maxY - minY) * 0.1;
+    const aspect = (maxX - minX + 2 * padX) / (maxY - minY + 2 * padY);
+    const height = Math.round(width / Math.max(aspect, 0.5));
+
+    const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${minX - padX},${minY - padY},${maxX + padX},${maxY + padY}&bboxSR=4326&imageSR=4326&size=${width},${height}&format=png&f=image`;
+
+    const { data } = await axios.get(url, { responseType: 'arraybuffer', timeout: 15000 });
+    return `data:image/png;base64,${Buffer.from(data).toString('base64')}`;
   } catch {
     return null;
   }
@@ -207,11 +216,8 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       return;
     }
 
-    // 2. Get thumbnail of best (least cloudy) scene
+    // 2. Get satellite image of EXACT polygon area (Esri, free)
     const bestScene = scenes[0];
-    const thumbnailUrl = bestScene.assets?.thumbnail?.href
-      || bestScene.assets?.visual?.href
-      || '';
 
     // 3. Compute NDVI from the best scene's bands
     const redUrl = bestScene.assets?.red?.href || bestScene.assets?.B04?.href || '';
@@ -219,9 +225,9 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
     const sceneBbox = bestScene.bbox || [];
     const projBbox = bestScene.properties?.['proj:bbox'] || sceneBbox;
 
-    // Run thumbnail proxy + NDVI computation in parallel
+    // Run field image + NDVI computation in parallel
     const [trueColorBase64, latestNDVI] = await Promise.all([
-      thumbnailUrl ? proxyImageAsBase64(thumbnailUrl) : Promise.resolve(null),
+      getFieldImage(geoBbox, 512),
       (redUrl && nirUrl && sceneBbox.length === 4)
         ? computeNDVI(redUrl, nirUrl, geoBbox, sceneBbox, projBbox)
         : Promise.resolve(null),
