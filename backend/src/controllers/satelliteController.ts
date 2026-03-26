@@ -1,88 +1,11 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import axios from 'axios';
+import { fromUrl } from 'geotiff';
 
-// ─── Copernicus Data Space Ecosystem (CDSE) — Sentinel Hub APIs ───
-const SH_AUTH_URL = 'https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token';
-const SH_PROCESS_URL = 'https://sh.dataspace.copernicus.eu/api/v1/process';
-const SH_CATALOG_URL = 'https://sh.dataspace.copernicus.eu/api/v1/catalog/1.0.0/search';
-const SH_STATS_URL = 'https://sh.dataspace.copernicus.eu/api/v1/statistics';
-
+// ─── Element84 Earth Search — FREE, no API key, no signup, unlimited ───
+const STAC_URL = 'https://earth-search.aws.element84.com/v1/search';
 const TKGM_BASE = 'https://cbsapi.tkgm.gov.tr/megsiswebapi.v3/api/parsel';
-
-// ─── Token cache ───
-let tokenCache: { token: string; expiresAt: number } | null = null;
-
-async function getAccessToken(): Promise<string> {
-  // Return cached token if still valid (with 60s buffer)
-  if (tokenCache && Date.now() < tokenCache.expiresAt - 60000) {
-    return tokenCache.token;
-  }
-
-  const clientId = process.env.SH_CLIENT_ID || '';
-  const clientSecret = process.env.SH_CLIENT_SECRET || '';
-
-  if (!clientId || !clientSecret) {
-    throw new Error('SENTINEL_HUB_CREDENTIALS_MISSING');
-  }
-
-  const { data } = await axios.post(SH_AUTH_URL,
-    new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: clientId,
-      client_secret: clientSecret,
-    }).toString(),
-    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
-  );
-
-  tokenCache = {
-    token: data.access_token,
-    expiresAt: Date.now() + data.expires_in * 1000,
-  };
-
-  return data.access_token;
-}
-
-// ─── Evalscripts ───
-const EVALSCRIPT_TRUE_COLOR = `//VERSION=3
-function setup() {
-  return { input: ["B04","B03","B02","dataMask"], output: { bands: 4 } };
-}
-function evaluatePixel(s) {
-  return [2.5*s.B04, 2.5*s.B03, 2.5*s.B02, s.dataMask];
-}`;
-
-const EVALSCRIPT_NDVI = `//VERSION=3
-function setup() {
-  return { input: ["B04","B08","dataMask"], output: { bands: 4 } };
-}
-function evaluatePixel(s) {
-  let ndvi = (s.B08 - s.B04) / (s.B08 + s.B04 + 0.0001);
-  // Color ramp: red → yellow → green
-  let r, g, b;
-  if (ndvi < 0) { r=0.5; g=0; b=0; }
-  else if (ndvi < 0.2) { r=0.8; g=0.2; b=0.1; }
-  else if (ndvi < 0.4) { r=0.9; g=0.7; b=0.1; }
-  else if (ndvi < 0.6) { r=0.5; g=0.8; b=0.2; }
-  else { r=0.1; g=0.6; b=0.1; }
-  return [r, g, b, s.dataMask];
-}`;
-
-const EVALSCRIPT_FALSE_COLOR = `//VERSION=3
-function setup() {
-  return { input: ["B08","B04","B03","dataMask"], output: { bands: 4 } };
-}
-function evaluatePixel(s) {
-  return [2.5*s.B08, 2.5*s.B04, 2.5*s.B03, s.dataMask];
-}`;
-
-const EVALSCRIPT_NDVI_STATS = `//VERSION=3
-function setup() {
-  return { input: ["B04","B08","dataMask"], output: [{ id: "ndvi", bands: 1, sampleType: "FLOAT32" }, { id: "dataMask", bands: 1 }] };
-}
-function evaluatePixel(s) {
-  return { ndvi: [(s.B08 - s.B04) / (s.B08 + s.B04 + 0.0001)], dataMask: [s.dataMask] };
-}`;
 
 // ─── Helpers ───
 
@@ -102,96 +25,128 @@ function calcPolygonAreaHa(coords: number[][]): number {
   return Math.abs(area * R * R / 2) / 10000;
 }
 
-/** Get image from Sentinel Hub Process API, return as base64 data URL */
-async function getProcessImage(
-  token: string,
+function bboxFromCoords(coords: number[][]): [number, number, number, number] {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const c of coords) {
+    if (c[0] < minX) minX = c[0];
+    if (c[1] < minY) minY = c[1];
+    if (c[0] > maxX) maxX = c[0];
+    if (c[1] > maxY) maxY = c[1];
+  }
+  return [minX, minY, maxX, maxY];
+}
+
+/** Search Sentinel-2 L2A scenes via Element84 STAC (free, no auth) */
+async function searchScenes(
   geometry: any,
-  evalscript: string,
   from: string,
   to: string,
-  width = 512,
-  height = 512,
-  maxCloudCoverage = 100,
-): Promise<Buffer> {
-  const { data } = await axios.post(SH_PROCESS_URL, {
-    input: {
-      bounds: {
-        geometry,
-        properties: { crs: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84' },
-      },
-      data: [{
-        type: 'sentinel-2-l2a',
-        dataFilter: {
-          timeRange: { from, to },
-          maxCloudCoverage,
-        },
-      }],
-    },
-    output: {
-      width,
-      height,
-      responses: [{ identifier: 'default', format: { type: 'image/png' } }],
-    },
-    evalscript,
-  }, {
-    headers: { Authorization: `Bearer ${token}` },
-    responseType: 'arraybuffer',
-  });
-  return Buffer.from(data);
-}
-
-/** Search catalog for available Sentinel-2 scenes */
-async function searchScenes(token: string, geometry: any, from: string, to: string, maxCloud = 80): Promise<any[]> {
-  const { data } = await axios.post(SH_CATALOG_URL, {
+  maxCloud = 80,
+  limit = 30,
+): Promise<any[]> {
+  const { data } = await axios.post(STAC_URL, {
     collections: ['sentinel-2-l2a'],
-    datetime: `${from}/${to}`,
     intersects: geometry,
-    limit: 50,
-    filter: `eo:cloud_cover < ${maxCloud}`,
-    'filter-lang': 'cql2-text',
-  }, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return data.features || [];
+    datetime: `${from}/${to}`,
+    limit,
+    query: { 'eo:cloud_cover': { lte: maxCloud } },
+    sortby: [{ field: 'properties.eo:cloud_cover', direction: 'asc' }],
+  }, { timeout: 15000 });
+  return data?.features || [];
 }
 
-/** Get NDVI statistics over time using Statistical API */
-async function getNDVIStatistics(token: string, geometry: any, from: string, to: string): Promise<any[]> {
+/** Read NDVI from Sentinel-2 COG bands (B04=Red, B08=NIR) — free, public S3 */
+async function computeNDVI(
+  redUrl: string,
+  nirUrl: string,
+  geoBbox: [number, number, number, number],
+  sceneBbox: number[],
+  projBbox: number[],
+): Promise<{ min: number; max: number; mean: number; median: number } | null> {
   try {
-    const { data } = await axios.post(SH_STATS_URL, {
-      input: {
-        bounds: {
-          geometry,
-          properties: { crs: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84' },
-        },
-        data: [{
-          type: 'sentinel-2-l2a',
-          dataFilter: {
-            timeRange: { from, to },
-            maxCloudCoverage: 80,
-          },
-        }],
-      },
-      aggregation: {
-        timeRange: { from, to },
-        aggregationInterval: { of: 'P5D' },
-        evalscript: EVALSCRIPT_NDVI_STATS,
-        width: 100,
-        height: 100,
-      },
-    }, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return data.data || [];
+    // Map geographic bbox to pixel coordinates using scene's geo↔proj mapping
+    const [gMinX, gMinY, gMaxX, gMaxY] = geoBbox;
+    const [sMinX, sMinY, sMaxX, sMaxY] = sceneBbox;
+    const [pMinX, pMinY, pMaxX, pMaxY] = projBbox;
+
+    // Linear interpolation: geo → proj
+    const projLeft = pMinX + (gMinX - sMinX) / (sMaxX - sMinX) * (pMaxX - pMinX);
+    const projRight = pMinX + (gMaxX - sMinX) / (sMaxX - sMinX) * (pMaxX - pMinX);
+    const projBottom = pMinY + (gMinY - sMinY) / (sMaxY - sMinY) * (pMaxY - pMinY);
+    const projTop = pMinY + (gMaxY - sMinY) / (sMaxY - sMinY) * (pMaxY - pMinY);
+
+    const tiff = await fromUrl(redUrl);
+    const image = await tiff.getImage();
+
+    const [oX, oY] = image.getOrigin();
+    const [rX, rY] = image.getResolution();
+    const w = image.getWidth();
+    const h = image.getHeight();
+
+    // Convert proj coords to pixel coords
+    let left = Math.floor((projLeft - oX) / rX);
+    let top = Math.floor((projTop - oY) / rY);
+    let right = Math.ceil((projRight - oX) / rX);
+    let bottom = Math.ceil((projBottom - oY) / rY);
+
+    // Clamp to image bounds
+    left = Math.max(0, Math.min(w - 1, left));
+    right = Math.max(left + 1, Math.min(w, right));
+    top = Math.max(0, Math.min(h - 1, top));
+    bottom = Math.max(top + 1, Math.min(h, bottom));
+
+    // Read at reduced resolution (max 64x64 pixels = tiny download)
+    const outW = Math.min(64, right - left);
+    const outH = Math.min(64, bottom - top);
+
+    const tiffNir = await fromUrl(nirUrl);
+    const imageNir = await tiffNir.getImage();
+
+    const [redData, nirData] = await Promise.all([
+      image.readRasters({ window: [left, top, right, bottom], width: outW, height: outH }),
+      imageNir.readRasters({ window: [left, top, right, bottom], width: outW, height: outH }),
+    ]);
+
+    const red = redData[0] as any;
+    const nir = nirData[0] as any;
+    const values: number[] = [];
+
+    for (let i = 0; i < red.length; i++) {
+      if (red[i] === 0 && nir[i] === 0) continue; // nodata
+      const ndvi = (nir[i] - red[i]) / (nir[i] + red[i] + 0.0001);
+      if (ndvi >= -1 && ndvi <= 1) values.push(ndvi);
+    }
+
+    if (values.length === 0) return null;
+    values.sort((a, b) => a - b);
+
+    return {
+      min: values[0],
+      max: values[values.length - 1],
+      mean: values.reduce((s, v) => s + v, 0) / values.length,
+      median: values[Math.floor(values.length / 2)],
+    };
+  } catch (err) {
+    console.error('NDVI computation error:', err);
+    return null;
+  }
+}
+
+/** Proxy a remote image URL and return as base64 data URL */
+async function proxyImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const { data } = await axios.get(url, { responseType: 'arraybuffer', timeout: 10000 });
+    const contentType = url.endsWith('.png') ? 'image/png' : 'image/jpeg';
+    return `data:${contentType};base64,${Buffer.from(data).toString('base64')}`;
   } catch {
-    return [];
+    return null;
   }
 }
 
 // ─── Route Handlers ───
 
 /**
- * Quick satellite analysis — stateless, no polygon creation needed
+ * Quick satellite analysis — FREE, no API key needed
  * POST /api/satellite/analyze
  * Body: { lat, lng, radiusKm?, polygon?: [[lng,lat],...] }
  */
@@ -225,106 +180,121 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
     }
 
     const geometry = { type: 'Polygon', coordinates: [coordinates] };
+    const geoBbox = bboxFromCoords(coordinates);
     const areaHa = calcPolygonAreaHa(coordinates);
-
-    let token: string;
-    try {
-      token = await getAccessToken();
-    } catch (err: any) {
-      if (err.message === 'SENTINEL_HUB_CREDENTIALS_MISSING') {
-        res.status(503).json({ message: 'Uydu servisi yapilandirmasi eksik (SH_CLIENT_ID / SH_CLIENT_SECRET). Yoneticiyle iletisime gecin.' });
-      } else {
-        res.status(503).json({ message: 'Uydu servisi baglantisi kurulamadi. Lutfen tekrar deneyin.' });
-      }
-      return;
-    }
 
     // Time range: last 90 days
     const now = new Date();
-    const from = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] + 'T00:00:00Z';
-    const to = now.toISOString().split('T')[0] + 'T23:59:59Z';
+    const from = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    const to = now.toISOString();
 
-    // Run all requests in parallel
-    const imgSize = Math.min(Math.max(Math.round(Math.sqrt(areaHa) * 100), 256), 1024);
+    // 1. Search for clear Sentinel-2 scenes (FREE, no auth)
+    const scenes = await searchScenes(geometry, from, to, 80, 30);
 
-    const [scenes, ndviStats, trueColorBuf, ndviBuf, falseColorBuf] = await Promise.all([
-      searchScenes(token, geometry, from, to, 80).catch(() => []),
-      getNDVIStatistics(token, geometry, from, to),
-      getProcessImage(token, geometry, EVALSCRIPT_TRUE_COLOR, from, to, imgSize, imgSize, 30).catch(() => null),
-      getProcessImage(token, geometry, EVALSCRIPT_NDVI, from, to, imgSize, imgSize, 30).catch(() => null),
-      getProcessImage(token, geometry, EVALSCRIPT_FALSE_COLOR, from, to, imgSize, imgSize, 30).catch(() => null),
+    if (scenes.length === 0) {
+      res.json({
+        center: { lat, lng },
+        area: areaHa * 10000,
+        latestNDVI: null,
+        healthStatus: 'unknown',
+        healthColor: '#6B6560',
+        ndviHistory: [],
+        images: [],
+        renderedImages: {},
+        clearImageCount: 0,
+        totalImageCount: 0,
+      });
+      return;
+    }
+
+    // 2. Get thumbnail of best (least cloudy) scene
+    const bestScene = scenes[0];
+    const thumbnailUrl = bestScene.assets?.thumbnail?.href
+      || bestScene.assets?.visual?.href
+      || '';
+
+    // 3. Compute NDVI from the best scene's bands
+    const redUrl = bestScene.assets?.red?.href || bestScene.assets?.B04?.href || '';
+    const nirUrl = bestScene.assets?.nir?.href || bestScene.assets?.B08?.href || '';
+    const sceneBbox = bestScene.bbox || [];
+    const projBbox = bestScene.properties?.['proj:bbox'] || sceneBbox;
+
+    // Run thumbnail proxy + NDVI computation in parallel
+    const [trueColorBase64, latestNDVI] = await Promise.all([
+      thumbnailUrl ? proxyImageAsBase64(thumbnailUrl) : Promise.resolve(null),
+      (redUrl && nirUrl && sceneBbox.length === 4)
+        ? computeNDVI(redUrl, nirUrl, geoBbox, sceneBbox, projBbox)
+        : Promise.resolve(null),
     ]);
 
-    // Build image list from catalog scenes
-    const images = scenes
-      .sort((a: any, b: any) => (a.properties?.['eo:cloud_cover'] ?? 100) - (b.properties?.['eo:cloud_cover'] ?? 100))
-      .slice(0, 8)
-      .map((scene: any) => ({
-        dt: Math.floor(new Date(scene.properties?.datetime || '').getTime() / 1000),
-        date: (scene.properties?.datetime || '').split('T')[0],
-        cloudCoverage: scene.properties?.['eo:cloud_cover'] ?? 100,
-        platform: scene.properties?.['platform'] || 'sentinel-2',
-      }));
+    // 4. Compute NDVI history from multiple scenes (up to 10 for trend)
+    const historyScenes = scenes.slice(0, 12);
+    const ndviHistory: any[] = [];
 
-    // Convert rendered images to base64 data URLs
-    const renderedImages: Record<string, string> = {};
-    if (trueColorBuf) renderedImages.trueColor = `data:image/png;base64,${trueColorBuf.toString('base64')}`;
-    if (ndviBuf) renderedImages.ndvi = `data:image/png;base64,${ndviBuf.toString('base64')}`;
-    if (falseColorBuf) renderedImages.falseColor = `data:image/png;base64,${falseColorBuf.toString('base64')}`;
+    // Process history scenes sequentially to avoid overloading
+    for (const scene of historyScenes) {
+      const sRedUrl = scene.assets?.red?.href || scene.assets?.B04?.href || '';
+      const sNirUrl = scene.assets?.nir?.href || scene.assets?.B08?.href || '';
+      const sBbox = scene.bbox || [];
+      const sProjBbox = scene.properties?.['proj:bbox'] || sBbox;
 
-    // Process NDVI statistics
-    const ndviHistory = ndviStats
-      .filter((entry: any) => entry.outputs?.ndvi?.bands?.B0?.stats)
-      .map((entry: any) => {
-        const stats = entry.outputs.ndvi.bands.B0.stats;
-        return {
-          dt: Math.floor(new Date(entry.interval.from).getTime() / 1000),
-          date: entry.interval.from.split('T')[0],
-          min: stats.min ?? 0,
-          max: stats.max ?? 0,
-          mean: stats.mean ?? 0,
-          median: stats.median ?? stats.mean ?? 0,
-        };
-      })
-      .sort((a: any, b: any) => a.dt - b.dt);
+      if (sRedUrl && sNirUrl && sBbox.length === 4) {
+        const stats = await computeNDVI(sRedUrl, sNirUrl, geoBbox, sBbox, sProjBbox);
+        if (stats) {
+          const dt = Math.floor(new Date(scene.properties?.datetime || '').getTime() / 1000);
+          ndviHistory.push({
+            dt,
+            date: (scene.properties?.datetime || '').split('T')[0],
+            ...stats,
+          });
+        }
+      }
+    }
+    ndviHistory.sort((a, b) => a.dt - b.dt);
 
-    // Latest NDVI assessment
-    const latest = ndviHistory[ndviHistory.length - 1];
+    // 5. Determine health status
+    const ndviLatest = latestNDVI || (ndviHistory.length > 0 ? ndviHistory[ndviHistory.length - 1] : null);
     let healthStatus = 'unknown';
     let healthColor = '#6B6560';
-    if (latest) {
-      if (latest.mean >= 0.6) { healthStatus = 'excellent'; healthColor = '#059669'; }
-      else if (latest.mean >= 0.4) { healthStatus = 'good'; healthColor = '#2D6A4F'; }
-      else if (latest.mean >= 0.25) { healthStatus = 'moderate'; healthColor = '#D97706'; }
-      else if (latest.mean >= 0.1) { healthStatus = 'poor'; healthColor = '#DC2626'; }
+    if (ndviLatest) {
+      if (ndviLatest.mean >= 0.6) { healthStatus = 'excellent'; healthColor = '#059669'; }
+      else if (ndviLatest.mean >= 0.4) { healthStatus = 'good'; healthColor = '#2D6A4F'; }
+      else if (ndviLatest.mean >= 0.25) { healthStatus = 'moderate'; healthColor = '#D97706'; }
+      else if (ndviLatest.mean >= 0.1) { healthStatus = 'poor'; healthColor = '#DC2626'; }
       else { healthStatus = 'critical'; healthColor = '#991B1B'; }
     }
 
+    // 6. Build scene list for frontend
+    const imageList = scenes.slice(0, 8).map((s: any) => ({
+      dt: Math.floor(new Date(s.properties?.datetime || '').getTime() / 1000),
+      date: (s.properties?.datetime || '').split('T')[0],
+      cloudCoverage: s.properties?.['eo:cloud_cover'] ?? 100,
+      platform: s.properties?.platform || 'sentinel-2',
+    }));
+
+    // 7. Build rendered images
+    const renderedImages: Record<string, string> = {};
+    if (trueColorBase64) renderedImages.trueColor = trueColorBase64;
+
     res.json({
       center: { lat, lng },
-      area: areaHa * 10000, // m²
-      latestNDVI: latest || null,
+      area: areaHa * 10000,
+      latestNDVI: ndviLatest,
       healthStatus,
       healthColor,
       ndviHistory,
-      images,
+      images: imageList,
       renderedImages,
-      clearImageCount: images.filter((i: any) => i.cloudCoverage < 50).length,
-      totalImageCount: images.length,
+      clearImageCount: imageList.filter((i: any) => i.cloudCoverage < 50).length,
+      totalImageCount: imageList.length,
     });
   } catch (error: any) {
-    const status = error.response?.status;
-    if (status === 401 || status === 403) {
-      tokenCache = null; // Clear stale token
-      res.status(503).json({ message: 'Uydu servisi yetkilendirme hatasi. API anahtarlari kontrol edilmeli.' });
-    } else {
-      const msg = error.response?.data?.message || error.response?.data?.error?.message || error.message || 'Bilinmeyen hata';
-      res.status(status || 500).json({ message: `Analiz yapilamadi: ${msg}` });
-    }
+    const msg = error.response?.data?.message || error.message || 'Bilinmeyen hata';
+    res.status(error.response?.status || 500).json({ message: `Analiz yapilamadi: ${msg}` });
   }
 };
 
-// ─── Legacy Agromonitoring endpoints (kept for backward compat, can be removed) ───
+// ─── Legacy endpoints (removed — all-in-one /analyze is sufficient) ───
 export const createPolygon = async (_req: AuthRequest, res: Response): Promise<void> => {
   res.status(410).json({ message: 'Bu endpoint kaldirildi. /satellite/analyze kullanin.' });
 };
@@ -335,7 +305,7 @@ export const getNDVIStats = async (_req: AuthRequest, res: Response): Promise<vo
   res.status(410).json({ message: 'Bu endpoint kaldirildi. /satellite/analyze kullanin.' });
 };
 export const listPolygons = async (_req: AuthRequest, res: Response): Promise<void> => {
-  res.status(410).json({ message: 'Bu endpoint kaldirildi. /satellite/analyze kullanin.' });
+  res.status(410).json({ message: 'Bu endpoint kaldirildi.' });
 };
 export const deletePolygon = async (_req: AuthRequest, res: Response): Promise<void> => {
   res.status(410).json({ message: 'Bu endpoint kaldirildi.' });
@@ -343,10 +313,6 @@ export const deletePolygon = async (_req: AuthRequest, res: Response): Promise<v
 
 // ─── TKGM Parcel Query (unchanged) ───
 
-/**
- * Query TKGM cadastral parcel by coordinate
- * GET /api/satellite/parcel?lat=X&lng=Y
- */
 export const getParcelByCoordinate = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { lat, lng } = req.query;
@@ -392,11 +358,8 @@ function formatParcelResponse(feature: any) {
   const props = feature.properties || {};
   const geometry = feature.geometry;
   let coordinates: number[][][] = [];
-  if (geometry?.type === 'Polygon') {
-    coordinates = geometry.coordinates;
-  } else if (geometry?.type === 'MultiPolygon') {
-    coordinates = geometry.coordinates[0];
-  }
+  if (geometry?.type === 'Polygon') coordinates = geometry.coordinates;
+  else if (geometry?.type === 'MultiPolygon') coordinates = geometry.coordinates[0];
   return {
     parcel: {
       il: props.il || props.IL || '',
@@ -409,9 +372,6 @@ function formatParcelResponse(feature: any) {
       nitelik: props.nitelik || props.NITELIK || '',
       ozellekKod: props.ozellikKod || '',
     },
-    geometry: {
-      type: geometry?.type || 'Polygon',
-      coordinates,
-    },
+    geometry: { type: geometry?.type || 'Polygon', coordinates },
   };
 }
