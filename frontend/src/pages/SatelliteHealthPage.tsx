@@ -254,7 +254,7 @@ function SatelliteImageGallery({ images, clearCount, totalCount, lang }: {
                     'bg-red-500/80 text-white'
                   }`}>
                     <Cloud size={10} />
-                    %{(current.cloudCoverage * 100).toFixed(0)}
+                    %{Math.round(current.cloudCoverage)}
                   </div>
                   <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <Eye size={14} className="text-white" />
@@ -308,7 +308,7 @@ function SatelliteImageGallery({ images, clearCount, totalCount, lang }: {
           </button>
           <div className="absolute top-4 left-4 text-white z-10">
             <p className="text-[15px] font-semibold">{current.date} — {LAYER_LABELS[activeLayer][lang]}</p>
-            <p className="text-[12px] text-white/60">{lang === 'tr' ? 'Bulut' : 'Cloud'}: %{(current.cloudCoverage * 100).toFixed(0)} | Sentinel-2 L2A</p>
+            <p className="text-[12px] text-white/60">{lang === 'tr' ? 'Bulut' : 'Cloud'}: %{Math.round(current.cloudCoverage)} | Sentinel-2 L2A</p>
           </div>
           {/* Layer switch in fullscreen */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1 p-1 bg-white/10 backdrop-blur-sm rounded-xl z-10">
