@@ -178,7 +178,7 @@ export function initSocket(httpServer: HttpServer) {
       callback(ids);
     });
 
-    // Favorite toggle notification to listing owner
+    // Favorite toggle notification to listing owner — persist to DB
     socket.on('favorite:new', (data: { listingId: string; ownerId: string; userName: string }) => {
       if (data.ownerId && data.ownerId !== userId) {
         io.to(`user:${data.ownerId}`).emit('notification:favorite', {
@@ -186,6 +186,13 @@ export function initSocket(httpServer: HttpServer) {
           userName: data.userName,
           type: 'new_favorite',
         });
+        Notification.create({
+          userId: data.ownerId,
+          type: 'ilan',
+          title: `${data.userName} ilaninizi favorilere ekledi`,
+          message: 'Ilaniniz ilgi goruyor!',
+          relatedId: data.listingId,
+        }).catch(() => {});
       }
     });
 
@@ -194,7 +201,7 @@ export function initSocket(httpServer: HttpServer) {
       io.emit('listing:view_update', data);
     });
 
-    // New rating notification
+    // New rating notification — persist to DB
     socket.on('rating:new', (data: { toUserId: string; fromUserName: string; score: number; listingId?: string }) => {
       if (data.toUserId && data.toUserId !== userId) {
         io.to(`user:${data.toUserId}`).emit('notification:rating', {
@@ -203,6 +210,13 @@ export function initSocket(httpServer: HttpServer) {
           listingId: data.listingId,
           type: 'new_rating',
         });
+        Notification.create({
+          userId: data.toUserId,
+          type: 'rating',
+          title: `${data.fromUserName} size ${data.score} yildiz verdi`,
+          message: data.score >= 4 ? 'Harika bir degerlendirme!' : 'Yeni bir degerlendirme aldiniz.',
+          relatedId: data.listingId || '',
+        }).catch(() => {});
       }
     });
 

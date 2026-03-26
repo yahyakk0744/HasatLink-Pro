@@ -281,8 +281,8 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Fallback poll every 60 seconds (Socket.IO handles real-time)
-      const notifInterval = setInterval(fetchNotifications, 60000);
+      // Fallback poll every 30 seconds (Socket.IO handles real-time)
+      const notifInterval = setInterval(fetchNotifications, 30000);
       // Check weather alerts every 30 minutes
       const weatherInterval = setInterval(checkWeatherAlerts, 30 * 60 * 1000);
 

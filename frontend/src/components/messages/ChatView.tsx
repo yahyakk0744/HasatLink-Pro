@@ -84,7 +84,7 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
       if (userId !== currentUid) {
         setIsTyping(true);
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-        typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
+        typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 2000);
       }
     };
     const handleTypingStop = ({ userId }: { userId: string }) => {
