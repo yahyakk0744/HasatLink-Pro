@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Satellite, MapPin, Scan, Loader2, Leaf, TrendingUp,
-  AlertTriangle, CheckCircle, XCircle, Sun, Droplets,
-  Search, LocateFixed, Minus, Plus, Pencil, Trash2, RotateCcw,
+  AlertTriangle, CheckCircle, XCircle, Droplets, Cloud, CloudOff, Eye,
+  Search, LocateFixed, Minus, Plus, Pencil, Trash2, RotateCcw, Image as ImageIcon,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Polygon as LeafletPolygon, Polyline, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import { useLocation } from '../contexts/LocationContext';
@@ -154,6 +154,182 @@ function HealthCard({ status, color, ndvi }: { status: string; color: string; nd
               </div>
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Satellite Image Gallery ─── */
+
+type ImageLayer = 'trueColor' | 'ndvi' | 'falseColor';
+const LAYER_LABELS: Record<ImageLayer, { tr: string; en: string }> = {
+  trueColor: { tr: 'Gercek Renk', en: 'True Color' },
+  ndvi: { tr: 'Bitki Sagligi (NDVI)', en: 'Vegetation (NDVI)' },
+  falseColor: { tr: 'Yakin Kizilotesi', en: 'Near Infrared' },
+};
+
+function SatelliteImageGallery({ images, clearCount, totalCount, lang }: {
+  images: { dt: number; date: string; cloudCoverage: number; trueColor: string; ndvi: string; falseColor: string }[];
+  clearCount: number; totalCount: number; lang: 'tr' | 'en';
+}) {
+  const [activeLayer, setActiveLayer] = useState<ImageLayer>('trueColor');
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [showOnlyClear, setShowOnlyClear] = useState(true);
+
+  const filtered = showOnlyClear ? images.filter(img => img.cloudCoverage < 50) : images;
+  const displayImages = filtered.length > 0 ? filtered : images; // fallback to all if no clear images
+  const current = displayImages[selectedIdx] || displayImages[0];
+  const currentUrl = current?.[activeLayer] || current?.trueColor || '';
+
+  return (
+    <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden">
+      {/* Header */}
+      <div className="px-4 pt-4 pb-3">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Satellite size={16} className="text-violet-500" />
+            <h3 className="text-[13px] font-semibold">{lang === 'tr' ? 'Uydu Goruntuleri' : 'Satellite Images'}</h3>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-medium">
+              Sentinel-2
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px]">
+            {clearCount > 0 ? (
+              <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                <CloudOff size={12} /> {clearCount} {lang === 'tr' ? 'temiz' : 'clear'}
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-amber-600 font-medium">
+                <Cloud size={12} /> {lang === 'tr' ? 'Bulutlu donem' : 'Cloudy period'}
+              </span>
+            )}
+            <span className="text-[var(--text-tertiary)]">/ {totalCount}</span>
+          </div>
+        </div>
+
+        {/* Layer tabs */}
+        <div className="flex gap-1 p-0.5 bg-[var(--bg-input)] rounded-xl">
+          {(['trueColor', 'ndvi', 'falseColor'] as ImageLayer[]).map(layer => (
+            <button
+              key={layer}
+              onClick={() => setActiveLayer(layer)}
+              className={`flex-1 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
+                activeLayer === layer
+                  ? 'bg-white text-[var(--text-primary)] shadow-sm'
+                  : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
+              }`}
+            >
+              {LAYER_LABELS[layer][lang]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Main image */}
+      {current && (
+        <div className="relative mx-4 mb-3">
+          <div
+            className="relative rounded-xl overflow-hidden border border-[var(--border-default)] cursor-pointer group"
+            onClick={() => setFullscreen(true)}
+          >
+            <img
+              src={currentUrl}
+              alt={`${LAYER_LABELS[activeLayer][lang]} - ${current.date}`}
+              className="w-full aspect-[4/3] object-cover bg-gray-900"
+              loading="lazy"
+            />
+            {/* Overlay info */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 pt-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white text-[13px] font-semibold">{current.date}</p>
+                  <p className="text-white/70 text-[11px]">{LAYER_LABELS[activeLayer][lang]}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium ${
+                    current.cloudCoverage < 20 ? 'bg-emerald-500/80 text-white' :
+                    current.cloudCoverage < 50 ? 'bg-amber-500/80 text-white' :
+                    'bg-red-500/80 text-white'
+                  }`}>
+                    <Cloud size={10} />
+                    %{(current.cloudCoverage * 100).toFixed(0)}
+                  </div>
+                  <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Eye size={14} className="text-white" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Thumbnail strip */}
+      <div className="px-4 pb-3">
+        {clearCount > 0 && (
+          <button
+            onClick={() => { setShowOnlyClear(!showOnlyClear); setSelectedIdx(0); }}
+            className="mb-2 text-[10px] font-medium text-violet-600 hover:text-violet-800 transition-colors flex items-center gap-1"
+          >
+            {showOnlyClear ? <><ImageIcon size={10} /> {lang === 'tr' ? 'Tum goruntuleri goster' : 'Show all images'} ({totalCount})</>
+              : <><CloudOff size={10} /> {lang === 'tr' ? 'Sadece temiz goruntular' : 'Clear images only'} ({clearCount})</>}
+          </button>
+        )}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {displayImages.map((img, i) => (
+            <button
+              key={i}
+              onClick={() => setSelectedIdx(i)}
+              className={`relative shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                i === selectedIdx ? 'border-violet-500 ring-2 ring-violet-500/20' : 'border-transparent opacity-70 hover:opacity-100'
+              }`}
+            >
+              <img src={img.trueColor} alt="" className="w-full h-full object-cover" loading="lazy" />
+              {img.cloudCoverage >= 50 && (
+                <div className="absolute inset-0 bg-white/30 flex items-center justify-center">
+                  <Cloud size={12} className="text-gray-500" />
+                </div>
+              )}
+              <span className="absolute bottom-0 left-0 right-0 text-[7px] font-medium text-white bg-black/50 text-center py-0.5 leading-none">
+                {img.date.substring(5)}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Fullscreen modal */}
+      {fullscreen && current && (
+        <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center" onClick={() => setFullscreen(false)}>
+          <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors z-10">
+            <XCircle size={24} />
+          </button>
+          <div className="absolute top-4 left-4 text-white z-10">
+            <p className="text-[15px] font-semibold">{current.date} — {LAYER_LABELS[activeLayer][lang]}</p>
+            <p className="text-[12px] text-white/60">{lang === 'tr' ? 'Bulut' : 'Cloud'}: %{(current.cloudCoverage * 100).toFixed(0)} | Sentinel-2 L2A</p>
+          </div>
+          {/* Layer switch in fullscreen */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1 p-1 bg-white/10 backdrop-blur-sm rounded-xl z-10">
+            {(['trueColor', 'ndvi', 'falseColor'] as ImageLayer[]).map(layer => (
+              <button
+                key={layer}
+                onClick={(e) => { e.stopPropagation(); setActiveLayer(layer); }}
+                className={`px-3 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
+                  activeLayer === layer ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+                }`}
+              >
+                {LAYER_LABELS[layer][lang]}
+              </button>
+            ))}
+          </div>
+          <img
+            src={currentUrl}
+            alt=""
+            className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>
@@ -497,35 +673,7 @@ export default function SatelliteHealthPage() {
           </div>
 
           {analysis.images.length > 0 && (
-            <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Sun size={16} className="text-amber-500" />
-                <h3 className="text-[13px] font-semibold">{lang === 'tr' ? 'Uydu Goruntuleri' : 'Satellite Images'}</h3>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {analysis.images.map((img, i) => (
-                  <div key={i} className="space-y-2">
-                    {img.trueColor && (
-                      <div className="rounded-xl overflow-hidden border border-[var(--border-default)]">
-                        <img src={img.trueColor} alt={`True Color ${img.date}`} className="w-full aspect-square object-cover" loading="lazy" />
-                        <div className="px-2.5 py-1.5 bg-[var(--bg-input)]">
-                          <p className="text-[10px] font-medium text-[var(--text-secondary)]">{img.date} - Gercek Renk</p>
-                          <p className="text-[9px] text-[var(--text-tertiary)]">Bulut: %{(img.cloudCoverage * 100).toFixed(0)}</p>
-                        </div>
-                      </div>
-                    )}
-                    {img.ndvi && (
-                      <div className="rounded-xl overflow-hidden border border-[var(--border-default)]">
-                        <img src={img.ndvi} alt={`NDVI ${img.date}`} className="w-full aspect-square object-cover" loading="lazy" />
-                        <div className="px-2.5 py-1.5 bg-[var(--bg-input)]">
-                          <p className="text-[10px] font-medium text-[var(--text-secondary)]">{img.date} - NDVI</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <SatelliteImageGallery images={analysis.images} clearCount={analysis.clearImageCount} totalCount={analysis.totalImageCount} lang={lang} />
           )}
 
           <div className="grid grid-cols-3 gap-2.5">

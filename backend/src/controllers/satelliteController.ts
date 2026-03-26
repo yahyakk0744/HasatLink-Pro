@@ -259,24 +259,39 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
 
     const polyId = polygon.id;
 
-    // 2. Get satellite images (last 30 days) — retry on 404 (new polygon processing delay)
+    // 2. Get satellite images (last 90 days for better chance of clear images)
     const now = Math.floor(Date.now() / 1000);
-    const start = now - 30 * 24 * 60 * 60;
+    const start = now - 90 * 24 * 60 * 60;
 
     const [imgData, ndviData] = await Promise.all([
       fetchWithRetry<any[]>(`${AGRO_BASE}/image/search`, { polyid: polyId, start, end: now, appid: AGRO_API_KEY() }),
       fetchWithRetry<any[]>(`${AGRO_BASE}/ndvi/history`, { polyid: polyId, start, end: now, appid: AGRO_API_KEY() }),
     ]);
 
-    const images = (imgData || [])
+    // Process all images — separate clear from cloudy
+    const allImages = (imgData || [])
       .map((img: any) => ({
         dt: img.dt,
         date: new Date(img.dt * 1000).toISOString().split('T')[0],
-        cloudCoverage: img.cl,
-        trueColor: img.image?.truecolor?.replace('http://', 'https://'),
-        ndvi: img.image?.ndvi?.replace('http://', 'https://'),
+        cloudCoverage: img.cl ?? 100,
+        trueColor: img.image?.truecolor?.replace('http://', 'https://') || '',
+        ndvi: img.image?.ndvi?.replace('http://', 'https://') || '',
+        evi: img.image?.evi?.replace('http://', 'https://') || '',
+        falseColor: img.image?.false_color?.replace('http://', 'https://') || '',
       }))
-      .sort((a: any, b: any) => b.dt - a.dt);
+      .filter((img: any) => img.trueColor); // must have trueColor URL
+
+    // Priority: clear images first (< 50% cloud), then least cloudy
+    const clearImages = allImages
+      .filter((img: any) => img.cloudCoverage < 50)
+      .sort((a: any, b: any) => a.cloudCoverage - b.cloudCoverage || b.dt - a.dt);
+
+    const cloudyImages = allImages
+      .filter((img: any) => img.cloudCoverage >= 50)
+      .sort((a: any, b: any) => a.cloudCoverage - b.cloudCoverage);
+
+    // Take best clear images first, fill with least cloudy if needed
+    const images = [...clearImages, ...cloudyImages].slice(0, 8);
 
     const ndviHistory = (ndviData || [])
       .map((entry: any) => ({
@@ -304,6 +319,10 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
     // Clean up old QuickScans in background, keep this one
     cleanupQuickScans(polyId, 3).catch(() => {});
 
+    // Build static satellite map URL (Esri + polygon overlay) for preview
+    const centerZoom = 15;
+    const staticMapUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${centerZoom}/${Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * (1 << centerZoom))}/${Math.floor((lng + 180) / 360 * (1 << centerZoom))}`;
+
     res.json({
       polygonId: polyId,
       center: { lat, lng },
@@ -312,7 +331,10 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       healthStatus,
       healthColor,
       ndviHistory,
-      images: images.slice(0, 5),
+      images,
+      staticMapUrl,
+      clearImageCount: images.filter((i: any) => i.cloudCoverage < 50).length,
+      totalImageCount: allImages.length,
     });
   } catch (error: any) {
     const status = error.response?.status;

@@ -16,6 +16,8 @@ export interface SatelliteImage {
   cloudCoverage: number;
   trueColor: string;
   ndvi: string;
+  evi: string;
+  falseColor: string;
 }
 
 export interface SatelliteAnalysis {
@@ -27,6 +29,9 @@ export interface SatelliteAnalysis {
   healthColor: string;
   ndviHistory: NDVIDataPoint[];
   images: SatelliteImage[];
+  staticMapUrl: string;
+  clearImageCount: number;
+  totalImageCount: number;
 }
 
 const HEALTH_LABELS: Record<string, { tr: string; en: string }> = {
