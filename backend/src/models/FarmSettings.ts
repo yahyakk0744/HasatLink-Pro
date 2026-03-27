@@ -48,7 +48,7 @@ export interface IFarmSettings extends Document {
 const FarmSettingsSchema = new Schema<IFarmSettings>({
   key: { type: String, required: true, default: 'digital_farm' },
   enabled: { type: Boolean, default: false },
-  beta_mode: { type: Boolean, default: true },
+  beta_mode: { type: Boolean, default: false },
   whitelist_user_ids: [{ type: String }],
   active_cities: [
     {

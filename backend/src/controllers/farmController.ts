@@ -18,10 +18,22 @@ const generateId = (prefix: string): string => `${prefix}_${Date.now()}_${Math.r
 
 const generateInviteCode = (): string => Math.random().toString(36).slice(2, 8).toUpperCase();
 
+const DEFAULT_CROP_CATALOG = [
+  { crop_type: 'domates', display_name: 'Domates', seed_cost_per_m2: 3, min_area_m2: 5, growth_days: 75, yield_per_m2_kg: 3.5, season_start_month: 3, season_end_month: 8, water_frequency_hours: 24, fertilize_frequency_days: 7, icon_emoji: '🍅' },
+  { crop_type: 'biber', display_name: 'Biber', seed_cost_per_m2: 4, min_area_m2: 5, growth_days: 65, yield_per_m2_kg: 2.8, season_start_month: 4, season_end_month: 9, water_frequency_hours: 20, fertilize_frequency_days: 7, icon_emoji: '🌶️' },
+  { crop_type: 'salatalik', display_name: 'Salatalik', seed_cost_per_m2: 2.5, min_area_m2: 5, growth_days: 55, yield_per_m2_kg: 4.0, season_start_month: 4, season_end_month: 9, water_frequency_hours: 18, fertilize_frequency_days: 5, icon_emoji: '🥒' },
+  { crop_type: 'kayisi', display_name: 'Kayisi', seed_cost_per_m2: 8, min_area_m2: 10, growth_days: 120, yield_per_m2_kg: 2.0, season_start_month: 2, season_end_month: 6, water_frequency_hours: 48, fertilize_frequency_days: 14, icon_emoji: '🍑' },
+  { crop_type: 'zeytin', display_name: 'Zeytin', seed_cost_per_m2: 10, min_area_m2: 15, growth_days: 210, yield_per_m2_kg: 1.5, season_start_month: 1, season_end_month: 12, water_frequency_hours: 72, fertilize_frequency_days: 21, icon_emoji: '🫒' },
+];
+
 const getSettings = async () => {
   let settings = await FarmSettings.findOne({ key: 'digital_farm' });
   if (!settings) {
-    settings = await FarmSettings.create({ key: 'digital_farm' });
+    settings = await FarmSettings.create({
+      key: 'digital_farm',
+      beta_mode: false,
+      crop_catalog: DEFAULT_CROP_CATALOG,
+    });
   }
   return settings;
 };
@@ -81,15 +93,18 @@ export const checkAccess = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    // City check
-    const userCity = (user.location || '').toLowerCase().trim();
-    const activeCityNames = settings.active_cities.map(c => c.city_name.toLowerCase());
+    // City check — if no active cities configured, allow everyone
     const inWhitelist = settings.whitelist_user_ids.includes(userId);
-    const inActiveCity = activeCityNames.some(cn => userCity.includes(cn));
+    const activeCityNames = settings.active_cities.map((c: any) => c.city_name.toLowerCase());
 
-    if (!inActiveCity && !inWhitelist) {
-      res.json({ allowed: false, reason: 'city_blocked', settings: null });
-      return;
+    // If active_cities is empty, skip city check (open to all)
+    if (activeCityNames.length > 0 && !inWhitelist) {
+      const userCity = (user.location || '').toLowerCase().trim();
+      const inActiveCity = activeCityNames.some((cn: string) => userCity.includes(cn));
+      if (!inActiveCity) {
+        res.json({ allowed: false, reason: 'city_blocked', settings: null });
+        return;
+      }
     }
 
     res.json({

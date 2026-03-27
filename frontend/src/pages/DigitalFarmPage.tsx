@@ -79,36 +79,43 @@ export default function DigitalFarmPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Access kontrolu
-      if (user) {
-        try {
-          const { data: access } = await api.get('/farm/access');
-          if (!access.allowed) {
-            setAccessDenied(true);
-            setAccessMessage(access.reason || 'Bu modul henuz aktif degil.');
-            setLoading(false);
-            return;
-          }
-        } catch {
-          // access endpoint yoksa devam et
-        }
-      }
-
-      const [settingsRes, regionsRes, plotsRes] = await Promise.all([
-        api.get('/farm/settings').catch(() => ({ data: null })),
-        api.get('/farm/regions').catch(() => ({ data: { regions: [] } })),
-        user ? api.get('/farm/plots').catch(() => ({ data: { plots: [] } })) : Promise.resolve({ data: { plots: [] } }),
-      ]);
+      // Once settings'i cek (public endpoint, auth gerektirmez)
+      const settingsRes = await api.get('/farm/settings').catch(() => ({ data: null }));
 
       if (settingsRes.data) {
         setSettings(settingsRes.data);
         if (!settingsRes.data.enabled) {
           setAccessDenied(true);
-          setAccessMessage('Dijital Tarla modulu henuz aktif degildir. Yakinda hizmetinizde!');
+          setAccessMessage(isTr ? 'Dijital Tarla modulu henuz aktif degildir. Yakinda hizmetinizde!' : 'Digital Farm is not active yet.');
           setLoading(false);
           return;
         }
       }
+
+      // Giris yapilmissa access kontrolu yap
+      if (user) {
+        try {
+          const { data: access } = await api.get('/farm/access');
+          if (!access.allowed) {
+            const reasons: Record<string, string> = {
+              beta_only: isTr ? 'Dijital Tarla su anda kapali beta asamasindadir.' : 'Digital Farm is in closed beta.',
+              city_blocked: isTr ? 'Dijital Tarla henuz sehrinizde aktif degil.' : 'Digital Farm is not active in your city yet.',
+              disabled: isTr ? 'Dijital Tarla henuz aktif degil.' : 'Digital Farm is not active yet.',
+            };
+            setAccessDenied(true);
+            setAccessMessage(reasons[access.reason] || access.reason || 'Erisim engellendi.');
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // access endpoint hatasi — devam et (belki auth token suresi dolmus)
+        }
+      }
+
+      const [regionsRes, plotsRes] = await Promise.all([
+        api.get('/farm/regions').catch(() => ({ data: { regions: [] } })),
+        user ? api.get('/farm/plots').catch(() => ({ data: { plots: [] } })) : Promise.resolve({ data: { plots: [] } }),
+      ]);
 
       setRegions(regionsRes.data?.regions || []);
       setMyPlots(plotsRes.data?.plots || []);
