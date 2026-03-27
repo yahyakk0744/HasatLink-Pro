@@ -48,6 +48,7 @@ const AdminModerationPage = lazy(() => import('./pages/AdminModerationPage'));
 const SatelliteHealthPage = lazy(() => import('./pages/SatelliteHealthPage'));
 const AgriEncyclopediaPage = lazy(() => import('./pages/AgriEncyclopediaPage'));
 const DigitalFarmPage = lazy(() => import('./pages/DigitalFarmPage'));
+const RentPlotPage = lazy(() => import('./pages/RentPlotPage'));
 
 function PageLoader() {
   return <LoadingSpinner size="lg" className="py-20" />;
@@ -88,7 +89,7 @@ export default function App() {
             <Route path="/uydu-analiz" element={<SatelliteHealthPage />} />
             <Route path="/dijital-tarla" element={<DigitalFarmPage />} />
             <Route path="/dijital-tarla/:plotId" element={<DigitalFarmPage />} />
-            <Route path="/dijital-tarla/kirala/:regionId" element={<DigitalFarmPage />} />
+            <Route path="/dijital-tarla/kirala/:regionId" element={<RentPlotPage />} />
             <Route path="/bildirimler" element={<NotificationsPage />} />
             <Route path="/hal-fiyatlari" element={<HalFiyatlariPage />} />
             <Route path="/hasatlink-pazari" element={<HasatlinkPazariPage />} />

@@ -111,9 +111,11 @@ export default function DigitalFarmPage() {
         user ? api.get('/farm/plots').catch(() => ({ data: { plots: [] } })) : Promise.resolve({ data: { plots: [] } }),
       ]);
 
-      setRegions(regionsRes.data?.regions || regionsRes.data || []);
-      setMyPlots(plotsRes.data?.plots || []);
-      setTab(plotsRes.data?.plots?.length > 0 ? 'plots' : 'discover');
+      const regionList = Array.isArray(regionsRes.data) ? regionsRes.data : (regionsRes.data?.regions || []);
+      const plotList = Array.isArray(plotsRes.data) ? plotsRes.data : (plotsRes.data?.plots || []);
+      setRegions(regionList);
+      setMyPlots(plotList);
+      setTab(plotList.length > 0 ? 'plots' : 'discover');
     } catch {
       toast.error('Veriler yüklenemedi');
     } finally {
