@@ -75,7 +75,7 @@ export default function AdminDigitalFarmPage() {
 
   const handleSaveSettings = async () => {
     try {
-      await api.put('/farm/admin/settings', {
+      const res = await api.put('/farm/admin/settings', {
         enabled,
         beta_mode: betaMode,
         whitelist_user_ids: whitelistIds,
@@ -84,9 +84,22 @@ export default function AdminDigitalFarmPage() {
           activated_at: new Date().toISOString(),
         })),
       });
-      toast.success('Dijital Tarla ayarlari guncellendi');
-    } catch {
-      toast.error('Ayarlar guncellenemedi');
+      console.log('Settings saved:', res.data);
+      toast.success('Dijital Tarla ayarları güncellendi');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Ayarlar güncellenemedi';
+      console.error('Settings save error:', err.response?.status, msg);
+      toast.error(msg);
+    }
+  };
+
+  // Toggle değişince otomatik kaydet
+  const quickToggle = async (field: string, value: boolean) => {
+    try {
+      await api.put('/farm/admin/settings', { [field]: value });
+      toast.success(field === 'enabled' ? (value ? 'Modül aktif edildi' : 'Modül kapatıldı') : 'Güncellendi');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Güncelleme başarısız');
     }
   };
 
@@ -223,15 +236,15 @@ export default function AdminDigitalFarmPage() {
             <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Modul Ayarlari</h3>
 
             <label className="flex items-center justify-between">
-              <span className="text-[13px] font-medium">Modul Aktif</span>
-              <button onClick={() => setEnabled(!enabled)} className={`w-12 h-7 rounded-full transition-colors ${enabled ? 'bg-[#2D6A4F]' : 'bg-gray-300'}`}>
+              <span className="text-[13px] font-medium">Modül Aktif</span>
+              <button onClick={() => { setEnabled(!enabled); quickToggle('enabled', !enabled); }} className={`w-12 h-7 rounded-full transition-colors ${enabled ? 'bg-[#2D6A4F]' : 'bg-gray-300'}`}>
                 <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </label>
 
             <label className="flex items-center justify-between">
               <span className="text-[13px] font-medium">Beta Modu (Sadece Whitelist)</span>
-              <button onClick={() => setBetaMode(!betaMode)} className={`w-12 h-7 rounded-full transition-colors ${betaMode ? 'bg-[#2D6A4F]' : 'bg-gray-300'}`}>
+              <button onClick={() => { setBetaMode(!betaMode); quickToggle('beta_mode', !betaMode); }} className={`w-12 h-7 rounded-full transition-colors ${betaMode ? 'bg-[#2D6A4F]' : 'bg-gray-300'}`}>
                 <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${betaMode ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </label>

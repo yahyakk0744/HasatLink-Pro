@@ -87,7 +87,8 @@ export default function DigitalFarmPage() {
         }
       }
 
-      if (user) {
+      // Eğer beta_mode aktifse ve kullanıcı giriş yapmışsa access kontrolü yap
+      if (user && settingsRes.data?.beta_mode) {
         try {
           const { data: access } = await api.get('/farm/access');
           if (!access.allowed) {
@@ -103,6 +104,7 @@ export default function DigitalFarmPage() {
           }
         } catch {}
       }
+      // beta_mode kapalıysa veya undefined ise herkes girebilir
 
       const [regionsRes, plotsRes] = await Promise.all([
         api.get('/farm/regions').catch(() => ({ data: { regions: [] } })),
