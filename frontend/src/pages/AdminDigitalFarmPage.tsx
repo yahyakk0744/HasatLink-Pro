@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '../components/admin/AdminLayout';
-import { Sprout, MapPin, Users, TrendingUp, Package, AlertTriangle, Save } from 'lucide-react';
+import { Sprout, MapPin, Users, TrendingUp, Package, AlertTriangle, Save, Search, X, UserPlus } from 'lucide-react';
 import api from '../config/api';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Button from '../components/ui/Button';
@@ -40,9 +40,14 @@ export default function AdminDigitalFarmPage() {
 
   // Settings state
   const [enabled, setEnabled] = useState(false);
-  const [betaMode, setBetaMode] = useState(true);
-  const [whitelist, setWhitelist] = useState('');
+  const [betaMode, setBetaMode] = useState(false);
+  const [whitelistIds, setWhitelistIds] = useState<string[]>([]);
   const [activeCities, setActiveCities] = useState('');
+
+  // User search for whitelist
+  const [userSearch, setUserSearch] = useState('');
+  const [userResults, setUserResults] = useState<any[]>([]);
+  const [searchingUsers, setSearchingUsers] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -59,8 +64,8 @@ export default function AdminDigitalFarmPage() {
       if (regionsRes.data?.regions) setRegions(regionsRes.data.regions);
       if (settingsRes.data) {
         setEnabled(settingsRes.data.enabled ?? false);
-        setBetaMode(settingsRes.data.beta_mode ?? true);
-        setWhitelist((settingsRes.data.whitelist_user_ids || []).join(', '));
+        setBetaMode(settingsRes.data.beta_mode ?? false);
+        setWhitelistIds(settingsRes.data.whitelist_user_ids || []);
         setActiveCities((settingsRes.data.active_cities || []).map((c: any) => c.city_name).join(', '));
       }
     } catch {} finally {
@@ -73,7 +78,7 @@ export default function AdminDigitalFarmPage() {
       await api.put('/farm/admin/settings', {
         enabled,
         beta_mode: betaMode,
-        whitelist_user_ids: whitelist.split(',').map(s => s.trim()).filter(Boolean),
+        whitelist_user_ids: whitelistIds,
         active_cities: activeCities.split(',').map(s => s.trim()).filter(Boolean).map(name => ({
           city_name: name,
           activated_at: new Date().toISOString(),
@@ -83,6 +88,33 @@ export default function AdminDigitalFarmPage() {
     } catch {
       toast.error('Ayarlar guncellenemedi');
     }
+  };
+
+  const searchUsers = async (query: string) => {
+    setUserSearch(query);
+    if (query.length < 2) { setUserResults([]); return; }
+    setSearchingUsers(true);
+    try {
+      // Admin kullanici listesinden ara
+      const { data } = await api.get('/admin/users', { params: { search: query, limit: 10 } });
+      setUserResults((data.users || data || []).filter((u: any) => !whitelistIds.includes(u.userId)));
+    } catch {
+      setUserResults([]);
+    } finally {
+      setSearchingUsers(false);
+    }
+  };
+
+  const addToWhitelist = (userId: string) => {
+    if (!whitelistIds.includes(userId)) {
+      setWhitelistIds([...whitelistIds, userId]);
+    }
+    setUserSearch('');
+    setUserResults([]);
+  };
+
+  const removeFromWhitelist = (userId: string) => {
+    setWhitelistIds(whitelistIds.filter(id => id !== userId));
   };
 
   if (loading) return <AdminLayout title="Dijital Tarla"><LoadingSpinner size="lg" className="py-20" /></AdminLayout>;
@@ -204,12 +236,56 @@ export default function AdminDigitalFarmPage() {
               </button>
             </label>
 
-            <Input
-              label="Whitelist Kullanici ID'leri (virgul ile)"
-              value={whitelist}
-              onChange={e => setWhitelist(e.target.value)}
-              placeholder="user_123, user_456"
-            />
+            {/* Kullanici Whitelist — Arama ile secim */}
+            <div>
+              <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
+                <UserPlus size={12} className="inline mr-1" />
+                Whitelist Kullanicilari ({whitelistIds.length})
+              </label>
+              {/* Secili kullanicilar */}
+              {whitelistIds.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {whitelistIds.map(uid => (
+                    <span key={uid} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-medium">
+                      {uid}
+                      <button onClick={() => removeFromWhitelist(uid)} className="hover:text-red-500">
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* Arama */}
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
+                <input
+                  type="text"
+                  value={userSearch}
+                  onChange={e => searchUsers(e.target.value)}
+                  placeholder="Kullanici ara (isim veya email)..."
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-[var(--bg-input)] border border-[var(--border-default)] text-[12px] focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+                {searchingUsers && <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />}
+              </div>
+              {/* Arama sonuclari */}
+              {userResults.length > 0 && (
+                <div className="mt-1 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-lg max-h-40 overflow-y-auto">
+                  {userResults.map((u: any) => (
+                    <button key={u.userId} onClick={() => addToWhitelist(u.userId)}
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg-surface-hover)] text-left transition-colors">
+                      <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-[11px] font-bold text-emerald-700">
+                        {(u.name || '?').charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-semibold truncate">{u.name || u.userId}</p>
+                        <p className="text-[10px] text-[var(--text-tertiary)] truncate">{u.email} | {u.location || 'Konum yok'}</p>
+                      </div>
+                      <UserPlus size={14} className="text-emerald-500 shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <Input
               label="Aktif Sehirler (virgul ile)"
