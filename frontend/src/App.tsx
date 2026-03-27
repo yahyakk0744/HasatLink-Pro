@@ -28,6 +28,7 @@ const ContactPage = lazy(() => import('./pages/ContactPage'));
 const AdminContactsPage = lazy(() => import('./pages/AdminContactsPage'));
 const AdminSettingsPage = lazy(() => import('./pages/AdminSettingsPage'));
 const AdminRevenuePage = lazy(() => import('./pages/AdminRevenuePage'));
+const AdminDigitalFarmPage = lazy(() => import('./pages/AdminDigitalFarmPage'));
 const AdminAdsPage = lazy(() => import('./pages/AdminAdsPage'));
 const AdminDealersPage = lazy(() => import('./pages/AdminDealersPage'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
@@ -101,6 +102,7 @@ export default function App() {
             <Route path="/admin/mesajlar" element={<AdminContactsPage />} />
             <Route path="/admin/ayarlar" element={<AdminSettingsPage />} />
             <Route path="/admin/gelir" element={<AdminRevenuePage />} />
+            <Route path="/admin/dijital-tarla" element={<AdminDigitalFarmPage />} />
             <Route path="/admin/reklamlar" element={<AdminAdsPage />} />
             <Route path="/admin/bayiler" element={<AdminDealersPage />} />
             <Route path="/admin/bildirimler" element={<AdminNotificationsPage />} />

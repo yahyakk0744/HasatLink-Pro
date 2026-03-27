@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useMessages } from '../../hooks/useMessages';
 import { useSocket } from '../../contexts/SocketContext';
-import { getPusherClient } from '../../config/pusher';
 import type { Conversation, Message } from '../../types';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
@@ -34,47 +33,8 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
     return () => { socket.emit('conversation:leave', conversation.id); };
   }, [socket, conversation.id]);
 
-  // Pusher: subscribe to conversation channel for instant delivery
-  useEffect(() => {
-    const pusher = getPusherClient();
-    const channel = pusher.subscribe(`conversation-${conversation.id}`);
-
-    channel.bind('message:new', (data: { message: any; senderName?: string }) => {
-      if (data.message && data.message.senderId !== currentUid) {
-        const newMsg: Message = {
-          id: data.message.id || `pusher-${Date.now()}`,
-          senderId: data.message.senderId,
-          text: data.message.text,
-          createdAt: data.message.createdAt,
-          read: false,
-          delivered: true,
-        };
-        setMessages(prev => {
-          // Avoid duplicates: prefer ID-based dedup, fall back to content+timestamp
-          const isDuplicate = newMsg.id && !newMsg.id.startsWith('pusher-')
-            ? prev.some(m => m.id === newMsg.id)
-            : prev.some(m => m.text === newMsg.text && m.senderId === newMsg.senderId && Math.abs(new Date(m.createdAt?.seconds ? m.createdAt.seconds * 1000 : m.createdAt).getTime() - new Date(newMsg.createdAt).getTime()) < 3000);
-          if (isDuplicate) {
-            return prev;
-          }
-          return [...prev, newMsg];
-        });
-      }
-    });
-
-    channel.bind('message:read', (data: { messageIds: string[]; readBy: string }) => {
-      if (data.readBy !== currentUid) {
-        setMessages(prev => prev.map(m =>
-          data.messageIds.includes(m.id) ? { ...m, read: true } : m
-        ));
-      }
-    });
-
-    return () => {
-      channel.unbind_all();
-      pusher.unsubscribe(`conversation-${conversation.id}`);
-    };
-  }, [conversation.id, currentUid]);
+  // Pusher removed — Firestore real-time subscription + Socket.IO is sufficient
+  // This eliminates duplicate message race conditions
 
   // Listen for typing events via Socket.IO
   useEffect(() => {

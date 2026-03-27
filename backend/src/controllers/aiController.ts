@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import fs from 'fs';
+import axios from 'axios';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import AIDiagnosis from '../models/AIDiagnosis';
 import SiteSettings from '../models/SiteSettings';
@@ -66,6 +67,81 @@ async function analyzeWithGemini(imagePath: string): Promise<any | null> {
     console.error('[Gemini] Analysis error:', err.message);
     return null;
   }
+}
+
+// ─── HuggingFace Fallback (Plant Disease Classification) ───
+const HF_TOKEN = () => process.env.HF_ACCESS_TOKEN || '';
+const HF_MODELS = [
+  'ozair23/mobilenet_v2_1.0_224-finetuned-plantdisease',
+  'linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification',
+];
+
+async function analyzeWithHuggingFace(imagePath: string): Promise<{ label: string; score: number }[] | null> {
+  const token = HF_TOKEN();
+  if (!token) return null;
+
+  const imageBuffer = fs.readFileSync(imagePath);
+
+  for (const model of HF_MODELS) {
+    try {
+      const { data } = await axios.post(
+        `https://api-inference.huggingface.co/models/${model}`,
+        imageBuffer,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/octet-stream',
+          },
+          timeout: 30000,
+        },
+      );
+      if (Array.isArray(data) && data.length > 0) {
+        return data.slice(0, 5).map((d: any) => ({
+          label: d.label || '',
+          score: d.score || 0,
+        }));
+      }
+    } catch (err: any) {
+      console.error(`[HuggingFace] ${model} error:`, err.message);
+      continue; // sonraki modeli dene
+    }
+  }
+  return null;
+}
+
+/** HuggingFace label'ini Turkce hastalik eslestirmesine cevir */
+function matchHFLabel(label: string): DiseaseEntry | null {
+  const lower = label.toLowerCase().replace(/[_-]/g, ' ');
+  // Bilinen eslesmeler
+  const mappings: Record<string, string> = {
+    'tomato late blight': 'domates_mildiyo',
+    'tomato early blight': 'domates_yaprak_lekesi',
+    'tomato leaf mold': 'domates_yaprak_lekesi',
+    'tomato septoria leaf spot': 'domates_yaprak_lekesi',
+    'tomato mosaic virus': 'domates_mozaik',
+    'tomato yellow leaf curl virus': 'domates_mozaik',
+    'pepper bell bacterial spot': 'biber_yaprak_lekesi',
+    'potato late blight': 'patates_mildiyo',
+    'potato early blight': 'patates_mildiyo',
+    'grape black rot': 'bag_mildiyo',
+    'grape esca': 'bag_esca',
+    'apple scab': 'elma_karaleke',
+    'apple black rot': 'elma_karaleke',
+    'corn common rust': 'misir_pasi',
+    'powdery mildew': 'kulleme',
+    'healthy': 'saglikli',
+  };
+
+  for (const [key, code] of Object.entries(mappings)) {
+    if (lower.includes(key)) {
+      return DISEASES.find(d => d.disease_code === code) || null;
+    }
+  }
+  // Genel saglikli kontrolu
+  if (lower.includes('healthy')) {
+    return DISEASES.find(d => d.disease_code === 'saglikli') || null;
+  }
+  return null;
 }
 
 // ─── COMPREHENSIVE DISEASE DATABASE — 60+ Turkish Agriculture Diseases ───
@@ -216,16 +292,61 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
     const imageUrl = `/uploads/${file.filename}`;
     const imagePath = file.path;
 
-    // ─── Gemini Vision Analysis ───
+    // ─── AI Analysis: Gemini (primary) → HuggingFace (fallback) ───
     let geminiResult = await analyzeWithGemini(imagePath);
     let usedGemini = !!geminiResult;
+    let hfClassifications: { label: string; score: number }[] | null = null;
+    let usedHF = false;
 
-    // If Gemini fails, return error instead of fake data
+    // Gemini basarisizsa HuggingFace'e gec
+    if (!geminiResult) {
+      console.log('[AI] Gemini failed, trying HuggingFace fallback...');
+      hfClassifications = await analyzeWithHuggingFace(imagePath);
+
+      if (hfClassifications && hfClassifications.length > 0) {
+        usedHF = true;
+        const topResult = hfClassifications[0];
+        const matched = matchHFLabel(topResult.label);
+
+        if (matched) {
+          geminiResult = {
+            crop_type: matched.crop_type,
+            disease: matched.disease,
+            disease_code: matched.disease_code,
+            confidence: Math.round(topResult.score * 100),
+            stage: matched.stage,
+            spread_risk: matched.spread_risk,
+            urgency: matched.urgency,
+            treatment: matched.treatment,
+            recommended_products: matched.recommended_products,
+            prevention: matched.prevention,
+            detailed_analysis: `HuggingFace siniflandirmasi: ${topResult.label} (%${(topResult.score * 100).toFixed(1)} guven). ${matched.treatment}`,
+          };
+        } else {
+          // Eslestirilemedi ama sonuc var
+          geminiResult = {
+            crop_type: 'Genel',
+            disease: topResult.label.replace(/_/g, ' '),
+            disease_code: 'bilinmeyen',
+            confidence: Math.round(topResult.score * 100),
+            stage: 'mid',
+            spread_risk: 'medium',
+            urgency: 'medium',
+            treatment: 'Detayli analiz icin ziraat muhendisine danisin.',
+            recommended_products: [],
+            prevention: 'Duzenli kontrol yapin.',
+            detailed_analysis: `HuggingFace siniflandirmasi: ${hfClassifications.map(c => `${c.label} (%${(c.score * 100).toFixed(1)})`).join(', ')}`,
+          };
+        }
+      }
+    }
+
+    // Her iki AI de basarisizsa hata don
     if (!geminiResult) {
       res.status(503).json({
         message: 'AI analiz servisi su an kullanilamamaktadir. Lutfen daha sonra tekrar deneyin.',
         ai_engine: 'none',
-        error_code: 'GEMINI_UNAVAILABLE',
+        error_code: 'AI_UNAVAILABLE',
       });
       return;
     }
@@ -263,8 +384,9 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
         quality_factors: harvestInfo.quality_factors,
         optimal_conditions: harvestInfo.optimal_conditions,
       },
-      ai_engine: usedGemini ? 'gemini' : 'local',
-      gemini_analysis: usedGemini ? (geminiResult.detailed_analysis || '') : '',
+      ai_engine: usedGemini ? 'gemini' : usedHF ? 'huggingface' : 'local',
+      gemini_analysis: geminiResult.detailed_analysis || '',
+      hf_classifications: hfClassifications || undefined,
     };
 
     // Save to history
