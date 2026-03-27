@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
   Sprout, MapPin, Droplets, Leaf, Lock, ChevronRight,
@@ -21,7 +20,6 @@ interface FarmRegion {
   crop_types: string[];
   description: string;
   photos: string[];
-  fomo_level: string;
 }
 
 interface FarmSettings {
@@ -49,9 +47,9 @@ interface MyPlot {
 }
 
 const CROP_EMOJIS: Record<string, string> = {
-  domates: '🍅', biber: '🌶️', salatalik: '🥒', kayisi: '🍑',
-  zeytin: '🫒', uzum: '🍇', elma: '🍎', nar: '🍎', patates: '🥔',
-  bugday: '🌾', misir: '🌽', findik: '🌰', cay: '🍵', pamuk: '☁️',
+  domates: '🍅', biber: '🌶️', salatalik: '🥒', patlican: '🍆',
+  kabak: '🎃', fasulye: '🫘', marul: '🥬', ispanak: '🥬',
+  havuc: '🥕', sogan: '🧅',
 };
 
 const STAGE_EMOJIS: Record<string, string> = {
@@ -59,8 +57,6 @@ const STAGE_EMOJIS: Record<string, string> = {
 };
 
 export default function DigitalFarmPage() {
-  const { i18n } = useTranslation();
-  const isTr = i18n.language?.startsWith('tr');
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -79,37 +75,33 @@ export default function DigitalFarmPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Once settings'i cek (public endpoint, auth gerektirmez)
       const settingsRes = await api.get('/farm/settings').catch(() => ({ data: null }));
 
       if (settingsRes.data) {
         setSettings(settingsRes.data);
         if (!settingsRes.data.enabled) {
           setAccessDenied(true);
-          setAccessMessage(isTr ? 'Dijital Tarla modulu henuz aktif degildir. Yakinda hizmetinizde!' : 'Digital Farm is not active yet.');
+          setAccessMessage('Dijital Tarla modülü henüz aktif değildir. Yakında hizmetinizde!');
           setLoading(false);
           return;
         }
       }
 
-      // Giris yapilmissa access kontrolu yap
       if (user) {
         try {
           const { data: access } = await api.get('/farm/access');
           if (!access.allowed) {
             const reasons: Record<string, string> = {
-              beta_only: isTr ? 'Dijital Tarla su anda kapali beta asamasindadir.' : 'Digital Farm is in closed beta.',
-              city_blocked: isTr ? 'Dijital Tarla henuz sehrinizde aktif degil.' : 'Digital Farm is not active in your city yet.',
-              disabled: isTr ? 'Dijital Tarla henuz aktif degil.' : 'Digital Farm is not active yet.',
+              beta_only: 'Dijital Tarla şu anda kapalı beta aşamasındadır.',
+              city_blocked: 'Dijital Tarla henüz şehrinizde aktif değil.',
+              disabled: 'Dijital Tarla henüz aktif değil.',
             };
             setAccessDenied(true);
-            setAccessMessage(reasons[access.reason] || access.reason || 'Erisim engellendi.');
+            setAccessMessage(reasons[access.reason] || access.reason || 'Erişim engellendi.');
             setLoading(false);
             return;
           }
-        } catch {
-          // access endpoint hatasi — devam et (belki auth token suresi dolmus)
-        }
+        } catch {}
       }
 
       const [regionsRes, plotsRes] = await Promise.all([
@@ -117,17 +109,16 @@ export default function DigitalFarmPage() {
         user ? api.get('/farm/plots').catch(() => ({ data: { plots: [] } })) : Promise.resolve({ data: { plots: [] } }),
       ]);
 
-      setRegions(regionsRes.data?.regions || []);
+      setRegions(regionsRes.data?.regions || regionsRes.data || []);
       setMyPlots(plotsRes.data?.plots || []);
       setTab(plotsRes.data?.plots?.length > 0 ? 'plots' : 'discover');
     } catch {
-      toast.error('Veriler yuklenemedi');
+      toast.error('Veriler yüklenemedi');
     } finally {
       setLoading(false);
     }
   };
 
-  // ─── Access Denied ───
   if (accessDenied) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-fade-in">
@@ -135,11 +126,11 @@ export default function DigitalFarmPage() {
         <div className="w-20 h-20 bg-amber-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
           <Lock size={36} className="text-amber-600" />
         </div>
-        <h1 className="text-2xl font-bold mb-3">{isTr ? 'Dijital Tarla' : 'Digital Farm'}</h1>
+        <h1 className="text-2xl font-bold mb-3">Dijital Tarla</h1>
         <p className="text-[var(--text-secondary)] text-[14px] max-w-md mx-auto mb-6">{accessMessage}</p>
         <div className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold text-[13px]">
           <Sprout size={18} />
-          {isTr ? 'Yakinda Aciliyor' : 'Coming Soon'}
+          Yakında Açılıyor
         </div>
       </div>
     );
@@ -155,7 +146,7 @@ export default function DigitalFarmPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
-      <SEO title={isTr ? 'Dijital Tarla' : 'Digital Farm'} description="Gercek tarlani dijitalden yonet, hasadini kapinda al." />
+      <SEO title="Dijital Tarla" description="Gerçek tarlanı dijitalden yönet, hasadını kapında al." />
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
@@ -164,10 +155,10 @@ export default function DigitalFarmPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-            {isTr ? 'Dijital Tarla' : 'Digital Farm'}
+            Dijital Tarla
           </h1>
           <p className="text-[13px] text-[var(--text-secondary)]">
-            {isTr ? 'Gercek tarlani dijitalden yonet' : 'Manage your real farm digitally'}
+            Gerçek tarlanı dijitalden yönet
           </p>
         </div>
       </div>
@@ -176,11 +167,11 @@ export default function DigitalFarmPage() {
       <div className="flex gap-2 mb-6">
         <button onClick={() => setTab('plots')}
           className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${tab === 'plots' ? 'bg-[#2D6A4F] text-white shadow-lg shadow-emerald-500/20' : 'bg-[var(--bg-surface)] text-[var(--text-secondary)]'}`}>
-          🌱 {isTr ? 'Tarlalarim' : 'My Farms'} {myPlots.length > 0 && `(${myPlots.length})`}
+          🌱 Tarlalarım {myPlots.length > 0 && `(${myPlots.length})`}
         </button>
         <button onClick={() => setTab('discover')}
           className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${tab === 'discover' ? 'bg-[#2D6A4F] text-white shadow-lg shadow-emerald-500/20' : 'bg-[var(--bg-surface)] text-[var(--text-secondary)]'}`}>
-          🗺️ {isTr ? 'Bolge Kesfet' : 'Discover Regions'}
+          🗺️ Bölge Keşfet
         </button>
       </div>
 
@@ -190,13 +181,13 @@ export default function DigitalFarmPage() {
           {myPlots.length === 0 ? (
             <div className="text-center py-16">
               <Sprout size={56} className="mx-auto mb-4 text-[var(--text-tertiary)] opacity-30" />
-              <h2 className="text-[17px] font-bold mb-2">{isTr ? 'Henuz tarlan yok' : 'No farms yet'}</h2>
+              <h2 className="text-[17px] font-bold mb-2">Henüz tarlanız yok</h2>
               <p className="text-[13px] text-[var(--text-secondary)] mb-6 max-w-sm mx-auto">
-                {isTr ? 'Bir bolge sec, alan kirala ve gercek urununun dijitalden buyumesini izle!' : 'Pick a region, rent land, and watch your real crops grow!'}
+                Bir bölge seçin, alan kiralayın ve gerçek ürününüzün dijitalden büyümesini izleyin!
               </p>
               <button onClick={() => setTab('discover')}
                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold text-[14px] shadow-lg shadow-emerald-500/20 hover:shadow-xl transition-all">
-                🗺️ {isTr ? 'Bolge Kesfet' : 'Discover Regions'}
+                🗺️ Bölge Keşfet
               </button>
             </div>
           ) : (
@@ -213,11 +204,10 @@ export default function DigitalFarmPage() {
                   </div>
                   <ChevronRight size={18} className="text-[var(--text-tertiary)]" />
                 </div>
-                {/* Mini barlar */}
                 <div className="grid grid-cols-3 gap-2">
-                  <MiniBar label="Saglik" value={plot.health_score} emoji="❤️" color={plot.health_score > 70 ? '#10B981' : plot.health_score > 40 ? '#F59E0B' : '#EF4444'} />
+                  <MiniBar label="Sağlık" value={plot.health_score} emoji="❤️" color={plot.health_score > 70 ? '#10B981' : plot.health_score > 40 ? '#F59E0B' : '#EF4444'} />
                   <MiniBar label="Nem" value={plot.moisture} emoji="💧" color={plot.moisture > 50 ? '#3B82F6' : plot.moisture > 20 ? '#F59E0B' : '#EF4444'} />
-                  <MiniBar label="Buyume" value={plot.growth_percent} emoji="📈" color="#2D6A4F" />
+                  <MiniBar label="Büyüme" value={plot.growth_percent} emoji="📈" color="#2D6A4F" />
                 </div>
               </button>
             ))
@@ -225,17 +215,16 @@ export default function DigitalFarmPage() {
         </div>
       )}
 
-      {/* ─── BOLGE KESFET ─── */}
+      {/* ─── BÖLGE KEŞFET ─── */}
       {tab === 'discover' && (
         <div className="space-y-4">
-          {/* Fiyat bilgisi */}
           {settings && (
             <div className="rounded-2xl bg-gradient-to-r from-emerald-500/5 to-lime-500/5 border border-emerald-500/10 p-4">
-              <p className="text-[11px] font-semibold text-[#2D6A4F] uppercase tracking-wider mb-2">Fiyatlandirma</p>
+              <p className="text-[11px] font-semibold text-[#2D6A4F] uppercase tracking-wider mb-2">Fiyatlandırma</p>
               <div className="flex flex-wrap gap-3 text-[12px]">
                 <span className="flex items-center gap-1"><MapPin size={12} className="text-emerald-600" /> Kira: {settings.pricing.rent_per_m2_monthly} TL/m²/ay</span>
                 <span className="flex items-center gap-1"><Droplets size={12} className="text-blue-500" /> Sulama: {settings.pricing.water_per_action} TL</span>
-                <span className="flex items-center gap-1"><Leaf size={12} className="text-purple-500" /> Gubre: {settings.pricing.fertilizer_per_action} TL</span>
+                <span className="flex items-center gap-1"><Leaf size={12} className="text-purple-500" /> Gübre: {settings.pricing.fertilizer_per_action} TL</span>
               </div>
             </div>
           )}
@@ -243,8 +232,8 @@ export default function DigitalFarmPage() {
           {regions.length === 0 ? (
             <div className="text-center py-16">
               <MapPin size={48} className="mx-auto mb-3 text-[var(--text-tertiary)] opacity-30" />
-              <h2 className="text-[15px] font-bold mb-1">{isTr ? 'Henuz bolge eklenmemis' : 'No regions yet'}</h2>
-              <p className="text-[12px] text-[var(--text-secondary)]">{isTr ? 'Yakinda yeni bolgeler eklenecek.' : 'New regions coming soon.'}</p>
+              <h2 className="text-[15px] font-bold mb-1">Henüz bölge eklenmemiş</h2>
+              <p className="text-[12px] text-[var(--text-secondary)]">Yakında yeni bölgeler eklenecek.</p>
             </div>
           ) : (
             regions.map(region => {
@@ -256,15 +245,14 @@ export default function DigitalFarmPage() {
                 <div key={region.region_id}
                   className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden hover:border-[#2D6A4F]/30 transition-all">
 
-                  {/* FOMO Banner */}
                   {fomoLevel !== 'none' && (
                     <div className={`px-4 py-2 text-[12px] font-bold text-white ${
                       fomoLevel === 'soldOut' ? 'bg-gray-500' :
                       fomoLevel === 'red' ? 'bg-red-500 animate-pulse' : 'bg-amber-500'
                     }`}>
-                      {fomoLevel === 'soldOut' ? '🚫 Tukenmistir!' :
-                       fomoLevel === 'red' ? `🔥 Acele Et! Son ${region.available_area_m2} m² kaldi!` :
-                       `⚡ Sinirli alan: ${region.available_area_m2} m² kaldi`}
+                      {fomoLevel === 'soldOut' ? '🚫 Tükenmiştir!' :
+                       fomoLevel === 'red' ? `🔥 Acele Edin! Son ${region.available_area_m2} m² kaldı!` :
+                       `⚡ Sınırlı alan: ${region.available_area_m2} m² kaldı`}
                     </div>
                   )}
 
@@ -278,11 +266,10 @@ export default function DigitalFarmPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-[18px] font-bold text-[#2D6A4F]">{region.available_area_m2.toLocaleString('tr-TR')}</p>
-                        <p className="text-[9px] text-[var(--text-secondary)]">m² musait</p>
+                        <p className="text-[9px] text-[var(--text-secondary)]">m² müsait</p>
                       </div>
                     </div>
 
-                    {/* Doluluk bar */}
                     <div className="mb-3">
                       <div className="flex justify-between text-[10px] text-[var(--text-secondary)] mb-1">
                         <span>Doluluk</span>
@@ -295,7 +282,6 @@ export default function DigitalFarmPage() {
                       </div>
                     </div>
 
-                    {/* Urun listesi */}
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {region.crop_types.map(crop => (
                         <span key={crop} className="px-2.5 py-1 rounded-lg bg-[var(--bg-input)] text-[10px] font-medium">
@@ -308,7 +294,6 @@ export default function DigitalFarmPage() {
                       <p className="text-[11px] text-[var(--text-secondary)] mb-3 line-clamp-2">{region.description}</p>
                     )}
 
-                    {/* Kirala butonu */}
                     {fomoLevel !== 'soldOut' ? (
                       <button onClick={() => {
                         if (!user) { navigate('/giris'); return; }
@@ -316,18 +301,18 @@ export default function DigitalFarmPage() {
                       }}
                         className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold text-[14px] flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-emerald-500/20 transition-all">
                         <Sprout size={18} />
-                        {isTr ? 'Tarla Kirala' : 'Rent a Plot'}
+                        Tarla Kirala
                       </button>
                     ) : (
                       <button onClick={() => {
                         if (!user) { navigate('/giris'); return; }
                         api.post('/farm/waitlist', { region_id: region.region_id })
-                          .then(() => toast.success('Bekleme listesine eklendi!'))
+                          .then(() => toast.success('Bekleme listesine eklendiniz!'))
                           .catch(() => toast.error('Zaten bekleme listesinde'));
                       }}
                         className="w-full py-3 rounded-xl bg-gray-100 text-gray-600 font-semibold text-[14px] flex items-center justify-center gap-2">
                         <Zap size={18} />
-                        {isTr ? 'Bekleme Listesine Katil' : 'Join Waitlist'}
+                        Bekleme Listesine Katıl
                       </button>
                     )}
                   </div>
@@ -336,16 +321,15 @@ export default function DigitalFarmPage() {
             })
           )}
 
-          {/* Nasil Calisir */}
           <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] p-5">
-            <h3 className="text-[13px] font-bold mb-4">{isTr ? 'Nasil Calisir?' : 'How It Works?'}</h3>
+            <h3 className="text-[13px] font-bold mb-4">Nasıl Çalışır?</h3>
             <div className="space-y-3">
               {[
-                { emoji: '🗺️', title: 'Bolge Sec', desc: 'Turkiye genelinde gercek tarim bolgelerinden birini sec.' },
-                { emoji: '📐', title: 'Alan Kirala', desc: 'Istedigin buyuklukte (m²) tarla alanini kirala.' },
-                { emoji: '💧', title: 'Dijitalden Yonet', desc: 'Sulama, gubreleme, zararli korumasi — hepsini telefondan yap.' },
-                { emoji: '📸', title: 'Gercek Fotograflarla Takip Et', desc: 'Saha ekibi her hafta tarlanin gercek fotograflarini yukler.' },
-                { emoji: '📦', title: 'Hasadini Kapinda Al', desc: 'Hasat zamani gelince urunlerin kargoyla adresine gelir.' },
+                { emoji: '🗺️', title: 'Bölge Seçin', desc: 'Türkiye genelinde gerçek tarım bölgelerinden birini seçin.' },
+                { emoji: '📐', title: 'Alan Kiralayın', desc: 'İstediğiniz büyüklükte (m²) tarla alanını kiralayın.' },
+                { emoji: '💧', title: 'Dijitalden Yönetin', desc: 'Sulama, gübreleme, zararlı koruması — hepsini telefondan yapın.' },
+                { emoji: '📸', title: 'Gerçek Fotoğraflarla Takip Edin', desc: 'Saha ekibi her hafta tarlanızın gerçek fotoğraflarını yükler.' },
+                { emoji: '📦', title: 'Hasadınızı Kapınızda Alın', desc: 'Hasat zamanı gelince ürünleriniz kargoyla adresinize gelir.' },
               ].map((step, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
