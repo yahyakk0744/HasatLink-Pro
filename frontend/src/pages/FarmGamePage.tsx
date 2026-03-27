@@ -1,32 +1,63 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft, Droplets, Leaf, Snowflake, Sun,
-  Loader2, Wallet, Package,
-} from 'lucide-react';
+import { ArrowLeft, Droplets, Leaf, Loader2, Wallet, Package, Star } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SEO from '../components/ui/SEO';
 import api from '../config/api';
 import toast from 'react-hot-toast';
 
-// ─── Sabitler ───
-const TICK_MS = 3000; // 3 saniyede bir tick (demo hızı)
-// Her tick 4 saat simüle eder
+// ═══════════════════════════════════════════════════
+// FARMVILLE-STYLE GAME ENGINE
+// Grid tabanlı, tıkla-ek-sula-hasat, animasyonlu
+// ═══════════════════════════════════════════════════
 
-const STAGE_VISUALS: Record<string, { emoji: string; label: string; bg: string }> = {
-  seed: { emoji: '🌰', label: 'Tohum', bg: 'from-amber-900/30 to-amber-800/10' },
-  sprout: { emoji: '🌱', label: 'Fide', bg: 'from-lime-900/20 to-green-900/10' },
-  growing: { emoji: '🌿', label: 'Büyüme', bg: 'from-green-900/20 to-emerald-900/10' },
-  flowering: { emoji: '🌸', label: 'Çiçeklenme', bg: 'from-pink-900/15 to-green-900/10' },
-  fruiting: { emoji: '🍅', label: 'Meyve', bg: 'from-red-900/15 to-green-900/10' },
-  harvest_ready: { emoji: '✨', label: 'Hasat Hazır', bg: 'from-yellow-900/20 to-amber-900/10' },
+const TICK_MS = 2500;
+
+// Kare durumları
+type TileState = 'empty' | 'planted' | 'growing' | 'flowering' | 'ready' | 'withered';
+
+interface FarmTile {
+  id: number;
+  state: TileState;
+  moisture: number;      // 0-100
+  growthPercent: number;  // 0-100
+  plantedAt: number;     // timestamp
+  lastWatered: number;
+  isAnimating: string;   // 'water' | 'plant' | 'harvest' | 'fertilize' | ''
+}
+
+// Görsel tanımlar
+const TILE_VISUALS: Record<TileState, { emoji: string; soilClass: string }> = {
+  empty: { emoji: '', soilClass: 'bg-amber-800/60' },
+  planted: { emoji: '🌰', soilClass: 'bg-amber-700/70' },
+  growing: { emoji: '🌱', soilClass: 'bg-amber-700/50' },
+  flowering: { emoji: '🌿', soilClass: 'bg-green-900/40' },
+  ready: { emoji: '', soilClass: 'bg-green-800/30' }, // crop emoji dinamik
+  withered: { emoji: '🥀', soilClass: 'bg-gray-700/50' },
 };
 
-const CROP_EMOJIS: Record<string, string> = {
-  domates: '🍅', biber: '🌶️', salatalik: '🥒', patlican: '🍆',
-  kabak: '🎃', fasulye: '🫘', marul: '🥬', ispanak: '🥬',
-  havuc: '🥕', sogan: '🧅',
+const CROP_STAGES: Record<string, string[]> = {
+  domates: ['🌰', '🌱', '🌿', '🌸', '🍅', '🥀'],
+  biber: ['🌰', '🌱', '🌿', '🌸', '🌶️', '🥀'],
+  salatalik: ['🌰', '🌱', '🌿', '🌸', '🥒', '🥀'],
+  patlican: ['🌰', '🌱', '🌿', '🌸', '🍆', '🥀'],
+  kabak: ['🌰', '🌱', '🌿', '🌸', '🎃', '🥀'],
+  fasulye: ['🌰', '🌱', '🌿', '🌸', '🫘', '🥀'],
+  marul: ['🌰', '🌱', '🌿', '🥬', '🥬', '🥀'],
+  ispanak: ['🌰', '🌱', '🌿', '🥬', '🥬', '🥀'],
+  havuc: ['🌰', '🌱', '🌿', '🌿', '🥕', '🥀'],
+  sogan: ['🌰', '🌱', '🌿', '🌿', '🧅', '🥀'],
 };
+
+// Araç seçimi
+type ToolType = 'hand' | 'water' | 'fertilize' | 'harvest' | 'plant';
+
+const TOOLS: { type: ToolType; emoji: string; label: string; cost: number; color: string }[] = [
+  { type: 'plant', emoji: '🌱', label: 'Ek', cost: 0, color: '#10B981' },
+  { type: 'water', emoji: '💧', label: 'Sula', cost: 2, color: '#3B82F6' },
+  { type: 'fertilize', emoji: '🧪', label: 'Gübrele', cost: 5, color: '#8B5CF6' },
+  { type: 'harvest', emoji: '🧺', label: 'Hasat', cost: 0, color: '#F59E0B' },
+];
 
 interface PlotData {
   plot_id: string;
@@ -41,26 +72,6 @@ interface PlotData {
   growth_stage: string;
   status: string;
   total_spent: number;
-  region_id: string;
-}
-
-interface WeatherData {
-  temperature: number;
-  humidity: number;
-  wind_speed: number;
-  description: string;
-  frost_risk: boolean;
-  heat_risk: boolean;
-}
-
-interface ActionDef {
-  type: string;
-  label: string;
-  emoji: string;
-  icon: any;
-  cost: number;
-  color: string;
-  bgColor: string;
 }
 
 export default function FarmGamePage() {
@@ -70,410 +81,478 @@ export default function FarmGamePage() {
 
   const [loading, setLoading] = useState(true);
   const [plot, setPlot] = useState<PlotData | null>(null);
-  const [weather, setWeather] = useState<WeatherData>({
-    temperature: 28, humidity: 50, wind_speed: 3, description: 'Güneşli',
-    frost_risk: false, heat_risk: false,
-  });
   const [balance, setBalance] = useState(0);
-  const [alerts, setAlerts] = useState<{ text: string; type: 'danger' | 'warning' | 'success' | 'info'; id: number }[]>([]);
-  const [actionCooldown, setActionCooldown] = useState<string | null>(null);
+  const [selectedTool, setSelectedTool] = useState<ToolType>('water');
+  const [tiles, setTiles] = useState<FarmTile[]>([]);
+  const [xp, setXp] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [harvestedKg, setHarvestedKg] = useState(0);
+  const [floatingEmojis, setFloatingEmojis] = useState<{ id: number; emoji: string; x: number; y: number }[]>([]);
+  const [weather, setWeather] = useState({ temp: 28, desc: 'Güneşli', icon: '☀️' });
+  const floatIdRef = useRef(0);
   const tickRef = useRef<ReturnType<typeof setInterval>>(null);
-  const alertIdRef = useRef(0);
 
-  // ─── Veri Yükle ───
+  // Grid boyutu (alan m²'ye göre)
+  const gridSize = plot ? Math.max(3, Math.min(8, Math.ceil(Math.sqrt(plot.area_m2 / 2)))) : 5;
+
   useEffect(() => {
     if (!user) { navigate('/giris'); return; }
-    loadPlot();
+    loadData();
     return () => { if (tickRef.current) clearInterval(tickRef.current); };
   }, [plotId]);
 
-  const loadPlot = async () => {
+  const loadData = async () => {
     try {
       const { data } = await api.get(`/farm/plots/${plotId}`);
       const p = data.plot || data;
       setPlot(p);
 
-      const meRes = await api.get('/auth/me');
-      setBalance(meRes.data?.points || 0);
+      const me = await api.get('/auth/me');
+      setBalance(me.data?.points || 0);
+
+      // Grid oluştur
+      const size = Math.max(3, Math.min(8, Math.ceil(Math.sqrt(p.area_m2 / 2))));
+      const count = size * size;
+      const plantedCount = Math.floor(count * (p.growth_percent / 100));
+
+      const newTiles: FarmTile[] = Array.from({ length: count }, (_, i) => {
+        const isPlanted = i < plantedCount;
+        const tileGrowth = isPlanted ? Math.min(100, p.growth_percent + (Math.random() * 20 - 10)) : 0;
+        let state: TileState = 'empty';
+        if (isPlanted) {
+          if (tileGrowth >= 90) state = 'ready';
+          else if (tileGrowth >= 50) state = 'flowering';
+          else if (tileGrowth >= 10) state = 'growing';
+          else state = 'planted';
+        }
+        return {
+          id: i,
+          state,
+          moisture: isPlanted ? p.water_level + (Math.random() * 10 - 5) : 40,
+          growthPercent: tileGrowth,
+          plantedAt: isPlanted ? Date.now() - tileGrowth * 1000 : 0,
+          lastWatered: Date.now(),
+          isAnimating: '',
+        };
+      });
+      setTiles(newTiles);
 
       // Hava durumu
       try {
-        const wRes = await api.get(`/farm/weather/${p.region_id || ''}`);
-        if (wRes.data) setWeather(wRes.data);
+        await api.get('/farm/settings');
+        // Basit hava simülasyonu
+        const temps = [22, 25, 28, 31, 34, 18, 15];
+        const t = temps[Math.floor(Math.random() * temps.length)];
+        setWeather({
+          temp: t,
+          desc: t > 32 ? 'Çok Sıcak' : t > 28 ? 'Sıcak' : t < 18 ? 'Serin' : 'Güneşli',
+          icon: t > 32 ? '🔥' : t > 28 ? '☀️' : t < 18 ? '🌧️' : '⛅',
+        });
       } catch {}
 
       setLoading(false);
-      startSimulation(p);
+      startTick();
     } catch {
       toast.error('Tarla yüklenemedi');
       setLoading(false);
     }
   };
 
-  // ─── Simülasyon Motoru (Client-Side) ───
-  const startSimulation = useCallback((_initialPlot: PlotData) => {
+  // ─── Oyun Döngüsü ───
+  const startTick = useCallback(() => {
     if (tickRef.current) clearInterval(tickRef.current);
-
     tickRef.current = setInterval(() => {
-      setPlot(prev => {
-        if (!prev || prev.status !== 'active') return prev;
+      setTiles(prev => prev.map(tile => {
+        if (tile.state === 'empty' || tile.state === 'withered') return tile;
 
-        let moisture = prev.water_level;
-        let health = prev.health_score;
-        let fert = prev.fertilizer_level;
-        let fire = prev.fire_rate;
-        let growth = prev.growth_percent;
+        let { moisture, growthPercent, state } = tile;
 
-        // Nem azalması (hava durumuna bağlı)
-        let decayRate = 1.5; // baz: tick başına %1.5
-        setWeather(w => {
-          if (w.temperature > 30) decayRate *= 1.8;
-          else if (w.temperature > 25) decayRate *= 1.3;
-          else if (w.temperature < 10) decayRate *= 0.5;
-          if (w.wind_speed > 5) decayRate *= 1.3;
-          if (w.humidity > 70) decayRate *= 0.6;
-          return w;
-        });
+        // Nem azalması
+        const decayRate = weather.temp > 30 ? 3 : weather.temp > 25 ? 2 : 1;
         moisture = Math.max(0, moisture - decayRate);
 
-        // Gübre azalması
-        fert = Math.max(0, fert - 0.8);
-
-        // Nem düşükse sağlık düşer
-        if (moisture < 20) {
-          health -= 2;
-          fire += 0.5;
-          if (moisture < 10) {
-            addAlert('Kurak tehlike! Hemen sula!', 'danger');
-          }
+        // Nem düşükse solma riski
+        if (moisture < 10 && Math.random() < 0.1) {
+          return { ...tile, state: 'withered' as TileState, moisture: 0, isAnimating: '' };
         }
-
-        // Gübre düşükse büyüme yavaşlar
-        if (fert < 15) {
-          health -= 0.5;
-        }
-
-        // Don/sıcak riski
-        setWeather(w => {
-          if (w.frost_risk) { health -= 3; fire += 1; addAlert('Don tehlikesi! Koruma yap!', 'danger'); }
-          if (w.heat_risk) { health -= 1.5; fire += 0.5; addAlert('Aşırı sıcak! Sulama gerekli!', 'warning'); }
-          return w;
-        });
 
         // Büyüme
-        if (health > 30 && moisture > 15) {
-          const hFactor = health / 100;
-          const mFactor = Math.min(moisture / 50, 1);
-          const fFactor = Math.max(fert / 50, 0.3);
-          growth += 0.15 * hFactor * mFactor * fFactor;
+        if (moisture > 15) {
+          const growRate = 0.3 * (moisture / 80);
+          growthPercent = Math.min(100, growthPercent + growRate);
         }
 
-        health = Math.max(0, Math.min(100, health));
-        fire = Math.max(0, Math.min(100, fire));
-        growth = Math.min(100, growth);
+        // Aşama güncelle
+        if (growthPercent >= 90) state = 'ready';
+        else if (growthPercent >= 50) state = 'flowering';
+        else if (growthPercent >= 10) state = 'growing';
 
-        // Aşama belirleme
-        let stage = 'seed';
-        if (growth >= 90) stage = 'harvest_ready';
-        else if (growth >= 70) stage = 'fruiting';
-        else if (growth >= 50) stage = 'flowering';
-        else if (growth >= 25) stage = 'growing';
-        else if (growth >= 10) stage = 'sprout';
-
-        return {
-          ...prev,
-          water_level: moisture,
-          health_score: health,
-          fertilizer_level: fert,
-          fire_rate: fire,
-          growth_percent: growth,
-          growth_stage: stage,
-        };
-      });
+        return { ...tile, moisture, growthPercent, state };
+      }));
     }, TICK_MS);
-  }, []);
+  }, [weather.temp]);
 
-  const addAlert = useCallback((text: string, type: 'danger' | 'warning' | 'success' | 'info') => {
-    const id = ++alertIdRef.current;
-    setAlerts(prev => {
-      if (prev.some(a => a.text === text)) return prev; // duplikat engelle
-      return [{ text, type, id }, ...prev].slice(0, 5);
-    });
-    setTimeout(() => setAlerts(prev => prev.filter(a => a.id !== id)), 4000);
-  }, []);
+  // ─── Kareye Tıklama ───
+  const handleTileClick = (tile: FarmTile, e: React.MouseEvent) => {
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top;
 
-  // ─── Aksiyon Yap ───
-  const performAction = async (actionType: string, cost: number) => {
-    if (actionCooldown) return;
-    if (balance < cost) {
-      toast.error(`Yetersiz bakiye! Gereken: ${cost} TL`);
-      return;
-    }
-
-    setActionCooldown(actionType);
-    try {
-      await api.post('/farm/actions', { plot_id: plotId, action_type: actionType });
-      setBalance(prev => prev - cost);
-
-      // Anında UI etkisi
-      setPlot(prev => {
-        if (!prev) return prev;
-        const updates = { ...prev, total_spent: prev.total_spent + cost };
-        switch (actionType) {
-          case 'water':
-            updates.water_level = Math.min(100, prev.water_level + 35);
-            updates.health_score = Math.min(100, prev.health_score + 3);
-            addAlert('💧 Sulama yapıldı! Toprak nemi arttı.', 'success');
-            break;
-          case 'fertilize':
-            updates.fertilizer_level = Math.min(100, prev.fertilizer_level + 30);
-            updates.health_score = Math.min(100, prev.health_score + 5);
-            addAlert('🧪 Gübre verildi! Bitki güçlendi.', 'success');
-            break;
-          case 'protect_frost':
-            updates.health_score = Math.min(100, prev.health_score + 8);
-            updates.fire_rate = Math.max(0, prev.fire_rate - 5);
-            addAlert('❄️ Don koruması aktif! Bitki güvende.', 'success');
-            break;
-          case 'protect_heat':
-            updates.water_level = Math.min(100, prev.water_level + 15);
-            updates.health_score = Math.min(100, prev.health_score + 3);
-            addAlert('☀️ Sıcak koruması yapıldı!', 'success');
-            break;
+    switch (selectedTool) {
+      case 'plant':
+        if (tile.state === 'empty' || tile.state === 'withered') {
+          setTiles(prev => prev.map(t => t.id === tile.id ? {
+            ...t, state: 'planted' as TileState, moisture: 60, growthPercent: 1,
+            plantedAt: Date.now(), isAnimating: 'plant',
+          } : t));
+          spawnFloat('🌱', x, y);
+          addXp(5);
+          setTimeout(() => clearAnim(tile.id), 800);
         }
-        return updates;
-      });
+        break;
 
-      toast.success(`${actionType === 'water' ? '💧 Sulama' : actionType === 'fertilize' ? '🧪 Gübre' : '🛡️ Koruma'} yapıldı! -${cost} TL`);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'İşlem başarısız');
-    } finally {
-      setTimeout(() => setActionCooldown(null), 1500);
+      case 'water':
+        if (tile.state !== 'empty') {
+          if (balance < 2) { toast.error('Yetersiz bakiye!'); return; }
+          setBalance(b => b - 2);
+          setTiles(prev => prev.map(t => t.id === tile.id ? {
+            ...t, moisture: Math.min(100, t.moisture + 30), lastWatered: Date.now(),
+            isAnimating: 'water',
+            // Solmuş bitki canlanabilir
+            state: t.state === 'withered' ? 'growing' as TileState : t.state,
+            growthPercent: t.state === 'withered' ? 10 : t.growthPercent,
+          } : t));
+          spawnFloat('💧', x, y);
+          addXp(2);
+          setTimeout(() => clearAnim(tile.id), 800);
+        }
+        break;
+
+      case 'fertilize':
+        if (tile.state !== 'empty' && tile.state !== 'withered') {
+          if (balance < 5) { toast.error('Yetersiz bakiye!'); return; }
+          setBalance(b => b - 5);
+          setTiles(prev => prev.map(t => t.id === tile.id ? {
+            ...t, growthPercent: Math.min(100, t.growthPercent + 15),
+            isAnimating: 'fertilize',
+          } : t));
+          spawnFloat('🧪', x, y);
+          addXp(3);
+          setTimeout(() => clearAnim(tile.id), 800);
+        }
+        break;
+
+      case 'harvest':
+        if (tile.state === 'ready') {
+          const crop = plot?.crop_type || 'domates';
+          const stages = CROP_STAGES[crop] || CROP_STAGES.domates;
+          spawnFloat(stages[4], x, y);
+          spawnFloat('⭐', x + 20, y - 10);
+          setTiles(prev => prev.map(t => t.id === tile.id ? {
+            ...t, state: 'empty' as TileState, growthPercent: 0, moisture: 40,
+            isAnimating: 'harvest',
+          } : t));
+          const kg = 0.5 + Math.random() * 1.5;
+          setHarvestedKg(h => h + kg);
+          addXp(10);
+          toast.success(`🧺 ${kg.toFixed(1)} kg hasat edildi!`);
+          setTimeout(() => clearAnim(tile.id), 800);
+        }
+        break;
+
+      default:
+        // hand — bilgi göster
+        toast(`${tile.state === 'empty' ? 'Boş kare' : `Nem: %${Math.round(tile.moisture)} · Büyüme: %${Math.round(tile.growthPercent)}`}`, { icon: 'ℹ️', duration: 1500 });
     }
   };
 
-  // ─── Pricing ───
-  const [pricing, setPricing] = useState({ water: 15, fertilize: 50, frost: 60, heat: 40 });
-  useEffect(() => {
-    api.get('/farm/settings').then(({ data }) => {
-      if (data?.pricing) {
-        setPricing({
-          water: data.pricing.water_per_action || 15,
-          fertilize: data.pricing.fertilizer_per_action || 50,
-          frost: data.pricing.frost_protection_cost || 60,
-          heat: data.pricing.heat_protection_cost || 40,
-        });
-      }
-    }).catch(() => {});
-  }, []);
+  const clearAnim = (id: number) => {
+    setTiles(prev => prev.map(t => t.id === id ? { ...t, isAnimating: '' } : t));
+  };
 
-  const actions: ActionDef[] = [
-    { type: 'water', label: 'Sula', emoji: '💧', icon: Droplets, cost: pricing.water, color: 'text-blue-400', bgColor: 'bg-blue-500/15 border-blue-500/30' },
-    { type: 'fertilize', label: 'Gübrele', emoji: '🧪', icon: Leaf, cost: pricing.fertilize, color: 'text-purple-400', bgColor: 'bg-purple-500/15 border-purple-500/30' },
-    { type: 'protect_frost', label: 'Don Koru', emoji: '❄️', icon: Snowflake, cost: pricing.frost, color: 'text-cyan-400', bgColor: 'bg-cyan-500/15 border-cyan-500/30' },
-    { type: 'protect_heat', label: 'Sıcak Koru', emoji: '☀️', icon: Sun, cost: pricing.heat, color: 'text-amber-400', bgColor: 'bg-amber-500/15 border-amber-500/30' },
-  ];
+  const addXp = (amount: number) => {
+    setXp(prev => {
+      const newXp = prev + amount;
+      const newLevel = Math.floor(newXp / 50) + 1;
+      if (newLevel > level) {
+        setLevel(newLevel);
+        toast.success(`⭐ Seviye ${newLevel}!`, { duration: 2000 });
+      }
+      return newXp;
+    });
+  };
+
+  const spawnFloat = (emoji: string, x: number, y: number) => {
+    const id = ++floatIdRef.current;
+    setFloatingEmojis(prev => [...prev, { id, emoji, x, y }]);
+    setTimeout(() => setFloatingEmojis(prev => prev.filter(f => f.id !== id)), 1200);
+  };
+
+  // Toplu sulama
+  const waterAll = async () => {
+    const dryTiles = tiles.filter(t => t.state !== 'empty' && t.state !== 'withered' && t.moisture < 50);
+    const cost = dryTiles.length * 2;
+    if (balance < cost) { toast.error(`Yetersiz bakiye! Gereken: ${cost} TL`); return; }
+
+    try {
+      await api.post('/farm/actions', { plot_id: plotId, action_type: 'water' });
+    } catch {}
+
+    setBalance(b => b - cost);
+    setTiles(prev => prev.map(t => {
+      if (t.state !== 'empty' && t.state !== 'withered' && t.moisture < 50) {
+        return { ...t, moisture: Math.min(100, t.moisture + 30), isAnimating: 'water', lastWatered: Date.now() };
+      }
+      return t;
+    }));
+    addXp(dryTiles.length * 2);
+    toast.success(`💧 ${dryTiles.length} kare sulandı! -${cost} TL`);
+    setTimeout(() => setTiles(prev => prev.map(t => ({ ...t, isAnimating: '' }))), 800);
+  };
+
+  // Toplu hasat
+  const harvestAll = () => {
+    const readyTiles = tiles.filter(t => t.state === 'ready');
+    if (readyTiles.length === 0) { toast('Hasat edilecek ürün yok', { icon: '🤷' }); return; }
+
+    let totalKg = 0;
+    setTiles(prev => prev.map(t => {
+      if (t.state === 'ready') {
+        const kg = 0.5 + Math.random() * 1.5;
+        totalKg += kg;
+        return { ...t, state: 'empty' as TileState, growthPercent: 0, moisture: 40, isAnimating: 'harvest' };
+      }
+      return t;
+    }));
+    setHarvestedKg(h => h + totalKg);
+    addXp(readyTiles.length * 10);
+    toast.success(`🧺 ${readyTiles.length} kare hasat edildi! +${totalKg.toFixed(1)} kg`);
+    setTimeout(() => setTiles(prev => prev.map(t => ({ ...t, isAnimating: '' }))), 800);
+  };
+
+  // İstatistikler
+  const plantedCount = tiles.filter(t => t.state !== 'empty' && t.state !== 'withered').length;
+  const avgMoisture = plantedCount > 0 ? tiles.filter(t => t.state !== 'empty').reduce((s, t) => s + t.moisture, 0) / plantedCount : 0;
+  const avgGrowth = plantedCount > 0 ? tiles.filter(t => t.state !== 'empty').reduce((s, t) => s + t.growthPercent, 0) / plantedCount : 0;
 
   if (!user) return null;
-  if (loading) return <div className="flex items-center justify-center py-20 bg-[#0A1628] min-h-screen"><Loader2 size={32} className="animate-spin text-emerald-400" /></div>;
-  if (!plot) return <div className="text-center py-20 bg-[#0A1628] min-h-screen text-white">Tarla bulunamadı</div>;
+  if (loading) return <div className="flex items-center justify-center py-20 bg-[#1a2e1a] min-h-screen"><Loader2 size={32} className="animate-spin text-green-400" /></div>;
+  if (!plot) return <div className="text-center py-20 bg-[#1a2e1a] min-h-screen text-white">Tarla bulunamadı</div>;
 
-  const stage = STAGE_VISUALS[plot.growth_stage] || STAGE_VISUALS.seed;
-  const cropEmoji = CROP_EMOJIS[plot.crop_type] || '🌱';
-  const yieldKg = (plot.area_m2 * 3 * (plot.health_score / 100) * (1 - plot.fire_rate / 100)).toFixed(1);
+  const crop = plot.crop_type || 'domates';
+  const stages = CROP_STAGES[crop] || CROP_STAGES.domates;
 
   return (
-    <div className="min-h-screen bg-[#0A1628] text-white">
-      <SEO title={`${plot.crop_display_name || plot.crop_type} Tarlanız`} />
+    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(180deg, #1a3a1a 0%, #0d1f0d 50%, #1a2e1a 100%)' }}>
+      <SEO title={`${plot.crop_display_name || crop} Tarlanız`} />
 
-      {/* ─── Alert Banner ─── */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center pt-2 pointer-events-none">
-        {alerts.map(a => (
-          <div key={a.id} className={`mb-1 px-4 py-2 rounded-xl text-[12px] font-bold shadow-lg pointer-events-auto animate-fade-in ${
-            a.type === 'danger' ? 'bg-red-500' : a.type === 'warning' ? 'bg-amber-500' : a.type === 'success' ? 'bg-emerald-500' : 'bg-blue-500'
-          }`}>
-            {a.text}
-          </div>
-        ))}
-      </div>
+      {/* Floating emojis */}
+      {floatingEmojis.map(f => (
+        <div key={f.id} className="fixed pointer-events-none z-50" style={{
+          left: f.x - 15, top: f.y,
+          animation: 'floatUp 1.2s ease-out forwards',
+        }}>
+          <span className="text-[28px]">{f.emoji}</span>
+        </div>
+      ))}
+
+      <style>{`
+        @keyframes floatUp { 0% { opacity:1; transform:translateY(0) scale(1); } 100% { opacity:0; transform:translateY(-60px) scale(1.3); } }
+        @keyframes tileWater { 0%,100% { box-shadow: inset 0 0 0 transparent; } 50% { box-shadow: inset 0 0 20px rgba(59,130,246,0.5); } }
+        @keyframes tilePlant { 0% { transform:scale(0.5); } 50% { transform:scale(1.2); } 100% { transform:scale(1); } }
+        @keyframes tileHarvest { 0% { transform:scale(1); } 50% { transform:scale(1.3) rotate(10deg); } 100% { transform:scale(0); opacity:0; } }
+        @keyframes tilePulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }
+      `}</style>
 
       {/* ─── Header ─── */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/dijital-tarla')} className="w-9 h-9 rounded-xl bg-white/8 flex items-center justify-center">
-            <ArrowLeft size={16} />
+      <div className="flex items-center justify-between px-3 pt-3 pb-2">
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate('/dijital-tarla')} className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+            <ArrowLeft size={14} />
           </button>
           <div>
-            <h1 className="text-[16px] font-bold">{cropEmoji} {plot.crop_display_name || plot.crop_type}</h1>
-            <p className="text-[10px] text-white/40">{plot.area_m2} m² · {stage.label}</p>
+            <h1 className="text-[14px] font-bold">{stages[4]} {plot.crop_display_name || crop}</h1>
+            <p className="text-[9px] text-white/40">{plot.area_m2} m²</p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/8 border border-white/10">
-          <Wallet size={12} className="text-emerald-400" />
-          <span className={`text-[13px] font-bold ${balance < 30 ? 'text-red-400' : 'text-emerald-400'}`}>
-            {balance} TL
-          </span>
+        <div className="flex items-center gap-2">
+          {/* XP/Level */}
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30">
+            <Star size={10} className="text-amber-400" />
+            <span className="text-[10px] font-bold text-amber-400">Lv.{level}</span>
+            <span className="text-[8px] text-amber-300/60">{xp}xp</span>
+          </div>
+          {/* Bakiye */}
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30">
+            <Wallet size={10} className="text-emerald-400" />
+            <span className={`text-[11px] font-bold ${balance < 20 ? 'text-red-400' : 'text-emerald-400'}`}>{balance} TL</span>
+          </div>
         </div>
       </div>
 
-      {/* ─── Bitki Görseli ─── */}
-      <div className={`mx-4 mt-2 rounded-3xl overflow-hidden bg-gradient-to-b ${stage.bg} border border-white/5 relative`} style={{ height: 220 }}>
-        {/* Toprak */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-amber-900/40 to-transparent"
-          style={{ opacity: 0.3 + (plot.water_level / 100) * 0.7 }} />
-
-        {/* Bitki */}
-        <div className="flex items-center justify-center h-full">
-          <span className="animate-bounce" style={{
-            fontSize: 60 + (plot.growth_percent / 100) * 30,
-            animationDuration: '3s',
-            filter: plot.health_score < 30 ? 'grayscale(0.6)' : 'none',
-          }}>
-            {plot.growth_stage === 'harvest_ready' ? '✨' : stage.emoji}
-          </span>
+      {/* ─── Hava & İstatistik Bar ─── */}
+      <div className="flex gap-2 px-3 mb-2">
+        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/5 flex-1">
+          <span className="text-[16px]">{weather.icon}</span>
+          <span className="text-[11px] font-bold">{weather.temp}°C</span>
+          <span className="text-[9px] text-white/40">{weather.desc}</span>
         </div>
-
-        {/* Büyüme % */}
-        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/40 backdrop-blur-sm">
-          <span className="text-[13px] font-bold text-emerald-400">%{plot.growth_percent.toFixed(1)}</span>
+        <div className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white/5">
+          <Droplets size={10} className="text-blue-400" />
+          <span className="text-[10px] font-bold">%{Math.round(avgMoisture)}</span>
         </div>
-
-        {/* Aşama */}
-        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/40 backdrop-blur-sm">
-          <span className="text-[11px] font-semibold text-white/70">{stage.label}</span>
+        <div className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white/5">
+          <Leaf size={10} className="text-green-400" />
+          <span className="text-[10px] font-bold">%{Math.round(avgGrowth)}</span>
         </div>
-
-        {/* Fire rate */}
-        {plot.fire_rate > 0 && (
-          <div className="absolute bottom-3 right-3 px-2 py-1 rounded-lg bg-red-500/20 border border-red-500/30">
-            <span className="text-[10px] font-bold text-red-400">🔥 Kayıp: %{plot.fire_rate.toFixed(0)}</span>
+        {harvestedKg > 0 && (
+          <div className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-amber-500/10">
+            <Package size={10} className="text-amber-400" />
+            <span className="text-[10px] font-bold text-amber-400">{harvestedKg.toFixed(1)}kg</span>
           </div>
         )}
+      </div>
 
-        {/* Nem göstergesi */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-1">
-          <Droplets size={10} className={plot.water_level < 20 ? 'text-red-400' : 'text-blue-400'} />
-          <span className={`text-[10px] font-bold ${plot.water_level < 20 ? 'text-red-400 animate-pulse' : 'text-blue-300'}`}>
-            %{Math.round(plot.water_level)}
-          </span>
+      {/* ─── TARLA GRİDİ (FarmVille Çekirdeği) ─── */}
+      <div className="px-3 mb-2">
+        <div className="rounded-2xl overflow-hidden border-2 border-green-900/50 bg-gradient-to-b from-amber-900/20 to-green-900/20 p-2"
+          style={{ boxShadow: 'inset 0 0 30px rgba(0,0,0,0.3)' }}>
+          <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}>
+            {tiles.map(tile => {
+              const vis = TILE_VISUALS[tile.state];
+              let emoji = vis.emoji;
+
+              // Dinamik ürün emojisi
+              if (tile.state === 'planted') emoji = stages[0];
+              else if (tile.state === 'growing') emoji = stages[1];
+              else if (tile.state === 'flowering') emoji = stages[2] || stages[1];
+              else if (tile.state === 'ready') emoji = stages[4];
+              else if (tile.state === 'withered') emoji = stages[5];
+
+              // Nem bazlı toprak rengi
+              const soilDarkness = tile.state === 'empty' ? 0.4 : 0.3 + (tile.moisture / 100) * 0.4;
+
+              const isReady = tile.state === 'ready';
+              const isDry = tile.moisture < 20 && tile.state !== 'empty';
+              const canInteract =
+                (selectedTool === 'plant' && (tile.state === 'empty' || tile.state === 'withered')) ||
+                (selectedTool === 'water' && tile.state !== 'empty') ||
+                (selectedTool === 'fertilize' && tile.state !== 'empty' && tile.state !== 'withered') ||
+                (selectedTool === 'harvest' && tile.state === 'ready');
+
+              return (
+                <button key={tile.id}
+                  onClick={(e) => handleTileClick(tile, e)}
+                  className={`aspect-square rounded-lg relative transition-all duration-200 ${
+                    canInteract ? 'ring-2 ring-white/30 cursor-pointer hover:scale-105' : 'cursor-default'
+                  }`}
+                  style={{
+                    backgroundColor: `rgba(101, 67, 33, ${soilDarkness})`,
+                    animation: tile.isAnimating === 'water' ? 'tileWater 0.8s ease' :
+                      isReady ? 'tilePulse 2s infinite' : 'none',
+                  }}>
+
+                  {/* Toprak çizgileri */}
+                  {tile.state === 'empty' && (
+                    <div className="absolute inset-0 opacity-20">
+                      <div className="absolute top-1/3 left-1 right-1 h-px bg-amber-600" />
+                      <div className="absolute top-2/3 left-1 right-1 h-px bg-amber-600" />
+                    </div>
+                  )}
+
+                  {/* Bitki */}
+                  {emoji && (
+                    <span className="absolute inset-0 flex items-center justify-center" style={{
+                      fontSize: tile.state === 'ready' ? 22 : tile.state === 'flowering' ? 18 : tile.state === 'growing' ? 16 : 12,
+                      animation: tile.isAnimating === 'plant' ? 'tilePlant 0.6s ease' :
+                        tile.isAnimating === 'harvest' ? 'tileHarvest 0.6s ease' : 'none',
+                      filter: tile.state === 'withered' ? 'grayscale(0.7)' : 'none',
+                    }}>
+                      {emoji}
+                    </span>
+                  )}
+
+                  {/* Nem göstergesi (düşükse kırmızı nokta) */}
+                  {isDry && (
+                    <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  )}
+
+                  {/* Hasat hazır parıltı */}
+                  {isReady && (
+                    <span className="absolute top-0 right-0 text-[8px] animate-bounce">✨</span>
+                  )}
+
+                  {/* Nem bar (mini) */}
+                  {tile.state !== 'empty' && (
+                    <div className="absolute bottom-0.5 left-0.5 right-0.5 h-1 rounded-full bg-black/30 overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{
+                        width: `${tile.moisture}%`,
+                        backgroundColor: tile.moisture > 50 ? '#3B82F6' : tile.moisture > 20 ? '#F59E0B' : '#EF4444',
+                      }} />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* ─── Hava Durumu ─── */}
-      <div className={`mx-4 mt-3 px-3 py-2.5 rounded-xl flex items-center gap-3 ${
-        weather.frost_risk || weather.heat_risk ? 'bg-red-500/10 border border-red-500/20' : 'bg-white/5 border border-white/5'
-      }`}>
-        <span className="text-[24px]">
-          {weather.frost_risk ? '🥶' : weather.heat_risk ? '🔥' : weather.temperature > 30 ? '☀️' : '⛅'}
-        </span>
-        <div className="flex-1">
-          <p className="text-[13px] font-bold">{weather.temperature}°C · {weather.description}</p>
-          <p className="text-[10px] text-white/40">💧 %{weather.humidity} · 🌬️ {weather.wind_speed} m/s</p>
-        </div>
-        {(weather.frost_risk || weather.heat_risk) && (
-          <span className="animate-pulse text-[18px]">⚠️</span>
-        )}
+      {/* ─── Hızlı Aksiyonlar ─── */}
+      <div className="flex gap-2 px-3 mb-2">
+        <button onClick={waterAll}
+          className="flex-1 py-2 rounded-xl bg-blue-500/15 border border-blue-500/30 text-[11px] font-bold text-blue-400 flex items-center justify-center gap-1 active:scale-95 transition-transform">
+          💧 Tümünü Sula
+        </button>
+        <button onClick={harvestAll}
+          className="flex-1 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-[11px] font-bold text-amber-400 flex items-center justify-center gap-1 active:scale-95 transition-transform">
+          🧺 Tümünü Hasat Et
+        </button>
       </div>
 
-      {/* ─── Stratejik Barlar ─── */}
-      <div className="mx-4 mt-3 space-y-2">
-        <GameBar emoji="❤️" label="Sağlık" value={plot.health_score}
-          color={plot.health_score > 70 ? '#10B981' : plot.health_score > 40 ? '#F59E0B' : '#EF4444'} />
-        <GameBar emoji="💧" label="Toprak Nemi" value={plot.water_level}
-          color={plot.water_level > 50 ? '#3B82F6' : plot.water_level > 20 ? '#F59E0B' : '#EF4444'}
-          critical={plot.water_level < 20} />
-        <GameBar emoji="🧪" label="Gübre" value={plot.fertilizer_level}
-          color={plot.fertilizer_level > 40 ? '#8B5CF6' : plot.fertilizer_level > 15 ? '#F59E0B' : '#EF4444'} />
-      </div>
-
-      {/* ─── Büyüme Zaman Çizelgesi ─── */}
-      <div className="mx-4 mt-3 px-3 py-2.5 rounded-xl bg-white/5 border border-white/5">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Büyüme Aşamaları</span>
-          <span className="text-[10px] font-bold text-emerald-400">%{plot.growth_percent.toFixed(1)}</span>
-        </div>
-        <div className="flex gap-1">
-          {Object.entries(STAGE_VISUALS).map(([key, s]) => {
-            const isActive = key === plot.growth_stage;
-            const isPast = Object.keys(STAGE_VISUALS).indexOf(key) < Object.keys(STAGE_VISUALS).indexOf(plot.growth_stage);
-            return (
-              <div key={key} className="flex-1 text-center">
-                <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center border transition-all ${
-                  isActive ? 'bg-emerald-500/20 border-emerald-400 scale-110' :
-                  isPast ? 'bg-white/10 border-white/20' : 'bg-white/3 border-white/5'
-                }`}>
-                  <span style={{ fontSize: isActive ? 16 : 12, opacity: isPast || isActive ? 1 : 0.3 }}>{s.emoji}</span>
+      {/* ─── Büyüme Çizelgesi ─── */}
+      <div className="px-3 mb-2">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5">
+          <span className="text-[9px] text-white/30 font-bold">AŞAMALAR</span>
+          <div className="flex-1 flex justify-between">
+            {stages.slice(0, 5).map((s, i) => {
+              const stagePercent = i * 25;
+              const isActive = avgGrowth >= stagePercent && avgGrowth < stagePercent + 25;
+              const isPast = avgGrowth >= stagePercent + 25;
+              return (
+                <div key={i} className={`text-center ${isActive ? 'scale-125' : ''} transition-transform`}>
+                  <span style={{ fontSize: isActive ? 18 : 14, opacity: isPast || isActive ? 1 : 0.3 }}>{s}</span>
                 </div>
-                <p className={`text-[7px] mt-1 ${isActive ? 'text-emerald-400 font-bold' : 'text-white/25'}`}>{s.label}</p>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+          <span className="text-[10px] font-bold text-green-400">%{Math.round(avgGrowth)}</span>
         </div>
       </div>
 
-      {/* ─── Hasat Tahmini ─── */}
-      <div className="mx-4 mt-3 px-3 py-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center gap-3">
-        <Package size={18} className="text-amber-400" />
-        <div className="flex-1">
-          <p className="text-[10px] text-white/40">Tahmini Hasat</p>
-          <p className="text-[16px] font-bold">{yieldKg} kg</p>
-        </div>
-        <div className="text-right">
-          <p className="text-[10px] text-white/40">Harcanan</p>
-          <p className="text-[13px] font-bold text-amber-400">{plot.total_spent} TL</p>
-        </div>
-      </div>
+      {/* Alt boşluk */}
+      <div className="h-24" />
 
-      {/* ─── Aksiyon Butonları ─── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A1628]/95 backdrop-blur-sm border-t border-white/5 px-3 py-3 pb-5">
-        <div className="flex gap-2">
-          {actions.map(a => {
-            const canAfford = balance >= a.cost;
-            const isCooldown = actionCooldown === a.type;
+      {/* ─── ARAÇ ÇUBUĞU (Alt Sabit) ─── */}
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0d1f0d]/95 backdrop-blur-sm border-t border-green-900/50 px-3 py-2 pb-4">
+        <div className="flex gap-1.5">
+          {TOOLS.map(tool => {
+            const isActive = selectedTool === tool.type;
             return (
-              <button key={a.type}
-                onClick={() => performAction(a.type, a.cost)}
-                disabled={!canAfford || !!actionCooldown}
-                className={`flex-1 py-2.5 rounded-xl border transition-all ${
-                  canAfford && !actionCooldown ? `${a.bgColor} active:scale-95` : 'bg-white/3 border-white/5 opacity-40'
+              <button key={tool.type}
+                onClick={() => setSelectedTool(tool.type)}
+                className={`flex-1 py-2.5 rounded-xl border-2 transition-all active:scale-95 ${
+                  isActive ? 'border-white/40 bg-white/10 scale-105' : 'border-white/5 bg-white/3'
                 }`}>
                 <div className="text-center">
-                  <span className="text-[18px]">{isCooldown ? '⏳' : a.emoji}</span>
-                  <p className={`text-[9px] font-bold mt-0.5 ${canAfford ? a.color : 'text-white/30'}`}>{a.label}</p>
-                  <p className={`text-[8px] font-semibold ${canAfford ? 'text-white/50' : 'text-white/20'}`}>{a.cost} TL</p>
+                  <span className="text-[20px]">{tool.emoji}</span>
+                  <p className={`text-[9px] font-bold mt-0.5 ${isActive ? 'text-white' : 'text-white/40'}`}>{tool.label}</p>
+                  {tool.cost > 0 && <p className="text-[7px] text-white/30">{tool.cost} TL</p>}
                 </div>
               </button>
             );
           })}
         </div>
-      </div>
-
-      {/* Alt boşluk */}
-      <div className="h-28" />
-    </div>
-  );
-}
-
-// ─── Oyun Barı Componenti ───
-function GameBar({ emoji, label, value, color, critical }: {
-  emoji: string; label: string; value: number; color: string; critical?: boolean;
-}) {
-  return (
-    <div className={`px-3 py-2 rounded-xl border transition-all ${
-      critical ? 'bg-red-500/8 border-red-500/20' : 'bg-white/5 border-white/5'
-    }`}>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] text-white/50 font-medium">{emoji} {label}</span>
-        <span className={`text-[12px] font-bold ${critical ? 'animate-pulse' : ''}`} style={{ color }}>
-          %{Math.round(value)}
-        </span>
-      </div>
-      <div className="h-2 bg-white/8 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700" style={{
-          width: `${Math.max(1, value)}%`,
-          backgroundColor: color,
-          boxShadow: critical ? `0 0 8px ${color}` : 'none',
-        }} />
       </div>
     </div>
   );
