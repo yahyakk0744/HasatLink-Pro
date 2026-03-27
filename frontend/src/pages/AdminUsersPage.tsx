@@ -390,9 +390,14 @@ export default function AdminUsersPage() {
                         <span>•</span>
                         <span>{new Date(u.createdAt).toLocaleDateString('tr-TR')}</span>
                         <span>•</span>
-                        <span className="inline-flex items-center gap-0.5 font-semibold" style={{ color: getLoyaltyBadge(u.points || 0).color }}>
-                          {getLoyaltyBadge(u.points || 0).icon} {u.points || 0}
-                        </span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setPointsModalUserId(u.userId); setPointsAmount(''); }}
+                          className="inline-flex items-center gap-1 font-semibold hover:underline cursor-pointer"
+                          style={{ color: getLoyaltyBadge(u.points || 0).color }}
+                          title="Bakiye düzenle"
+                        >
+                          {getLoyaltyBadge(u.points || 0).icon} {u.points || 0} TL
+                        </button>
                       </div>
                     </div>
 
@@ -588,49 +593,35 @@ export default function AdminUsersPage() {
       <Modal
         isOpen={!!pointsModalUserId}
         onClose={() => { setPointsModalUserId(null); setPointsAmount(''); }}
-        title="Puan Düzenle"
+        title="Bakiye Düzenle (TL)"
         size="sm"
       >
         <div className="space-y-4 py-2">
           <div className="flex items-center justify-center gap-3">
             <Trophy size={24} className="text-[#7C3AED]" />
             <p className="text-sm text-[var(--text-secondary)]">
-              Pozitif veya negatif puan girin
+              Eklemek için pozitif, düşmek için negatif değer girin
             </p>
           </div>
           <input
             type="number"
             value={pointsAmount}
             onChange={e => setPointsAmount(e.target.value)}
-            placeholder="ör. 50 veya -20"
+            placeholder="ör. 500 veya -100"
             className="w-full px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-default)] rounded-xl text-sm text-center font-semibold outline-none focus:border-[#7C3AED] transition-colors"
             autoFocus
           />
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleAdjustPoints(-50)}
-              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-            >
-              <Minus size={12} />50
-            </button>
-            <button
-              onClick={() => handleAdjustPoints(-10)}
-              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-            >
-              <Minus size={12} />10
-            </button>
-            <button
-              onClick={() => handleAdjustPoints(10)}
-              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
-            >
-              <Plus size={12} />10
-            </button>
-            <button
-              onClick={() => handleAdjustPoints(50)}
-              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
-            >
-              <Plus size={12} />50
-            </button>
+          <div className="grid grid-cols-4 gap-2">
+            {[-500, -100, 100, 500, -1000, -50, 50, 1000].map(amt => (
+              <button key={amt}
+                onClick={() => handleAdjustPoints(amt)}
+                className={`flex items-center justify-center gap-0.5 px-2 py-2 rounded-xl text-xs font-medium transition-colors ${
+                  amt < 0 ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                }`}
+              >
+                {amt < 0 ? <Minus size={10} /> : <Plus size={10} />}{Math.abs(amt)}
+              </button>
+            ))}
           </div>
           <div className="flex gap-3">
             <Button variant="outline" onClick={() => { setPointsModalUserId(null); setPointsAmount(''); }} className="flex-1">
