@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { MapPin, CheckCircle, Calendar, MessageSquare, Trophy } from 'lucide-react';
+import { MapPin, CheckCircle, Calendar, MessageSquare, Trophy, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import RatingStars from '../ratings/RatingStars';
 import { formatDate } from '../../utils/formatters';
 import { getLoyaltyBadge, getProgressToNext } from '../../utils/loyalty';
@@ -14,6 +15,7 @@ interface ProfileCardProps {
 
 export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileCardProps) {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const points = user.points || 0;
   const badge = getLoyaltyBadge(points);
@@ -59,12 +61,21 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
           {/* Action buttons */}
           <div className="flex items-center justify-center md:justify-start gap-2 mt-3">
             {isOwn && onEdit && (
-              <button
-                onClick={onEdit}
-                className="px-4 py-2 text-xs font-semibold uppercase bg-[var(--bg-input)] rounded-full hover:bg-[var(--bg-surface-hover)] transition-colors"
-              >
-                {t('editProfile')}
-              </button>
+              <>
+                <button
+                  onClick={onEdit}
+                  className="px-4 py-2 text-xs font-semibold uppercase bg-[var(--bg-input)] rounded-full hover:bg-[var(--bg-surface-hover)] transition-colors"
+                >
+                  {t('editProfile')}
+                </button>
+                <button
+                  onClick={() => navigate('/hesap-ayarlari')}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold uppercase bg-[var(--bg-input)] rounded-full hover:bg-[var(--bg-surface-hover)] transition-colors"
+                >
+                  <Settings size={14} />
+                  {t('accountSettings.title', 'Hesap Ayarları')}
+                </button>
+              </>
             )}
             {!isOwn && onMessage && (
               <button

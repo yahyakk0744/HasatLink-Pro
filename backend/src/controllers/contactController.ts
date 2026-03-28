@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import ContactMessage from '../models/ContactMessage';
+import Notification from '../models/Notification';
+import User from '../models/User';
 
 // POST /api/contact — public
 export const createContactMessage = async (req: Request, res: Response): Promise<void> => {
@@ -10,6 +12,23 @@ export const createContactMessage = async (req: Request, res: Response): Promise
       return;
     }
     const contact = await ContactMessage.create({ name, email, subject, message });
+
+    // Notify all admins
+    try {
+      const admins = await User.find({ role: 'admin' }).select('userId');
+      const { sendSocketNotification } = require('../socket');
+      for (const admin of admins) {
+        const notif = await Notification.create({
+          userId: admin.userId,
+          type: 'sistem',
+          title: `Yeni Destek Mesajı: ${subject}`,
+          message: `${name} - ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`,
+          relatedId: contact._id?.toString(),
+        });
+        try { sendSocketNotification(admin.userId, notif); } catch {}
+      }
+    } catch {}
+
     res.status(201).json(contact);
   } catch (error) {
     res.status(500).json({ message: 'Mesaj gönderilemedi', error });

@@ -13,6 +13,8 @@ interface NotificationContextType {
   fetchNotifications: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
+  deleteAllNotifications: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null);
@@ -321,8 +323,28 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user?.userId]);
 
+  const deleteNotification = useCallback(async (id: string) => {
+    try {
+      await api.delete(`/notifications/${id}`);
+      setNotifications(prev => {
+        const target = prev.find(n => n._id === id);
+        if (target && !target.isRead) setUnreadCount(c => Math.max(0, c - 1));
+        return prev.filter(n => n._id !== id);
+      });
+    } catch {}
+  }, []);
+
+  const deleteAllNotifications = useCallback(async () => {
+    if (!user?.userId) return;
+    try {
+      await api.delete(`/notifications/${user.userId}/all`);
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch {}
+  }, [user?.userId]);
+
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, fetchNotifications, markAsRead, markAllAsRead }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, fetchNotifications, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications }}>
       {children}
     </NotificationContext.Provider>
   );

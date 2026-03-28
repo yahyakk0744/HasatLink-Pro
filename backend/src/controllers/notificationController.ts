@@ -48,6 +48,35 @@ export const markAllAsRead = async (req: Request, res: Response): Promise<void> 
   }
 };
 
+// DELETE /api/notifications/:id
+export const deleteNotification = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const notification = await Notification.findById(req.params.id);
+    if (!notification) {
+      res.status(404).json({ message: 'Bildirim bulunamadı' });
+      return;
+    }
+    if (notification.userId !== (req as any).userId) {
+      res.status(403).json({ message: 'Bu bildirimi silme yetkiniz yok' });
+      return;
+    }
+    await notification.deleteOne();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ message: 'Hata', error });
+  }
+};
+
+// DELETE /api/notifications/:userId/all
+export const deleteAllNotifications = async (req: Request, res: Response): Promise<void> => {
+  try {
+    await Notification.deleteMany({ userId: req.params.userId });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ message: 'Hata', error });
+  }
+};
+
 // POST /api/notifications/push-subscribe
 export const pushSubscribe = async (req: Request, res: Response): Promise<void> => {
   try {
