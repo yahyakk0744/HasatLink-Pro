@@ -1,8 +1,6 @@
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
-import api from '../config/api';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import api, { API_ORIGIN } from '../config/api';
 
 export const useShare = () => {
   const shareListing = useCallback(async (listingId: string, title: string) => {
@@ -31,7 +29,7 @@ export const useShare = () => {
   }, []);
 
   const shareAsStory = useCallback(async (listingId: string) => {
-    const storyUrl = `${API_BASE}/api/story/${listingId}`;
+    const storyUrl = `${API_ORIGIN}/api/story/${listingId}`;
 
     try {
       const response = await fetch(storyUrl);
@@ -66,7 +64,7 @@ export const useShare = () => {
   }, []);
 
   const getOgImageUrl = useCallback((listingId: string) => {
-    return `${API_BASE}/api/og/${listingId}`;
+    return `${API_ORIGIN}/api/og/${listingId}`;
   }, []);
 
   return { shareListing, shareAsStory, getOgImageUrl };

@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_ORIGIN } from '../../config/api';
 
 interface SEOProps {
   title?: string;
@@ -38,7 +37,7 @@ export default function SEO({ title, description, keywords, ogTitle, ogDescripti
 
     // Resolve OG image: explicit prop > API OG service > none
     const resolvedListingId = listingId || getListingIdFromUrl();
-    const resolvedOgImage = ogImage || (resolvedListingId ? `${API_BASE}/api/og/${resolvedListingId}` : undefined);
+    const resolvedOgImage = ogImage || (resolvedListingId ? `${API_ORIGIN}/api/og/${resolvedListingId}` : undefined);
 
     // Open Graph
     setMeta('og:type', 'website', true);

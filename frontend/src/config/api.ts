@@ -46,4 +46,7 @@ export const clearCache = (urlPrefix?: string) => {
   }
 };
 
+/** Full backend origin for absolute URLs (og:image, story share etc.) */
+export const API_ORIGIN = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
+
 export default api;
