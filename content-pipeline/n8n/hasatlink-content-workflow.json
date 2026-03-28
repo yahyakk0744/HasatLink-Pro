@@ -1,0 +1,196 @@
+{
+  "name": "HasatLink Content Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24,
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "name": "Her Gün 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300],
+      "id": "schedule-trigger"
+    },
+    {
+      "parameters": {
+        "command": "cd C:\\Users\\Mega\\Desktop\\HasatLink-Pro\\content-pipeline && python main.py"
+      },
+      "name": "Pipeline Çalıştır",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [420, 300],
+      "id": "run-pipeline",
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// output/videos/ dizinindeki en son .json meta dosyasını oku\nconst fs = require('fs');\nconst path = require('path');\n\nconst videoDir = 'C:\\\\Users\\\\Mega\\\\Desktop\\\\HasatLink-Pro\\\\content-pipeline\\\\output\\\\videos';\nconst files = fs.readdirSync(videoDir)\n  .filter(f => f.endsWith('.json'))\n  .sort()\n  .reverse();\n\nif (files.length === 0) throw new Error('Meta dosyası bulunamadı');\n\nconst meta = JSON.parse(fs.readFileSync(path.join(videoDir, files[0]), 'utf8'));\nreturn [{ json: meta }];"
+      },
+      "name": "Meta Dosyasını Oku",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300],
+      "id": "read-meta"
+    },
+    {
+      "parameters": {
+        "url": "https://graph.facebook.com/v19.0/{{$env.FB_PAGE_ID}}/videos",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "description",
+              "value": "={{ $json.description }}"
+            },
+            {
+              "name": "title",
+              "value": "={{ $json.title }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        },
+        "sendBinaryData": true,
+        "binaryPropertyName": "video"
+      },
+      "name": "Facebook Video Yükle",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 160],
+      "id": "upload-facebook"
+    },
+    {
+      "parameters": {
+        "url": "https://graph.facebook.com/v19.0/{{$env.IG_USER_ID}}/media",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "caption",
+              "value": "={{ $json.description }}"
+            },
+            {
+              "name": "media_type",
+              "value": "REELS"
+            },
+            {
+              "name": "video_url",
+              "value": "={{ $json.video_public_url }}"
+            }
+          ]
+        }
+      },
+      "name": "Instagram Reels Yükle",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 340],
+      "id": "upload-instagram"
+    },
+    {
+      "parameters": {
+        "command": "python C:\\Users\\Mega\\Desktop\\HasatLink-Pro\\content-pipeline\\modules\\upload_tiktok.py \"{{ $json.video_file }}\" \"{{ $json.description }}\""
+      },
+      "name": "TikTok Yükle (Playwright)",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1000, 520],
+      "id": "upload-tiktok"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Video dosyasını binary olarak oku\nconst fs = require('fs');\nconst videoPath = $input.first().json.video_file;\nconst videoBuffer = fs.readFileSync(videoPath);\n\n// Binary data olarak ayarla\nconst binaryData = await this.helpers.prepareBinaryData(\n  videoBuffer,\n  'video.mp4',\n  'video/mp4'\n);\n\nreturn [{\n  json: $input.first().json,\n  binary: { video: binaryData }\n}];"
+      },
+      "name": "Video Binary Hazırla",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [840, 300],
+      "id": "prepare-binary"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-error",
+              "leftValue": "={{ $json.stderr }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Pipeline Hata Kontrolü",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [530, 460],
+      "id": "error-check"
+    },
+    {
+      "parameters": {
+        "message": "=⚠️ HasatLink Pipeline HATA:\n{{ $json.stderr }}",
+        "additionalFields": {}
+      },
+      "name": "Hata Bildirimi (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [700, 520],
+      "id": "error-notify"
+    }
+  ],
+  "connections": {
+    "Her Gün 08:00": {
+      "main": [
+        [{ "node": "Pipeline Çalıştır", "type": "main", "index": 0 }]
+      ]
+    },
+    "Pipeline Çalıştır": {
+      "main": [
+        [
+          { "node": "Pipeline Hata Kontrolü", "type": "main", "index": 0 },
+          { "node": "Meta Dosyasını Oku", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Pipeline Hata Kontrolü": {
+      "main": [
+        [{ "node": "Hata Bildirimi (Telegram)", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Meta Dosyasını Oku": {
+      "main": [
+        [{ "node": "Video Binary Hazırla", "type": "main", "index": 0 }]
+      ]
+    },
+    "Video Binary Hazırla": {
+      "main": [
+        [
+          { "node": "Facebook Video Yükle", "type": "main", "index": 0 },
+          { "node": "Instagram Reels Yükle", "type": "main", "index": 0 },
+          { "node": "TikTok Yükle (Playwright)", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

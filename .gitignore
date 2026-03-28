@@ -25,3 +25,5 @@ frontend/android/.idea/
 
 # Content pipeline outputs
 content-pipeline/output/
+__pycache__/
+*.pyc
