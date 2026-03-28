@@ -19,9 +19,9 @@ android {
     signingConfigs {
         release {
             storeFile file('../hasatlink-release.keystore')
-            storePassword 'HasatLink2026!'
+            storePassword System.getenv('KEYSTORE_PASSWORD') ?: ''
             keyAlias 'hasatlink'
-            keyPassword 'HasatLink2026!'
+            keyPassword System.getenv('KEY_PASSWORD') ?: ''
         }
     }
     buildTypes {
