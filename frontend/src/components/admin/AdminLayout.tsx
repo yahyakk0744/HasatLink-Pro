@@ -18,7 +18,6 @@ import {
   Menu,
   X,
   Home,
-  Sprout,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -41,7 +40,6 @@ const navItems = [
   { label: 'Blog', icon: FileText, path: '/admin/blog' },
   { label: 'İletişim', icon: MessageSquare, path: '/admin/mesajlar' },
   { label: 'Gelir', icon: DollarSign, path: '/admin/gelir' },
-  { label: 'Dijital Tarla', icon: Sprout, path: '/admin/dijital-tarla' },
   { label: 'Ayarlar', icon: Settings, path: '/admin/ayarlar' },
 ];
 

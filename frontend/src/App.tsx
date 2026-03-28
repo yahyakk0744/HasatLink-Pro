@@ -28,7 +28,6 @@ const ContactPage = lazy(() => import('./pages/ContactPage'));
 const AdminContactsPage = lazy(() => import('./pages/AdminContactsPage'));
 const AdminSettingsPage = lazy(() => import('./pages/AdminSettingsPage'));
 const AdminRevenuePage = lazy(() => import('./pages/AdminRevenuePage'));
-const AdminDigitalFarmPage = lazy(() => import('./pages/AdminDigitalFarmPage'));
 const AdminAdsPage = lazy(() => import('./pages/AdminAdsPage'));
 const AdminDealersPage = lazy(() => import('./pages/AdminDealersPage'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
@@ -47,9 +46,6 @@ const AdminBlogPage = lazy(() => import('./pages/AdminBlogPage'));
 const AdminModerationPage = lazy(() => import('./pages/AdminModerationPage'));
 const SatelliteHealthPage = lazy(() => import('./pages/SatelliteHealthPage'));
 const AgriEncyclopediaPage = lazy(() => import('./pages/AgriEncyclopediaPage'));
-const DigitalFarmPage = lazy(() => import('./pages/DigitalFarmPage'));
-const RentPlotPage = lazy(() => import('./pages/RentPlotPage'));
-const FarmGamePage = lazy(() => import('./pages/FarmGamePage'));
 
 function PageLoader() {
   return <LoadingSpinner size="lg" className="py-20" />;
@@ -88,9 +84,6 @@ export default function App() {
             <Route path="/ai-teshis" element={<AIDiagnosisPage />} />
             <Route path="/tarim-ansiklopedisi" element={<AgriEncyclopediaPage />} />
             <Route path="/uydu-analiz" element={<SatelliteHealthPage />} />
-            <Route path="/dijital-tarla" element={<DigitalFarmPage />} />
-            <Route path="/dijital-tarla/:plotId" element={<FarmGamePage />} />
-            <Route path="/dijital-tarla/kirala/:regionId" element={<RentPlotPage />} />
             <Route path="/bildirimler" element={<NotificationsPage />} />
             <Route path="/hal-fiyatlari" element={<HalFiyatlariPage />} />
             <Route path="/hasatlink-pazari" element={<HasatlinkPazariPage />} />
@@ -108,7 +101,6 @@ export default function App() {
             <Route path="/admin/mesajlar" element={<AdminContactsPage />} />
             <Route path="/admin/ayarlar" element={<AdminSettingsPage />} />
             <Route path="/admin/gelir" element={<AdminRevenuePage />} />
-            <Route path="/admin/dijital-tarla" element={<AdminDigitalFarmPage />} />
             <Route path="/admin/reklamlar" element={<AdminAdsPage />} />
             <Route path="/admin/bayiler" element={<AdminDealersPage />} />
             <Route path="/admin/bildirimler" element={<AdminNotificationsPage />} />

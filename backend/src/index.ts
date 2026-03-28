@@ -32,10 +32,8 @@ import priceAlertRoutes from './routes/priceAlertRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import offerRoutes from './routes/offerRoutes';
 import satelliteRoutes from './routes/satelliteRoutes';
-import farmRoutes from './routes/farmRoutes';
 import { expireOutdatedDealers } from './controllers/dealerController';
 import { processExpiredDeletions } from './controllers/userController';
-import { initFarmCrons } from './cron/farmCronInit';
 
 const app = express();
 const httpServer = createServer(app);
@@ -108,7 +106,6 @@ app.use('/api', priceAlertRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api', offerRoutes);
 app.use('/api', satelliteRoutes);
-app.use('/api', farmRoutes);
 
 // VAPID public key endpoint
 app.get('/api/push/vapid-key', (_req, res) => {
@@ -137,7 +134,4 @@ httpServer.listen(PORT, () => {
     if (count > 0) console.log(`[CRON] ${count} hesap 30 günlük süre dolduğu için silindi`);
   }, 6 * 60 * 60 * 1000);
 
-  // Initialize Digital Farm cron jobs
-  initFarmCrons();
-  console.log('[CRON] Dijital Tarla cron job\'lari baslatildi');
 });
