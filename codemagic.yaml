@@ -1,0 +1,46 @@
+workflows:
+  ios-release:
+    name: iOS Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.hasatlink.app
+      vars:
+        BUNDLE_ID: "com.hasatlink.app"
+        APP_STORE_APPLE_ID: "6761334964"
+      node: 20
+      xcode: latest
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd frontend
+          npm install
+      - name: Build web
+        script: |
+          cd frontend
+          npm run build
+      - name: Capacitor sync
+        script: |
+          cd frontend
+          npx cap sync ios
+      - name: Set up code signing
+        script: |
+          cd frontend
+          xcode-project use-profiles --project ios/App/App.xcodeproj
+      - name: Build IPA
+        script: |
+          cd frontend
+          xcode-project build-ipa \
+            --project ios/App/App.xcodeproj \
+            --scheme App \
+            --archive-flags="-destination 'generic/platform=iOS'"
+    artifacts:
+      - frontend/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: true
