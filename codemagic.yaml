@@ -40,7 +40,9 @@ workflows:
       - frontend/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
     publishing:
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: false
-        submit_to_app_store: true
+      email:
+        recipients:
+          - yahyakk0744@gmail.com
+        notify:
+          success: true
+          failure: true
