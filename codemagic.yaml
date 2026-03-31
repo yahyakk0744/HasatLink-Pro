@@ -9,7 +9,7 @@ workflows:
       vars:
         BUNDLE_ID: "com.hasatlink.app"
         APP_STORE_APPLE_ID: "6761334964"
-      node: 20
+      node: 22
       xcode: latest
     scripts:
       - name: Set up keychain
