@@ -17,12 +17,12 @@ workflows:
           keychain initialize
       - name: Fetch signing files
         script: |
-          CERTIFICATE_PRIVATE_KEY_PATH=~/cert_key.pem
-          openssl genrsa -out $CERTIFICATE_PRIVATE_KEY_PATH 2048
+          # Generate EC private key for iOS Distribution certificate
+          openssl ecparam -genkey -name prime256v1 -noout -out /tmp/cert_key.pem 2>/dev/null
+          export CERTIFICATE_PRIVATE_KEY="$(cat /tmp/cert_key.pem)"
           app-store-connect fetch-signing-files $BUNDLE_ID \
             --type IOS_APP_STORE \
-            --create \
-            --certificate-key $CERTIFICATE_PRIVATE_KEY_PATH
+            --create
       - name: Add certificates to keychain
         script: |
           keychain add-certificates
