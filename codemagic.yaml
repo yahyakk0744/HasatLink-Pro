@@ -33,6 +33,8 @@ workflows:
       - name: Build web
         script: |
           cd frontend
+          echo "VITE_API_URL=https://hasatlink-api.onrender.com/api" > .env.production
+          echo "VITE_SOCKET_URL=https://hasatlink-api.onrender.com" >> .env.production
           npm run build
       - name: Capacitor sync
         script: |

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api'),
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://hasatlink-api.onrender.com/api' : 'http://localhost:5000/api'),
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -47,6 +47,6 @@ export const clearCache = (urlPrefix?: string) => {
 };
 
 /** Full backend origin for absolute URLs (og:image, story share etc.) */
-export const API_ORIGIN = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
+export const API_ORIGIN = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://hasatlink-api.onrender.com' : 'http://localhost:5000');
 
 export default api;
