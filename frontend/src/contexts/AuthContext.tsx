@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { signInWithRedirect, getRedirectResult, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, deleteUser } from 'firebase/auth';
+import { signInWithRedirect, getRedirectResult, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, deleteUser, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth as firebaseAuth, googleProvider } from '../config/firebase';
+import { isNative } from '../utils/native';
 import api from '../config/api';
 import type { User } from '../types';
 
@@ -163,36 +164,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const loginWithGoogle = useCallback(async () => {
     try {
-      // Try popup first (works on most desktop browsers)
-      const result = await signInWithPopup(firebaseAuth, googleProvider);
-      const idToken = await result.user.getIdToken();
+      let idToken: string;
+      let fbUid: string;
+
+      if (isNative) {
+        // Native: use Capacitor Google Auth plugin
+        const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth');
+        const googleUser = await GoogleAuth.signIn();
+        const googleIdToken = googleUser.authentication.idToken;
+
+        // Sign into Firebase with the Google credential
+        const credential = GoogleAuthProvider.credential(googleIdToken);
+        const fbResult = await signInWithCredential(firebaseAuth, credential);
+        idToken = await fbResult.user.getIdToken();
+        fbUid = fbResult.user.uid;
+      } else {
+        // Web: try popup first, then redirect
+        try {
+          const result = await signInWithPopup(firebaseAuth, googleProvider);
+          idToken = await result.user.getIdToken();
+          fbUid = result.user.uid;
+        } catch (popupErr: any) {
+          if (popupErr.code === 'auth/popup-closed-by-user') {
+            return { success: false, message: 'Giriş iptal edildi' };
+          }
+          if (
+            popupErr.code === 'auth/popup-blocked' ||
+            popupErr.code === 'auth/cancelled-popup-request' ||
+            popupErr.code === 'auth/internal-error' ||
+            popupErr.code === 'auth/web-storage-unsupported'
+          ) {
+            await signInWithRedirect(firebaseAuth, googleProvider);
+            return { success: true };
+          }
+          throw popupErr;
+        }
+      }
+
       const { data } = await api.post('/auth/google', { idToken });
       localStorage.setItem('hasatlink_token', data.token);
       setToken(data.token);
       setUser(data.user);
-      setFirebaseUid(result.user.uid);
+      setFirebaseUid(fbUid);
       return { success: true };
     } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user') {
+      console.error('Google login error:', err.code || err.message, err);
+      if (err.code === 'auth/popup-closed-by-user' || err.message?.includes('canceled')) {
         return { success: false, message: 'Giriş iptal edildi' };
       }
-      // Popup blocked or failed — fall back to redirect
-      if (
-        err.code === 'auth/popup-blocked' ||
-        err.code === 'auth/cancelled-popup-request' ||
-        err.code === 'auth/internal-error' ||
-        err.code === 'auth/web-storage-unsupported'
-      ) {
-        try {
-          await signInWithRedirect(firebaseAuth, googleProvider);
-          // Page will redirect, return pending state
-          return { success: true };
-        } catch (redirectErr: any) {
-          console.error('Google redirect error:', redirectErr);
-          return { success: false, message: 'Google giriş hatası' };
-        }
-      }
-      console.error('Google login error:', err.code, err.message);
       return { success: false, message: err.response?.data?.message || 'Google giriş hatası' };
     }
   }, []);

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 import api, { API_ORIGIN } from '../config/api';
+import { nativeShare, hapticLight, isNative } from '../utils/native';
 
 export const useShare = () => {
   const shareListing = useCallback(async (listingId: string, title: string) => {
@@ -9,9 +10,12 @@ export const useShare = () => {
     // Track share
     try { await api.post(`/listings/${listingId}/share`); } catch {}
 
-    if (navigator.share) {
+    // Haptic feedback on native
+    hapticLight();
+
+    if (isNative || typeof navigator.share === 'function') {
       try {
-        await navigator.share({
+        await nativeShare({
           title: `HasatLink - ${title}`,
           text: `${title} - HasatLink'te bu ilana goz atin! #HasatLink #Mut #Tarim`,
           url,

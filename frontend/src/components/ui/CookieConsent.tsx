@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Cookie, X } from 'lucide-react';
+import { isNative } from '../../utils/native';
 
 export default function CookieConsent() {
   const { i18n } = useTranslation();
@@ -9,6 +10,8 @@ export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    // Never show cookie consent on native apps — no cookies/tracking on native
+    if (isNative) return;
     const consent = localStorage.getItem('hasatlink_cookie_consent');
     if (!consent) {
       const timer = setTimeout(() => setVisible(true), 1500);

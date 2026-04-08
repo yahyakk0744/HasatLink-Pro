@@ -28,7 +28,11 @@ workflows:
       - name: Install dependencies
         script: |
           cd frontend
-          npm install
+          npm install --legacy-peer-deps
+      - name: Install CocoaPods
+        script: |
+          cd frontend/ios/App
+          pod install --repo-update || pod install
       - name: Build web
         script: |
           cd frontend
@@ -39,6 +43,11 @@ workflows:
         script: |
           cd frontend
           npx cap sync ios
+      - name: Increment build number
+        script: |
+          cd frontend
+          agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0) + 1))
+        working_directory: ios/App
       - name: Set up code signing
         script: |
           cd frontend

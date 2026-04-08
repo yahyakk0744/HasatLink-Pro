@@ -1,7 +1,10 @@
-// Google Analytics utility
+// Google Analytics utility — web only, disabled on native to avoid ATT issues
 // Set your tracking ID in .env: VITE_GA_ID=G-XXXXXXXXXX
 
-const GA_ID = import.meta.env.VITE_GA_ID as string | undefined;
+import { Capacitor } from '@capacitor/core';
+
+// Never load GA on native platforms (avoids Apple ATT/cookie rejection)
+const GA_ID = Capacitor.isNativePlatform() ? undefined : (import.meta.env.VITE_GA_ID as string | undefined);
 
 declare global {
   interface Window {

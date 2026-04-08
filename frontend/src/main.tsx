@@ -15,11 +15,21 @@ import './utils/pwaInstallManager'
 import './index.css'
 import './i18n/config'
 import { initGA } from './utils/analytics'
+import { shouldLoadAnalytics, setupStatusBar, setupKeyboard, isNative } from './utils/native'
 
 // Initialize Sentry before anything else
 initSentry()
 
-initGA();
+// Only load Google Analytics on web — avoids ATT/cookie issues on native
+if (shouldLoadAnalytics()) {
+  initGA();
+}
+
+// Native platform setup
+if (isNative) {
+  setupStatusBar();
+  setupKeyboard();
+}
 
 // Service Worker registration
 if ('serviceWorker' in navigator) {

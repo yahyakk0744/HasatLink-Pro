@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Download, Smartphone, Zap, Bell, Wifi, ExternalLink } from 'lucide-react';
 import IOSInstallGuide from '../ui/IOSInstallGuide';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
+import { isNative } from '../../utils/native';
 
 function isInAppBrowser(): boolean {
   const ua = navigator.userAgent || navigator.vendor || '';
@@ -22,6 +23,9 @@ export default function MobileAppDownload() {
   const { canInstall, isInstalled, promptInstall } = usePWAInstall();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
   const inApp = isInAppBrowser();
+
+  // Don't show app download prompt when already running as native app
+  if (isNative) return null;
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);

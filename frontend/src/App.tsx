@@ -8,8 +8,10 @@ import MobileAppDownload from './components/layout/MobileAppDownload';
 import ScrollToTop from './components/ui/ScrollToTop';
 import CookieConsent from './components/ui/CookieConsent';
 import PWAInstallPrompt from './components/ui/PWAInstallPrompt';
+import NetworkBanner from './components/ui/NetworkBanner';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 import { trackPageView } from './utils/analytics';
+import { isNative, registerPushNotifications, onAppStateChange, onPushNotificationReceived } from './utils/native';
 
 // Lazy-loaded pages — each becomes its own chunk
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -59,6 +61,33 @@ export default function App() {
     window.scrollTo(0, 0);
     trackPageView(pathname);
   }, [pathname]);
+
+  // Native: register push notifications & app lifecycle
+  useEffect(() => {
+    if (!isNative) return;
+
+    registerPushNotifications().then((token) => {
+      if (token) {
+        // Send push token to backend for future notifications
+        import('./config/api').then(({ default: api }) => {
+          api.post('/users/push-token', { token, platform: 'ios' }).catch(() => {});
+        });
+      }
+    });
+
+    onPushNotificationReceived((notification) => {
+      import('react-hot-toast').then(({ default: toast }) => {
+        toast(notification.title || 'Yeni bildirim');
+      });
+    });
+
+    onAppStateChange((state) => {
+      if (state.isActive) {
+        // App came to foreground — refresh data if needed
+        window.dispatchEvent(new Event('app-foreground'));
+      }
+    });
+  }, []);
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-page)' }}>
@@ -119,7 +148,8 @@ export default function App() {
       {!isAdmin && <MobileBottomNav />}
       <ScrollToTop />
       <CookieConsent />
-      <PWAInstallPrompt />
+      {!isNative && <PWAInstallPrompt />}
+      <NetworkBanner />
     </div>
   );
 }

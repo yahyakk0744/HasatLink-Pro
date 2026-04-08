@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Home, ShoppingBag, Map, MessageSquare, User, LogIn, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMessageContext } from '../../contexts/MessageContext';
+import { hapticLight } from '../../utils/native';
 
 export default function MobileBottomNav() {
   const { t } = useTranslation();
@@ -14,8 +15,8 @@ export default function MobileBottomNav() {
     `flex flex-col items-center gap-0.5 px-2 py-1 relative transition-colors min-w-0 min-h-0 ${isActive ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--glass-surface)] backdrop-blur-lg border-t border-[var(--border-subtle)] md:hidden">
-      <div className="flex items-center justify-around py-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--glass-surface)] backdrop-blur-lg border-t border-[var(--border-subtle)] md:hidden safe-area-bottom">
+      <div className="flex items-center justify-around py-2" onClick={() => hapticLight()}>
         {/* Home */}
         <NavLink to="/" end className={navClass}>
           {({ isActive }) => (

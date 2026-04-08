@@ -4,6 +4,7 @@ import { Upload, Sparkles, X, Camera, Leaf } from 'lucide-react';
 import Button from '../ui/Button';
 import DiagnosisResult from './DiagnosisResult';
 import { useAIDiagnosis } from '../../hooks/useAIDiagnosis';
+import { isNative, takePhoto, pickImage, hapticMedium } from '../../utils/native';
 
 export default function AIDiagnosisPanel() {
   const { t, i18n } = useTranslation();
@@ -16,6 +17,41 @@ export default function AIDiagnosisPanel() {
   const handleFile = (file: File) => {
     setPreview(URL.createObjectURL(file));
     diagnose(file);
+  };
+
+  const handleNativeCamera = async () => {
+    try {
+      hapticMedium();
+      const photo = await takePhoto();
+      if (photo.base64String) {
+        const dataUrl = `data:image/jpeg;base64,${photo.base64String}`;
+        setPreview(dataUrl);
+        // Convert base64 to File for diagnosis
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+        diagnose(file);
+      }
+    } catch {
+      // User cancelled camera
+    }
+  };
+
+  const handleNativeGallery = async () => {
+    try {
+      hapticMedium();
+      const photo = await pickImage();
+      if (photo.base64String) {
+        const dataUrl = `data:image/jpeg;base64,${photo.base64String}`;
+        setPreview(dataUrl);
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'gallery-photo.jpg', { type: 'image/jpeg' });
+        diagnose(file);
+      }
+    } catch {
+      // User cancelled gallery
+    }
   };
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,7 +97,7 @@ export default function AIDiagnosisPanel() {
         </div>
 
         {/* Upload area */}
-        {!preview && !loading && !result && (
+        {!preview && !loading && !result && (<>
           <label
             className="block cursor-pointer"
             onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
@@ -106,7 +142,27 @@ export default function AIDiagnosisPanel() {
             </div>
             <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleUpload} className="hidden" />
           </label>
-        )}
+
+          {/* Native camera/gallery buttons */}
+          {isNative && (
+            <div className="flex gap-3 mt-3">
+              <button
+                onClick={handleNativeCamera}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition-transform"
+              >
+                <Camera size={18} />
+                {isTr ? 'Fotoğraf Çek' : 'Take Photo'}
+              </button>
+              <button
+                onClick={handleNativeGallery}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-[var(--bg-input)] border border-[var(--border-default)] font-semibold text-sm active:scale-95 transition-transform"
+              >
+                <Upload size={18} />
+                {isTr ? 'Galeriden Seç' : 'From Gallery'}
+              </button>
+            </div>
+          )}
+        </>)}
 
         {/* Preview */}
         {preview && (

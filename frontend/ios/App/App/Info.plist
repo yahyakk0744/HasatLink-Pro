@@ -40,5 +40,17 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>HasatLink bitki hastalığı teşhisi için kameranıza erişim istiyor.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>HasatLink ilan fotoğrafları ve bitki teşhisi için fotoğraf kitaplığınıza erişim istiyor.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>HasatLink paylaşım görsellerini kaydetmek için fotoğraf kitaplığınıza erişim istiyor.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>HasatLink yakınındaki ilanları göstermek için konumunuza erişim istiyor.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>
