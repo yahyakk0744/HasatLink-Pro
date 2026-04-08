@@ -30,10 +30,6 @@ workflows:
         script: |
           cd frontend
           npm install --legacy-peer-deps
-      - name: Install CocoaPods
-        script: |
-          cd frontend/ios/App
-          pod install --repo-update || pod install
       - name: Build web
         script: |
           cd frontend
@@ -44,6 +40,10 @@ workflows:
         script: |
           cd frontend
           npx cap sync ios
+      - name: Install CocoaPods
+        script: |
+          cd frontend/ios/App
+          pod install --repo-update || pod install
       - name: Increment build number
         script: |
           cd frontend
