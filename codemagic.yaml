@@ -41,9 +41,8 @@ workflows:
           npx cap sync ios
       - name: Increment build number
         script: |
-          cd frontend
+          cd frontend/ios/App
           agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0) + 1))
-        working_directory: ios/App
       - name: Set up code signing
         script: |
           cd frontend
