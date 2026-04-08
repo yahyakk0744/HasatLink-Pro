@@ -40,10 +40,6 @@ workflows:
         script: |
           cd frontend
           npx cap sync ios
-      - name: Install CocoaPods
-        script: |
-          cd frontend/ios/App
-          pod install --repo-update || pod install
       - name: Increment build number
         script: |
           cd frontend
