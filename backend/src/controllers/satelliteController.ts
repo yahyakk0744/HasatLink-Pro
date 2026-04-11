@@ -190,9 +190,9 @@ async function computeNDVI(
     top = Math.max(0, Math.min(h - 1, top));
     bottom = Math.max(top + 1, Math.min(h, bottom));
 
-    // Read at reduced resolution (max 64x64 pixels = tiny download)
-    const outW = Math.min(64, right - left);
-    const outH = Math.min(64, bottom - top);
+    // Read at 256x256 for sharp NDVI/falsecolor rendering
+    const outW = Math.min(256, right - left);
+    const outH = Math.min(256, bottom - top);
 
     const tiffNir = await fromUrl(nirUrl);
     const imageNir = await tiffNir.getImage();
