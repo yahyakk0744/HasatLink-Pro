@@ -2,6 +2,98 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import axios from 'axios';
 import { fromUrl } from 'geotiff';
+import { deflateSync } from 'zlib';
+
+// ─── Pure-JS PNG encoder (no external deps, uses built-in zlib) ───
+
+const _crc32Table = (() => {
+  const t: number[] = [];
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? 0xEDB88320 ^ (c >>> 1) : (c >>> 1);
+    t.push(c >>> 0);
+  }
+  return t;
+})();
+
+function _crc32(buf: Buffer): number {
+  let crc = 0xFFFFFFFF;
+  for (const b of buf) crc = (crc >>> 8) ^ _crc32Table[(crc ^ b) & 0xFF];
+  return ((crc ^ 0xFFFFFFFF) >>> 0);
+}
+
+function _pngChunk(type: string, data: Buffer): Buffer {
+  const len = Buffer.alloc(4); len.writeUInt32BE(data.length, 0);
+  const typeB = Buffer.from(type, 'ascii');
+  const crcBuf = Buffer.alloc(4);
+  crcBuf.writeUInt32BE(_crc32(Buffer.concat([typeB, data])), 0);
+  return Buffer.concat([len, typeB, data, crcBuf]);
+}
+
+/** Encode an RGB pixel array as a PNG buffer (pure Node.js) */
+function encodePNG(width: number, height: number, rgb: Uint8Array): Buffer {
+  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0); ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8; ihdr[9] = 2; // 8-bit depth, RGB color type
+  const raw = Buffer.alloc(height * (1 + width * 3));
+  for (let y = 0; y < height; y++) {
+    raw[y * (1 + width * 3)] = 0; // filter: None
+    for (let x = 0; x < width; x++) {
+      const src = (y * width + x) * 3;
+      const dst = y * (1 + width * 3) + 1 + x * 3;
+      raw[dst] = rgb[src]; raw[dst + 1] = rgb[src + 1]; raw[dst + 2] = rgb[src + 2];
+    }
+  }
+  return Buffer.concat([
+    sig,
+    _pngChunk('IHDR', ihdr),
+    _pngChunk('IDAT', deflateSync(raw)),
+    _pngChunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
+/** Map NDVI value (-1..1) to an RGB color (standard vegetation color scale) */
+function ndviToRGB(v: number): [number, number, number] {
+  if (v < -0.05) return [50,  50,  160]; // water / shadow — blue
+  if (v <  0.05) return [128, 128, 128]; // bare soil / rock — gray
+  if (v <  0.15) return [210,  80,  40]; // very sparse — red
+  if (v <  0.25) return [225, 140,  30]; // sparse — orange
+  if (v <  0.35) return [230, 210,  30]; // low density — yellow
+  if (v <  0.45) return [170, 210,  50]; // moderate — yellow-green
+  if (v <  0.55) return [ 90, 175,  50]; // good — light green
+  if (v <  0.65) return [ 40, 145,  35]; // very good — green
+  return                 [ 10,  90,  20]; // excellent — dark green
+}
+
+/** Render a 2-D NDVI grid as a base64 PNG data URI */
+function renderNDVIColorMap(
+  ndviValues: number[],
+  width: number,
+  height: number,
+  scaleTo = 256,
+): string {
+  // Scale up to scaleTo×scaleTo for visibility (nearest-neighbour)
+  const scaleX = scaleTo / width;
+  const scaleY = scaleTo / height;
+  const outW = scaleTo;
+  const outH = scaleTo;
+  const rgb = new Uint8Array(outW * outH * 3);
+
+  for (let oy = 0; oy < outH; oy++) {
+    for (let ox = 0; ox < outW; ox++) {
+      const srcX = Math.min(width  - 1, Math.floor(ox / scaleX));
+      const srcY = Math.min(height - 1, Math.floor(oy / scaleY));
+      const ndvi = ndviValues[srcY * width + srcX] ?? 0;
+      const [r, g, b] = ndviToRGB(ndvi);
+      const i = (oy * outW + ox) * 3;
+      rgb[i] = r; rgb[i + 1] = g; rgb[i + 2] = b;
+    }
+  }
+
+  const png = encodePNG(outW, outH, rgb);
+  return `data:image/png;base64,${png.toString('base64')}`;
+}
 
 // ─── Element84 Earth Search — FREE, no API key, no signup, unlimited ───
 const STAC_URL = 'https://earth-search.aws.element84.com/v1/search';
@@ -55,6 +147,8 @@ async function searchScenes(
   return data?.features || [];
 }
 
+type NDVIResult = { min: number; max: number; mean: number; median: number; grid?: { values: number[]; width: number; height: number } };
+
 /** Read NDVI from Sentinel-2 COG bands (B04=Red, B08=NIR) — free, public S3 */
 async function computeNDVI(
   redUrl: string,
@@ -62,7 +156,8 @@ async function computeNDVI(
   geoBbox: [number, number, number, number],
   sceneBbox: number[],
   projBbox: number[],
-): Promise<{ min: number; max: number; mean: number; median: number } | null> {
+  returnGrid = false,
+): Promise<NDVIResult | null> {
   try {
     // Map geographic bbox to pixel coordinates using scene's geo↔proj mapping
     const [gMinX, gMinY, gMaxX, gMaxY] = geoBbox;
@@ -120,12 +215,31 @@ async function computeNDVI(
     if (values.length === 0) return null;
     values.sort((a, b) => a - b);
 
-    return {
+    const result: NDVIResult = {
       min: values[0],
       max: values[values.length - 1],
       mean: values.reduce((s, v) => s + v, 0) / values.length,
       median: values[Math.floor(values.length / 2)],
     };
+
+    if (returnGrid) {
+      // Build unsorted grid (ndvi per pixel in raster order)
+      const grid: number[] = [];
+      const totalPixels = outW * outH;
+      const redArr = redData[0] as any;
+      const nirArr = nirData[0] as any;
+      for (let i = 0; i < totalPixels; i++) {
+        if (redArr[i] === 0 && nirArr[i] === 0) {
+          grid.push(0);
+        } else {
+          const v = (nirArr[i] - redArr[i]) / (nirArr[i] + redArr[i] + 0.0001);
+          grid.push(Math.max(-1, Math.min(1, v)));
+        }
+      }
+      result.grid = { values: grid, width: outW, height: outH };
+    }
+
+    return result;
   } catch (err) {
     console.error('NDVI computation error:', err);
     return null;
@@ -225,11 +339,11 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
     const sceneBbox = bestScene.bbox || [];
     const projBbox = bestScene.properties?.['proj:bbox'] || sceneBbox;
 
-    // Run field image + NDVI computation in parallel
+    // Run field image + NDVI computation in parallel (request grid for NDVI color map)
     const [trueColorBase64, latestNDVI] = await Promise.all([
       getFieldImage(geoBbox, 512),
       (redUrl && nirUrl && sceneBbox.length === 4)
-        ? computeNDVI(redUrl, nirUrl, geoBbox, sceneBbox, projBbox)
+        ? computeNDVI(redUrl, nirUrl, geoBbox, sceneBbox, projBbox, true)
         : Promise.resolve(null),
     ]);
 
@@ -281,6 +395,16 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
     // 7. Build rendered images
     const renderedImages: Record<string, string> = {};
     if (trueColorBase64) renderedImages.trueColor = trueColorBase64;
+
+    // NDVI color map — rendered from actual Sentinel-2 pixel data
+    if (latestNDVI?.grid) {
+      renderedImages.ndvi = renderNDVIColorMap(
+        latestNDVI.grid.values,
+        latestNDVI.grid.width,
+        latestNDVI.grid.height,
+        256,
+      );
+    }
 
     res.json({
       center: { lat, lng },

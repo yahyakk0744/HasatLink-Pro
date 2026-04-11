@@ -261,6 +261,36 @@ const HARVEST_DATA: Record<string, { min_days: number; max_days: number; quality
   'Genel': { min_days: 90, max_days: 180, quality_factors: ['Genel gorunum', 'Buyukluk', 'Olgunluk belirtileri'], optimal_conditions: 'Urune gore degisir' },
 };
 
+// ─── HARVEST ESTIMATION (deterministic, stage-based) ───
+
+function estimateHarvestDays(
+  info: { min_days: number; max_days: number },
+  stage: string,
+  isHealthy: boolean,
+): number {
+  // Stage factor: what fraction of the growth window is remaining
+  // early → 75% remaining, mid → 45%, advanced → 15%
+  const stageFactor = stage === 'early' ? 0.75 : stage === 'advanced' ? 0.15 : 0.45;
+  const base = Math.round(info.min_days + (info.max_days - info.min_days) * stageFactor);
+  // Diseased plants take ~15% longer to mature
+  const penalty = isHealthy ? 0 : Math.round((info.max_days - info.min_days) * 0.15);
+  return base + penalty;
+}
+
+function estimateQualityScore(
+  confidence: number,
+  stage: string,
+  isHealthy: boolean,
+): number {
+  if (isHealthy) {
+    // Healthy: 75-95 range, scaled by detection confidence
+    return Math.min(95, Math.max(75, Math.round(75 + confidence * 0.2)));
+  }
+  // Diseased: 25-70 range; advanced stage pulls score down more
+  const stagePenalty = stage === 'advanced' ? 20 : stage === 'mid' ? 10 : 0;
+  return Math.min(70, Math.max(25, Math.round(70 - stagePenalty - (100 - confidence) * 0.2)));
+}
+
 function getCurrentSeason(): string {
   const month = new Date().getMonth();
   if (month >= 2 && month <= 4) return 'spring';
@@ -355,10 +385,10 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
     const confidence = geminiResult.confidence || 85;
     const needsBetterPhoto = confidence < CONFIDENCE_THRESHOLD;
 
-    // Harvest prediction
+    // Harvest prediction — stage-based, deterministic (no Math.random)
     const harvestInfo = HARVEST_DATA[geminiResult.crop_type] || HARVEST_DATA['Genel'];
-    const estimatedDays = Math.floor(Math.random() * (harvestInfo.max_days - harvestInfo.min_days) + harvestInfo.min_days);
-    const qualityScore = isHealthy ? Math.floor(Math.random() * 15 + 85) : Math.floor(Math.random() * 30 + 40);
+    const estimatedDays = estimateHarvestDays(harvestInfo, geminiResult.stage || 'mid', isHealthy);
+    const qualityScore = estimateQualityScore(confidence, geminiResult.stage || 'mid', isHealthy);
 
     const response = {
       disease: geminiResult.disease || 'Bilinmeyen',
