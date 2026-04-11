@@ -246,6 +246,100 @@ async function computeNDVI(
   }
 }
 
+/** Process items in batches of N concurrently (avoids S3 rate limiting) */
+async function processInBatches<T, R>(
+  items: T[],
+  batchSize: number,
+  fn: (item: T) => Promise<R | null>,
+): Promise<(R | null)[]> {
+  const results: (R | null)[] = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const settled = await Promise.allSettled(batch.map(fn));
+    for (const r of settled) {
+      results.push(r.status === 'fulfilled' ? r.value : null);
+    }
+  }
+  return results;
+}
+
+/** Render false color composite from 3 Sentinel-2 bands (NIR=R, Red=G, Green=B) */
+async function getFalseColorImage(
+  nirUrl: string,   // B08 → Red channel
+  redUrl: string,   // B04 → Green channel
+  greenUrl: string, // B03 → Blue channel
+  geoBbox: [number, number, number, number],
+  sceneBbox: number[],
+  projBbox: number[],
+  scaleTo = 256,
+): Promise<string | null> {
+  try {
+    const [gMinX, gMinY, gMaxX, gMaxY] = geoBbox;
+    const [sMinX, sMinY, sMaxX, sMaxY] = sceneBbox;
+    const [pMinX, pMinY, pMaxX, pMaxY] = projBbox;
+
+    const projLeft   = pMinX + (gMinX - sMinX) / (sMaxX - sMinX) * (pMaxX - pMinX);
+    const projRight  = pMinX + (gMaxX - sMinX) / (sMaxX - sMinX) * (pMaxX - pMinX);
+    const projBottom = pMinY + (gMinY - sMinY) / (sMaxY - sMinY) * (pMaxY - pMinY);
+    const projTop    = pMinY + (gMaxY - sMinY) / (sMaxY - sMinY) * (pMaxY - pMinY);
+
+    const tiffNir = await fromUrl(nirUrl);
+    const imageNir = await tiffNir.getImage();
+    const [oX, oY] = imageNir.getOrigin();
+    const [rX, rY] = imageNir.getResolution();
+    const w = imageNir.getWidth();
+    const h = imageNir.getHeight();
+
+    let left   = Math.max(0, Math.min(w - 1, Math.floor((projLeft   - oX) / rX)));
+    let top    = Math.max(0, Math.min(h - 1, Math.floor((projTop    - oY) / rY)));
+    let right  = Math.max(left + 1, Math.min(w, Math.ceil((projRight  - oX) / rX)));
+    let bottom = Math.max(top  + 1, Math.min(h, Math.ceil((projBottom - oY) / rY)));
+
+    const outW = Math.min(64, right - left);
+    const outH = Math.min(64, bottom - top);
+
+    const tiffRed   = await fromUrl(redUrl);
+    const imageRed  = await tiffRed.getImage();
+    const tiffGreen = await fromUrl(greenUrl);
+    const imageGreen = await tiffGreen.getImage();
+
+    const window = { window: [left, top, right, bottom] as [number,number,number,number], width: outW, height: outH };
+    const [nirData, redData, greenData] = await Promise.all([
+      imageNir.readRasters(window),
+      imageRed.readRasters(window),
+      imageGreen.readRasters(window),
+    ]);
+
+    const nir   = nirData[0]   as any;
+    const red   = redData[0]   as any;
+    const green = greenData[0] as any;
+
+    // Scale up to scaleTo×scaleTo (nearest neighbour)
+    const scaleX = scaleTo / outW;
+    const scaleY = scaleTo / outH;
+    const rgb = new Uint8Array(scaleTo * scaleTo * 3);
+    const STRETCH = 4000; // Sentinel-2 L2A typical max reflectance * 10000
+
+    for (let oy = 0; oy < scaleTo; oy++) {
+      for (let ox = 0; ox < scaleTo; ox++) {
+        const sx = Math.min(outW - 1, Math.floor(ox / scaleX));
+        const sy = Math.min(outH - 1, Math.floor(oy / scaleY));
+        const src = sy * outW + sx;
+        const dst = (oy * scaleTo + ox) * 3;
+        rgb[dst]     = Math.min(255, Math.round((nir[src]   || 0) / STRETCH * 255)); // R = NIR
+        rgb[dst + 1] = Math.min(255, Math.round((red[src]   || 0) / STRETCH * 255)); // G = Red
+        rgb[dst + 2] = Math.min(255, Math.round((green[src] || 0) / STRETCH * 255)); // B = Green
+      }
+    }
+
+    const png = encodePNG(scaleTo, scaleTo, rgb);
+    return `data:image/png;base64,${png.toString('base64')}`;
+  } catch (err) {
+    console.error('FalseColor render error:', err);
+    return null;
+  }
+}
+
 /** Get satellite image of exact polygon area from Esri World Imagery (free, no API key) */
 async function getFieldImage(bbox: [number, number, number, number], width = 512): Promise<string | null> {
   try {
@@ -334,42 +428,39 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
     const bestScene = scenes[0];
 
     // 3. Compute NDVI from the best scene's bands
-    const redUrl = bestScene.assets?.red?.href || bestScene.assets?.B04?.href || '';
-    const nirUrl = bestScene.assets?.nir?.href || bestScene.assets?.B08?.href || '';
+    const redUrl   = bestScene.assets?.red?.href   || bestScene.assets?.B04?.href || '';
+    const nirUrl   = bestScene.assets?.nir?.href   || bestScene.assets?.B08?.href || '';
+    const greenUrl = bestScene.assets?.green?.href || bestScene.assets?.B03?.href || '';
     const sceneBbox = bestScene.bbox || [];
     const projBbox = bestScene.properties?.['proj:bbox'] || sceneBbox;
 
-    // Run field image + NDVI computation in parallel (request grid for NDVI color map)
-    const [trueColorBase64, latestNDVI] = await Promise.all([
+    // Run trueColor + NDVI + falseColor in parallel
+    const [trueColorBase64, latestNDVI, falseColorBase64] = await Promise.all([
       getFieldImage(geoBbox, 512),
       (redUrl && nirUrl && sceneBbox.length === 4)
         ? computeNDVI(redUrl, nirUrl, geoBbox, sceneBbox, projBbox, true)
         : Promise.resolve(null),
+      (nirUrl && redUrl && greenUrl && sceneBbox.length === 4)
+        ? getFalseColorImage(nirUrl, redUrl, greenUrl, geoBbox, sceneBbox, projBbox, 256)
+        : Promise.resolve(null),
     ]);
 
-    // 4. Compute NDVI history from multiple scenes (up to 10 for trend)
+    // 4. Compute NDVI history in parallel batches (4x faster than sequential)
     const historyScenes = scenes.slice(0, 12);
-    const ndviHistory: any[] = [];
 
-    // Process history scenes sequentially to avoid overloading
-    for (const scene of historyScenes) {
-      const sRedUrl = scene.assets?.red?.href || scene.assets?.B04?.href || '';
-      const sNirUrl = scene.assets?.nir?.href || scene.assets?.B08?.href || '';
-      const sBbox = scene.bbox || [];
+    const historyResults = await processInBatches(historyScenes, 4, async (scene) => {
+      const sRedUrl  = scene.assets?.red?.href  || scene.assets?.B04?.href || '';
+      const sNirUrl  = scene.assets?.nir?.href  || scene.assets?.B08?.href || '';
+      const sBbox    = scene.bbox || [];
       const sProjBbox = scene.properties?.['proj:bbox'] || sBbox;
+      if (!sRedUrl || !sNirUrl || sBbox.length !== 4) return null;
+      const stats = await computeNDVI(sRedUrl, sNirUrl, geoBbox, sBbox, sProjBbox, false);
+      if (!stats) return null;
+      const dt = Math.floor(new Date(scene.properties?.datetime || '').getTime() / 1000);
+      return { dt, date: (scene.properties?.datetime || '').split('T')[0], ...stats };
+    });
 
-      if (sRedUrl && sNirUrl && sBbox.length === 4) {
-        const stats = await computeNDVI(sRedUrl, sNirUrl, geoBbox, sBbox, sProjBbox);
-        if (stats) {
-          const dt = Math.floor(new Date(scene.properties?.datetime || '').getTime() / 1000);
-          ndviHistory.push({
-            dt,
-            date: (scene.properties?.datetime || '').split('T')[0],
-            ...stats,
-          });
-        }
-      }
-    }
+    const ndviHistory = historyResults.filter(Boolean) as any[];
     ndviHistory.sort((a, b) => a.dt - b.dt);
 
     // 5. Determine health status
@@ -405,6 +496,9 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
         256,
       );
     }
+
+    // False color composite (NIR=R, Red=G, Green=B) — healthy vegetation = bright red
+    if (falseColorBase64) renderedImages.falseColor = falseColorBase64;
 
     res.json({
       center: { lat, lng },

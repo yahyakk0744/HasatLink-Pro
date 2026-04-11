@@ -12,33 +12,62 @@ function getGemini() {
   return new GoogleGenerativeAI(key);
 }
 
-const MASTER_PROMPT = `Sen uzman bir Ziraat Muhendisisin. Bu fotograftaki bitkiyi analiz et.
+const MASTER_PROMPT = `Sen dunyanin oncu Bitki Patolojisi uzmani ve Ziraat Muhendisisin. 20+ yillik deneyiminle tarım fotograflarini hassas sekilde analiz ediyorsun.
 
-Asagidaki JSON formatinda cevap ver (baska hicbir sey yazma, sadece JSON):
+Bu fotograftaki bitkiyi / urunu analiz et ve SADECE asagidaki JSON formatinda cevap ver. Baska HICBIR sey yazma, sadece JSON:
+
 {
   "crop_type": "Bitki turu (ornek: Domates, Zeytin, Narenciye, Uzum, Bugday, vb.)",
   "disease": "Hastalik veya sorun adi (saglikli ise 'Saglikli Bitki')",
   "disease_code": "hastalik_kodu (kucuk harf, alt cizgi, ornek: domates_mildiyo, saglikli)",
-  "confidence": 85,
+  "confidence": 92,
   "stage": "early | mid | advanced",
   "spread_risk": "low | medium | high",
   "urgency": "low | medium | critical",
-  "treatment": "Detayli tedavi ve cozum onerisi. Ciftcinin anlayacagi sadelikte yaz.",
+  "treatment": "Detayli tedavi ve cozum onerisi. Ciftcinin anlayacagi sadelikte, somut adimlarla yaz.",
   "recommended_products": ["Urun1", "Urun2"],
   "prevention": "Onleme onerileri",
-  "detailed_analysis": "Fotograftaki bitkinin detayli durumu: bitki turu, yaprak durumu, renk, leke, hasarlik, besin eksikligi analizi. Profesyonel ama bir ciftcinin anlayacagi sadelikte, basliklar halinde yaz."
+  "detailed_analysis": "Fotograftaki bitkinin gorsel analizi: bitki turu, yaprak / meyve durumu, renk, leke, hasarlilik, besin eksikligi. Profesyonel ama anlasilir bicimde, basliklar halinde.",
+  "immediate_action": "SIMDI yapilmasi gereken EN ACIL tek eylem (1-2 cumle, net ve spesifik, saglikli ise 'Bitkiyi izlemeye devam edin' yaz)",
+  "economic_impact": "none | low | medium | high | critical",
+  "economic_loss_estimate": 25,
+  "treatment_schedule": [
+    {"day": 0, "action": "Bugun yapilacaklar (ilk mudahale)"},
+    {"day": 3, "action": "3. gunde kontrol ve uygulama"},
+    {"day": 7, "action": "7. gunde degerlendirme ve ikinci uygulama"},
+    {"day": 14, "action": "14. gunde son kontrol ve sonuc degerlendirmesi"}
+  ],
+  "differential_diagnosis": [
+    "Alternatif teshis 1 (%20) - ayirt edici ipucu",
+    "Alternatif teshis 2 (%10) - ayirt edici ipucu"
+  ],
+  "weather_triggers": "Bu hastaligi kotulestiren / tetikleyen hava kosullari (ornek: yuksek nem, yagis, sicaklik)",
+  "lab_confirmation": false,
+  "harvest_days_estimate": 45,
+  "growth_stage_pct": 70
 }
 
-Onemli kurallar:
-- Eger bitki saglikli gorunuyorsa disease_code olarak "saglikli" yaz
-- confidence 0-100 arasi olmali
-- treatment alaninda somut ve uygulanabilir adimlar yaz
-- detailed_analysis alaninda bitki turunu, gorunen sorunlari, nedenlerini ve acil yapilmasi gerekenleri detayli acikla
-- Sadece JSON don, aciklama veya markdown ekleme`;
+Mutlak kurallar:
+- Saglikli ise: disease_code="saglikli", economic_impact="none", economic_loss_estimate=0, lab_confirmation=false
+- confidence 0-100 arasi, gercekci ol
+- economic_loss_estimate: 0-100 arasi yuzde (saglikliysa 0)
+- treatment_schedule: 3-4 adim, her adim icin somut ve uygulanabilir eylem
+- differential_diagnosis: max 3 alternatif, parantez icinde olasilik yuzdesi
+- harvest_days_estimate: gorsele bakarak buyume asamasindan tahmini gun sayisi
+- growth_stage_pct: bitkinin buyume dongusunun tamamlanma yuzdesi (0=fide, 100=hasat hazir)
+- Sadece JSON don, aciklama veya markdown EKLEME`;
 
-const FOLLOWUP_SYSTEM = `Sen uzman bir Ziraat Muhendisisin. Bir ciftci sana onceki analiz sonucuyla ilgili ek sorular soruyor.
-Profesyonel ama anlasilir bir dilde, somut ve uygulanabilir tavsiyeler ver.
-Turkce cevap ver. Kisa ve oze doku.`;
+const FOLLOWUP_SYSTEM = `Sen dunyanin oncu Bitki Patolojisi uzmani ve Ziraat Muhendisisin.
+Bir ciftci sana onceki bitki analizi sonucuyla ilgili ek sorular soruyor.
+
+Cevap kurallarin:
+- Turkce yaz, profesyonel ama anlasilir
+- Somut ve uygulanabilir tavsiyeler ver
+- Mumkun oldugunda dozaj, zamanlama ve yontem belirt
+- Organik alternatif sorulursa mutlaka sun
+- Ekonomik etki sorusunda tahmini verim kaybi/kazancini belirt
+- Kisa tut: 3-5 cumle, gereksiz giriş/bitis cümlesi YAZMA
+- Gerekirse madde maddeli liste kullan`;
 
 // ─── Gemini Vision Analysis ───
 async function analyzeWithGemini(imagePath: string): Promise<any | null> {
@@ -390,6 +419,11 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
     const estimatedDays = estimateHarvestDays(harvestInfo, geminiResult.stage || 'mid', isHealthy);
     const qualityScore = estimateQualityScore(confidence, geminiResult.stage || 'mid', isHealthy);
 
+    // Use Gemini's visual harvest estimate if provided, else fall back to stage-based
+    const geminiHarvestDays = typeof geminiResult.harvest_days_estimate === 'number' && geminiResult.harvest_days_estimate > 0
+      ? geminiResult.harvest_days_estimate
+      : estimatedDays;
+
     const response = {
       disease: geminiResult.disease || 'Bilinmeyen',
       disease_code: isHealthy ? 'saglikli' : (geminiResult.disease_code || 'bilinmeyen'),
@@ -408,7 +442,7 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
       seasonal_alert: false,
       regional_alerts: [],
       harvest_prediction: {
-        estimated_days: estimatedDays,
+        estimated_days: geminiHarvestDays,
         quality_score: qualityScore,
         quality_label: qualityScore >= 80 ? 'Yuksek' : qualityScore >= 50 ? 'Orta' : 'Dusuk',
         quality_factors: harvestInfo.quality_factors,
@@ -417,6 +451,15 @@ export const diagnose = async (req: Request, res: Response): Promise<void> => {
       ai_engine: usedGemini ? 'gemini' : usedHF ? 'huggingface' : 'local',
       gemini_analysis: geminiResult.detailed_analysis || '',
       hf_classifications: hfClassifications || undefined,
+      // World-class diagnostic fields
+      immediate_action: geminiResult.immediate_action || null,
+      economic_impact: geminiResult.economic_impact || (isHealthy ? 'none' : 'medium'),
+      economic_loss_estimate: typeof geminiResult.economic_loss_estimate === 'number' ? geminiResult.economic_loss_estimate : (isHealthy ? 0 : null),
+      treatment_schedule: Array.isArray(geminiResult.treatment_schedule) ? geminiResult.treatment_schedule : [],
+      differential_diagnosis: Array.isArray(geminiResult.differential_diagnosis) ? geminiResult.differential_diagnosis : [],
+      weather_triggers: geminiResult.weather_triggers || null,
+      lab_confirmation: geminiResult.lab_confirmation || false,
+      growth_stage_pct: typeof geminiResult.growth_stage_pct === 'number' ? geminiResult.growth_stage_pct : null,
     };
 
     // Save to history
