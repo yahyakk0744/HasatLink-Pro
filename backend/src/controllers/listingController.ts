@@ -111,7 +111,11 @@ export const createListing = async (req: Request, res: Response): Promise<void> 
       res.status(400).json({ message: 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' });
       return;
     }
-    const listing = await Listing.create({ ...req.body, userId: (req as any).userId || req.body.userId });
+    const listing = await Listing.create({
+      ...req.body,
+      userId: (req as any).userId || req.body.userId,
+      originalPrice: Number(req.body.price) || 0,
+    });
 
     // Award points for new listing
     awardPoints(listing.userId, POINT_VALUES.NEW_LISTING);
@@ -175,6 +179,9 @@ export const updateListing = async (req: Request, res: Response): Promise<void> 
     }
     const oldPrice = listing.price;
     Object.assign(listing, req.body);
+    if (req.body.price !== undefined && Number(req.body.price) !== oldPrice) {
+      listing.priceUpdatedAt = new Date().toISOString();
+    }
     await listing.save();
 
     // Price drop alert
@@ -334,6 +341,53 @@ export const getListingViewers = async (req: Request, res: Response): Promise<vo
     res.json({ viewers });
   } catch (error) {
     res.status(500).json({ message: 'Viewer listesi alinamadi', error });
+  }
+};
+
+export const getSimilarListings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const current = await Listing.findById(req.params.id).lean();
+    if (!current) {
+      res.status(404).json({ message: 'İlan bulunamadı' });
+      return;
+    }
+    const filter: any = {
+      _id: { $ne: current._id },
+      type: (current as any).type,
+      status: 'active',
+    };
+    if ((current as any).subCategory) {
+      filter.subCategory = (current as any).subCategory;
+    }
+    let similar = await Listing.find(filter).sort({ createdAt: -1 }).limit(6).lean();
+    // Fallback: if not enough, relax subCategory
+    if (similar.length < 6 && (current as any).subCategory) {
+      const extra = await Listing.find({
+        _id: { $nin: [current._id, ...similar.map((s: any) => s._id)] },
+        type: (current as any).type,
+        status: 'active',
+      })
+        .sort({ createdAt: -1 })
+        .limit(6 - similar.length)
+        .lean();
+      similar = [...similar, ...extra];
+    }
+    res.json({ listings: similar });
+  } catch (error) {
+    res.status(500).json({ message: 'Benzer ilanlar hatası', error });
+  }
+};
+
+export const getSellerListings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const listings = await Listing.find({ userId, status: 'active' })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
+    res.json({ listings });
+  } catch (error) {
+    res.status(500).json({ message: 'Satıcı ilanları hatası', error });
   }
 };
 

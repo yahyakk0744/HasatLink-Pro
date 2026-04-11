@@ -235,6 +235,15 @@ export interface AIDiagnosisResult {
   ai_engine?: 'gemini' | 'huggingface' | 'local';
   gemini_analysis?: string;
   hf_top3?: HFClassification[];
+  // World-class fields
+  immediate_action?: string;
+  economic_impact?: 'none' | 'low' | 'medium' | 'high' | 'critical';
+  economic_loss_estimate?: number;
+  treatment_schedule?: { day: number; action: string }[];
+  differential_diagnosis?: string[];
+  weather_triggers?: string;
+  lab_confirmation?: boolean;
+  growth_stage_pct?: number;
 }
 
 export interface AIDiagnosisHistory extends AIDiagnosisResult {

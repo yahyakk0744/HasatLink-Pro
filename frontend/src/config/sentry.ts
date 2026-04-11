@@ -1,4 +1,5 @@
-import * as Sentry from '@sentry/react'
+// Sentry is loaded lazily — NOT on the critical path
+// This avoids blocking the initial page render with a heavy ~200KB bundle
 
 export function initSentry() {
   const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined
@@ -12,39 +13,41 @@ export function initSentry() {
 
   const isProd = import.meta.env.PROD
 
-  Sentry.init({
-    dsn,
-    environment: isProd ? 'production' : 'development',
-    release: `hasatlink-frontend@${__APP_VERSION__}`,
-
-    // Performance monitoring
-    tracesSampleRate: isProd ? 0.2 : 1.0,
-
-    // Session replay disabled — too heavy for production
-    replaysSessionSampleRate: 0,
-    replaysOnErrorSampleRate: 0,
-
-    // Only send errors in production, log everything in dev
-    beforeSend(event) {
-      if (!isProd) {
-        console.debug('[Sentry] Event captured:', event)
-      }
-      return event
-    },
-
-    // Filter noisy errors
-    ignoreErrors: [
-      'ResizeObserver loop',
-      'Network Error',
-      'Load failed',
-      'ChunkLoadError',
-      'Loading chunk',
-    ],
+  // Dynamic import: Sentry bundle loads AFTER the app is interactive
+  import('@sentry/react').then((Sentry) => {
+    Sentry.init({
+      dsn,
+      environment: isProd ? 'production' : 'development',
+      release: `hasatlink-frontend@${__APP_VERSION__}`,
+      tracesSampleRate: isProd ? 0.2 : 1.0,
+      replaysSessionSampleRate: 0,
+      replaysOnErrorSampleRate: 0,
+      beforeSend(event) {
+        if (!isProd) {
+          console.debug('[Sentry] Event captured:', event)
+        }
+        return event
+      },
+      ignoreErrors: [
+        'ResizeObserver loop',
+        'Network Error',
+        'Load failed',
+        'ChunkLoadError',
+        'Loading chunk',
+      ],
+    })
   })
 }
 
-// Re-export Sentry for use in other files
-export { Sentry }
+// Lazy Sentry proxy — returns a no-op if Sentry hasn't loaded yet
+export const Sentry = {
+  captureException: (err: unknown) => {
+    import('@sentry/react').then((s) => s.captureException(err))
+  },
+  captureMessage: (msg: string) => {
+    import('@sentry/react').then((s) => s.captureMessage(msg))
+  },
+}
 
 // Global type for the injected version
 declare const __APP_VERSION__: string

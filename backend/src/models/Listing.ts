@@ -64,6 +64,29 @@ export interface IListing extends Document {
   is_negotiable: boolean;
   needsTransport: boolean;
   hasTransportCapacity: boolean;
+  // Genel (tüm kategoriler)
+  paymentMethod: string;
+  priceUnit: string;
+  // Pazar (ek)
+  deliveryOption: string;
+  productOrigin: string;
+  // Lojistik (ek)
+  capacityUnit: string;
+  returnRoute: string;
+  // İşgücü (ek)
+  needsAccommodation: boolean;
+  monthlyWage: number;
+  // Ekipman (ek)
+  lastMaintenanceDate: string;
+  rentalPeriodUnit: string;
+  // Arazi (ek)
+  cropHistory: string;
+  altitude: number;
+  // Depolama (ek)
+  humidityControl: boolean;
+  // Fiyat düşüşü takibi
+  originalPrice: number;
+  priceUpdatedAt: string;
   // Stats
   stats: { views: number; whatsappClicks: number; shares: number };
   createdAt: Date;
@@ -136,6 +159,29 @@ const ListingSchema = new Schema<IListing>({
   is_negotiable: { type: Boolean, default: false },
   needsTransport: { type: Boolean, default: false },
   hasTransportCapacity: { type: Boolean, default: false },
+  // Genel (tüm kategoriler)
+  paymentMethod: { type: String, default: '' },
+  priceUnit: { type: String, default: '' },
+  // Pazar (ek)
+  deliveryOption: { type: String, default: '' },
+  productOrigin: { type: String, default: '' },
+  // Lojistik (ek)
+  capacityUnit: { type: String, default: '' },
+  returnRoute: { type: String, default: '' },
+  // İşgücü (ek)
+  needsAccommodation: { type: Boolean, default: false },
+  monthlyWage: { type: Number, default: 0 },
+  // Ekipman (ek)
+  lastMaintenanceDate: { type: String, default: '' },
+  rentalPeriodUnit: { type: String, default: '' },
+  // Arazi (ek)
+  cropHistory: { type: String, default: '' },
+  altitude: { type: Number, default: 0 },
+  // Depolama (ek)
+  humidityControl: { type: Boolean, default: false },
+  // Fiyat düşüşü takibi
+  originalPrice: { type: Number, default: 0 },
+  priceUpdatedAt: { type: String, default: '' },
   // Stats
   stats: {
     views: { type: Number, default: 0 },

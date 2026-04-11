@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Satellite, MapPin, Scan, Loader2, Leaf, TrendingUp,
   AlertTriangle, CheckCircle, XCircle, Droplets, Cloud, CloudOff, Eye,
-  Search, LocateFixed, Minus, Plus, Pencil, Trash2, RotateCcw,
+  Search, LocateFixed, Minus, Plus, Pencil, Trash2, RotateCcw, Database,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Polygon as LeafletPolygon, Polyline, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import { useLocation } from '../contexts/LocationContext';
@@ -72,69 +72,182 @@ function NDVIBar({ value, label }: { value: number; label: string }) {
 }
 
 function NDVIChart({ history }: { history: NDVIDataPoint[] }) {
+  const [showTable, setShowTable] = useState(false);
   if (history.length < 2) return null;
-  const maxVal = Math.max(...history.map(h => h.max), 1);
+  const maxVal = Math.max(...history.map(h => h.max), 0.01);
   const w = 100 / history.length;
+  const toY = (v: number) => 40 - (v / maxVal) * 37;
+
+  const meanPoints = history.map((h, i) => `${i * w + w / 2},${toY(h.mean)}`).join(' ');
+  const bandPath = [
+    `M${w / 2},${toY(history[0].max)}`,
+    ...history.map((h, i) => `L${i * w + w / 2},${toY(h.max)}`),
+    ...history.slice().reverse().map((h, i, arr) => `L${(arr.length - 1 - i) * w + w / 2},${toY(h.min)}`),
+    'Z',
+  ].join(' ');
+
   return (
-    <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <TrendingUp size={16} className="text-[var(--accent-green)]" />
-        <h3 className="text-[13px] font-semibold">NDVI Trend (30 Gun)</h3>
+    <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden">
+      <div className="p-4 pb-2">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={16} className="text-[var(--accent-green)]" />
+            <h3 className="text-[13px] font-semibold">NDVI Trend (30 Gün)</h3>
+          </div>
+          <button
+            onClick={() => setShowTable(t => !t)}
+            className="text-[11px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors px-2 py-1 rounded-lg hover:bg-[var(--bg-input)]"
+          >
+            {showTable ? 'Grafik' : 'Tablo'}
+          </button>
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-4 mb-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-1.5 bg-[#059669] rounded" />
+            <span className="text-[10px] text-[var(--text-secondary)]">Ortalama</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-3 bg-emerald-100 rounded border border-emerald-200" />
+            <span className="text-[10px] text-[var(--text-secondary)]">Min–Max Aralığı</span>
+          </div>
+        </div>
+
+        <div className="relative h-32">
+          <svg viewBox="0 0 100 40" className="w-full h-full" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="meanGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#059669" />
+                <stop offset="100%" stopColor="#059669" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            {/* Grid lines */}
+            {[0.2, 0.4, 0.6, 0.8].map(v => (
+              <line key={v} x1="0" x2="100" y1={toY(v)} y2={toY(v)} stroke="currentColor" className="text-gray-200" strokeWidth="0.3" strokeDasharray="2,2" />
+            ))}
+            {/* Min-Max band */}
+            <path d={bandPath} fill="#d1fae5" opacity="0.7" />
+            {/* Mean fill */}
+            <path
+              d={`M${w / 2},40 ${history.map((h, i) => `L${i * w + w / 2},${toY(h.mean)}`).join(' ')} L${(history.length - 1) * w + w / 2},40 Z`}
+              fill="url(#meanGrad)" opacity="0.4"
+            />
+            {/* Mean line */}
+            <polyline points={meanPoints} fill="none" stroke="#059669" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            {/* Dots */}
+            {history.map((h, i) => (
+              <circle key={i} cx={i * w + w / 2} cy={toY(h.mean)} r="1.2" fill="#059669" />
+            ))}
+          </svg>
+          {/* Y-axis labels */}
+          <div className="absolute left-0 top-0 h-full flex flex-col justify-between pointer-events-none">
+            {[0.8, 0.6, 0.4, 0.2].map(v => (
+              <span key={v} className="text-[8px] text-[var(--text-tertiary)] leading-none">{(v * 100).toFixed(0)}</span>
+            ))}
+          </div>
+        </div>
+        <div className="flex justify-between mt-1 text-[9px] text-[var(--text-tertiary)] pl-4">
+          <span>{history[0]?.date}</span>
+          <span>{history[Math.floor(history.length / 2)]?.date}</span>
+          <span>{history[history.length - 1]?.date}</span>
+        </div>
       </div>
-      <div className="relative h-32">
-        <svg viewBox="0 0 100 40" className="w-full h-full" preserveAspectRatio="none">
-          {[0.2, 0.4, 0.6, 0.8].map(v => (
-            <line key={v} x1="0" x2="100" y1={40 - (v / maxVal) * 40} y2={40 - (v / maxVal) * 40} stroke="var(--border-default)" strokeWidth="0.3" strokeDasharray="2,2" />
-          ))}
-          <path
-            d={`M0,40 ${history.map((h, i) => `L${i * w + w / 2},${40 - (h.mean / maxVal) * 38}`).join(' ')} L100,40 Z`}
-            fill="url(#ndviGrad)" opacity="0.3"
-          />
-          <polyline
-            points={history.map((h, i) => `${i * w + w / 2},${40 - (h.mean / maxVal) * 38}`).join(' ')}
-            fill="none" stroke="#2D6A4F" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round"
-          />
-          {history.map((h, i) => (
-            <circle key={i} cx={i * w + w / 2} cy={40 - (h.mean / maxVal) * 38} r="1" fill="#2D6A4F" />
-          ))}
-          <defs>
-            <linearGradient id="ndviGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2D6A4F" />
-              <stop offset="100%" stopColor="#2D6A4F" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
-      <div className="flex justify-between mt-1 text-[9px] text-[var(--text-tertiary)]">
-        <span>{history[0]?.date}</span>
-        <span>{history[history.length - 1]?.date}</span>
-      </div>
+
+      {/* Data table */}
+      {showTable && (
+        <div className="border-t border-[var(--border-default)] overflow-x-auto">
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr className="bg-[var(--bg-input)]">
+                <th className="text-left px-3 py-2 text-[var(--text-tertiary)] font-semibold">Tarih</th>
+                <th className="text-right px-3 py-2 text-[var(--text-tertiary)] font-semibold">Ort.</th>
+                <th className="text-right px-3 py-2 text-[var(--text-tertiary)] font-semibold">Min</th>
+                <th className="text-right px-3 py-2 text-[var(--text-tertiary)] font-semibold">Maks</th>
+                <th className="text-right px-3 py-2 text-[var(--text-tertiary)] font-semibold">Durum</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.slice().reverse().map((h, i) => {
+                const st = h.mean >= 0.6 ? { label: 'İyi', color: 'text-emerald-600' }
+                  : h.mean >= 0.4 ? { label: 'Orta', color: 'text-amber-600' }
+                  : h.mean >= 0.25 ? { label: 'Zayıf', color: 'text-orange-600' }
+                  : { label: 'Kritik', color: 'text-red-600' };
+                return (
+                  <tr key={i} className="border-t border-[var(--border-default)] hover:bg-[var(--bg-input)] transition-colors">
+                    <td className="px-3 py-2 text-[var(--text-primary)] font-medium">{h.date}</td>
+                    <td className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">{(h.mean * 100).toFixed(1)}%</td>
+                    <td className="px-3 py-2 text-right text-[var(--text-secondary)]">{(h.min * 100).toFixed(1)}%</td>
+                    <td className="px-3 py-2 text-right text-[var(--text-secondary)]">{(h.max * 100).toFixed(1)}%</td>
+                    <td className={`px-3 py-2 text-right font-semibold ${st.color}`}>{st.label}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
-function HealthCard({ status, color, ndvi }: { status: string; color: string; ndvi: NDVIDataPoint }) {
+function HealthCard({ status, color, ndvi, trend }: { status: string; color: string; ndvi: NDVIDataPoint; trend?: number }) {
   const icon = status === 'excellent' || status === 'good'
     ? <CheckCircle size={28} />
     : status === 'moderate'
       ? <AlertTriangle size={28} />
       : <XCircle size={28} />;
-  const recommendations: Record<string, string[]> = {
-    excellent: ['Mevcut bakimi surdur', 'Hasat zamanlamas1 icin takip et'],
-    good: ['Duzeni sulama devam etsin', 'Hafif gubre takviyesi dusun'],
-    moderate: ['Sulama programini kontrol et', 'Toprak analizi yaptir', 'Gubre eksikligi olabilir'],
-    poor: ['Acil sulama gerekli', 'Hastalik kontrolu yap', 'Ziraat muhendisine danisin'],
-    critical: ['Acil mudahale gerekli', 'Hastalik veya kuraklik riski', 'Profesyonel destek al'],
+
+  const recommendations: Record<string, { text: string; priority: 'normal' | 'warn' | 'ok' }[]> = {
+    excellent: [
+      { text: 'Mevcut bakımı sürdürün, düzenli gözlem yapın', priority: 'ok' },
+      { text: 'Hasat zamanlaması için NDVI takibini sürdürün', priority: 'ok' },
+      { text: 'Mevsimsel hastalık risklerini önceden önleyin', priority: 'normal' },
+    ],
+    good: [
+      { text: 'Düzenli sulama programına devam edin', priority: 'ok' },
+      { text: 'Hafif azot gübresi takviyesi düşünün', priority: 'normal' },
+      { text: 'Yaprak rengi değişikliklerini takip edin', priority: 'normal' },
+    ],
+    moderate: [
+      { text: 'Sulama programını gözden geçirin, eksiklik olabilir', priority: 'warn' },
+      { text: 'Toprak nem ve pH analizi yaptırın', priority: 'warn' },
+      { text: 'Gübre eksikliği veya fazlalığı kontrol edin', priority: 'warn' },
+      { text: 'Bölgesel hastalık uyarılarını takip edin', priority: 'normal' },
+    ],
+    poor: [
+      { text: 'Acil sulama gerekli — kuraklık stres belirtisi', priority: 'warn' },
+      { text: 'Hastalık ve zararlı kontrolü yapın', priority: 'warn' },
+      { text: 'Ziraat mühendisine danışın', priority: 'warn' },
+    ],
+    critical: [
+      { text: 'Acil müdahale gerekli — ciddi risk', priority: 'warn' },
+      { text: 'Hastalık veya kuraklık riski yüksek', priority: 'warn' },
+      { text: 'Profesyonel destek alın, HasatAI ile teşhis yapın', priority: 'warn' },
+    ],
   };
+
+  const recs = recommendations[status] || [];
+  const trendPct = trend !== undefined ? (trend * 100).toFixed(1) : null;
+
   return (
     <div className="rounded-2xl border overflow-hidden" style={{ borderColor: `${color}40` }}>
       <div className="p-5" style={{ background: `linear-gradient(135deg, ${color}08, ${color}15)` }}>
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${color}20`, color }}>{icon}</div>
           <div className="flex-1">
-            <p className="text-[11px] text-[var(--text-secondary)] uppercase font-semibold tracking-wider">Tarla Sagligi</p>
+            <p className="text-[11px] text-[var(--text-secondary)] uppercase font-semibold tracking-wider">Tarla Sağlığı</p>
             <p className="text-[22px] font-bold tracking-tight" style={{ color }}>{getHealthLabel(status)}</p>
-            <p className="text-[12px] text-[var(--text-secondary)]">NDVI Ortalama: <span className="font-bold">{(ndvi.mean * 100).toFixed(1)}%</span></p>
+            <div className="flex items-center gap-3 mt-0.5">
+              <p className="text-[12px] text-[var(--text-secondary)]">NDVI: <span className="font-bold">{(ndvi.mean * 100).toFixed(1)}%</span></p>
+              {trendPct !== null && (
+                <span className={`text-[11px] font-bold flex items-center gap-0.5 ${
+                  trend! >= 0 ? 'text-emerald-600' : 'text-red-500'
+                }`}>
+                  {trend! >= 0 ? '↑' : '↓'} {Math.abs(Number(trendPct))}% son dönem
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -143,14 +256,16 @@ function HealthCard({ status, color, ndvi }: { status: string; color: string; nd
         <NDVIBar value={ndvi.max} label="Maksimum" />
         <NDVIBar value={ndvi.min} label="Minimum" />
       </div>
-      {recommendations[status] && (
+      {recs.length > 0 && (
         <div className="px-4 pb-4 bg-[var(--bg-surface)]">
-          <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-2">Oneriler</p>
+          <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-2">Öneriler</p>
           <div className="space-y-1.5">
-            {recommendations[status].map((r, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                <span className="text-[12px] text-[var(--text-primary)]">{r}</span>
+            {recs.map((r, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 mt-1.5 ${
+                  r.priority === 'warn' ? 'bg-amber-500' : r.priority === 'ok' ? 'bg-emerald-500' : 'bg-gray-400'
+                }`} />
+                <span className="text-[12px] text-[var(--text-primary)]">{r.text}</span>
               </div>
             ))}
           </div>
@@ -305,6 +420,74 @@ function SatelliteImageGallery({ renderedImages, scenes, clearCount, totalCount,
           />
         </div>
       )}
+    </div>
+  );
+}
+
+/* ─── Loading Animation ─── */
+const ANALYSIS_STEPS = [
+  { icon: Satellite,  label: 'Uydu geçişleri sorgulanıyor...',    delay: 0 },
+  { icon: Cloud,      label: 'Sentinel-2 görüntüleri indiriliyor...', delay: 1200 },
+  { icon: Database,   label: 'NDVI değerleri hesaplanıyor...',     delay: 2400 },
+  { icon: CheckCircle,label: 'Sağlık analizi tamamlanıyor...',     delay: 3600 },
+];
+
+function AnalysisLoader() {
+  const [activeStep, setActiveStep] = useState(0);
+  useEffect(() => {
+    const timers = ANALYSIS_STEPS.map((s, i) =>
+      setTimeout(() => setActiveStep(i), s.delay)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
+  return (
+    <div className="rounded-2xl bg-gradient-to-br from-indigo-50/80 to-violet-50/80 border border-indigo-200/40 p-6 mb-6 animate-fade-in">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <Satellite size={20} className="text-white animate-pulse" />
+        </div>
+        <div>
+          <p className="text-[14px] font-bold text-indigo-900">Uydu Analizi Yapılıyor</p>
+          <p className="text-[11px] text-indigo-600">Copernicus Sentinel-2 · Son 90 gün</p>
+        </div>
+      </div>
+      <div className="space-y-2.5">
+        {ANALYSIS_STEPS.map((step, i) => {
+          const Icon = step.icon;
+          const done = i < activeStep;
+          const active = i === activeStep;
+          return (
+            <div
+              key={i}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-500 ${
+                active ? 'bg-indigo-100/80 scale-[1.01]' : done ? 'bg-white/40' : 'opacity-40'
+              }`}
+            >
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                done ? 'bg-emerald-100' : active ? 'bg-indigo-100' : 'bg-gray-100'
+              }`}>
+                {done
+                  ? <CheckCircle size={15} className="text-emerald-600" />
+                  : active
+                    ? <Loader2 size={15} className="text-indigo-600 animate-spin" />
+                    : <Icon size={15} className="text-gray-400" />
+                }
+              </div>
+              <span className={`text-[12px] font-medium ${active ? 'text-indigo-800' : done ? 'text-gray-500' : 'text-gray-400'}`}>
+                {step.label}
+              </span>
+              {done && <CheckCircle size={13} className="text-emerald-500 ml-auto" />}
+            </div>
+          );
+        })}
+      </div>
+      {/* Progress bar */}
+      <div className="mt-4 h-1.5 rounded-full bg-indigo-100 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-600 transition-all duration-1000"
+          style={{ width: `${((activeStep + 1) / ANALYSIS_STEPS.length) * 100}%` }}
+        />
+      </div>
     </div>
   );
 }
@@ -619,6 +802,9 @@ export default function SatelliteHealthPage() {
         </div>
       </div>
 
+      {/* Loading animation */}
+      {loading && <AnalysisLoader />}
+
       {/* Error */}
       {error && (
         <div className="rounded-2xl bg-red-50 border border-red-200/50 p-4 mb-6 flex items-center gap-3">
@@ -630,9 +816,21 @@ export default function SatelliteHealthPage() {
       {/* Results */}
       {analysis && (
         <div className="space-y-4 animate-fade-in">
-          {analysis.latestNDVI && (
-            <HealthCard status={analysis.healthStatus} color={analysis.healthColor} ndvi={analysis.latestNDVI} />
-          )}
+          {analysis.latestNDVI && (() => {
+            // Trend: compare latest NDVI to the one before
+            const hist = analysis.ndviHistory;
+            const trend = hist.length >= 2
+              ? hist[hist.length - 1].mean - hist[hist.length - 2].mean
+              : undefined;
+            return (
+              <HealthCard
+                status={analysis.healthStatus}
+                color={analysis.healthColor}
+                ndvi={analysis.latestNDVI!}
+                trend={trend}
+              />
+            );
+          })()}
           <NDVIChart history={analysis.ndviHistory} />
 
           <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] p-4">

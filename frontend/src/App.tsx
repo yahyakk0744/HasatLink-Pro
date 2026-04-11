@@ -48,6 +48,9 @@ const AdminBlogPage = lazy(() => import('./pages/AdminBlogPage'));
 const AdminModerationPage = lazy(() => import('./pages/AdminModerationPage'));
 const SatelliteHealthPage = lazy(() => import('./pages/SatelliteHealthPage'));
 const AgriEncyclopediaPage = lazy(() => import('./pages/AgriEncyclopediaPage'));
+const SellerStorePage = lazy(() => import('./pages/SellerStorePage'));
+const PriceAlertsPage = lazy(() => import('./pages/PriceAlertsPage'));
+const MyOffersPage = lazy(() => import('./pages/MyOffersPage'));
 
 function PageLoader() {
   return <LoadingSpinner size="lg" className="py-20" />;
@@ -122,6 +125,9 @@ export default function App() {
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/blog/:slug" element={<BlogDetailPage />} />
             <Route path="/kullanici/:userId" element={<ProfilePage />} />
+            <Route path="/magaza/:userId" element={<SellerStorePage />} />
+            <Route path="/fiyat-alarmlari" element={<PriceAlertsPage />} />
+            <Route path="/tekliflerim" element={<MyOffersPage />} />
             <Route path="/admin" element={<AdminDashboardPage />} />
             <Route path="/admin/ilanlar" element={<AdminListingsPage />} />
             <Route path="/admin/kullanicilar" element={<AdminUsersPage />} />

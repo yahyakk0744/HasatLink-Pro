@@ -267,6 +267,18 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const [needsTransport, setNeedsTransport] = useState(initialData?.needsTransport || false);
   const [hasTransportCapacity, setHasTransportCapacity] = useState(initialData?.hasTransportCapacity || false);
 
+  // New fields
+  const [paymentMethod, setPaymentMethod] = useState((initialData as any)?.paymentMethod || '');
+  const [deliveryOption, setDeliveryOption] = useState((initialData as any)?.deliveryOption || '');
+  const [productOrigin, setProductOrigin] = useState((initialData as any)?.productOrigin || '');
+  const [returnRoute, setReturnRoute] = useState((initialData as any)?.returnRoute || false);
+  const [needsAccommodation, setNeedsAccommodation] = useState((initialData as any)?.needsAccommodation || false);
+  const [monthlyWage, setMonthlyWage] = useState((initialData as any)?.monthlyWage?.toString() || '');
+  const [lastMaintenanceDate, setLastMaintenanceDate] = useState((initialData as any)?.lastMaintenanceDate || '');
+  const [cropHistory, setCropHistory] = useState((initialData as any)?.cropHistory || '');
+  const [altitude, setAltitude] = useState((initialData as any)?.altitude?.toString() || '');
+  const [humidityControl, setHumidityControl] = useState((initialData as any)?.humidityControl || false);
+
   const subCategories = CATEGORIES[type as keyof typeof CATEGORIES]?.filter(c => c !== 'HEPSİ') || [];
   const productOptions = type === 'pazar' && subCategory ? (PAZAR_SUBCATEGORIES[subCategory] || []) : [];
 
@@ -313,7 +325,8 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         is_negotiable: isNegotiable,
         needsTransport,
         hasTransportCapacity,
-      };
+        ...(paymentMethod && { paymentMethod }),
+      } as any;
 
       if (type === 'pazar') {
         data.harvestDate = harvestDate;
@@ -321,6 +334,8 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         data.qualityGrade = qualityGrade;
         data.storageType = storageType;
         data.minOrderAmount = parseFloat(minOrderAmount) || 0;
+        if (deliveryOption) (data as any).deliveryOption = deliveryOption;
+        if (productOrigin) (data as any).productOrigin = productOrigin;
       } else if (type === 'lojistik') {
         data.subCategory = vehicleType;
         data.isFrigo = vehicleType === 'FRIGO KAMYON' ? true : isFrigo;
@@ -331,12 +346,15 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         data.availableDate = availableDate;
         data.hasInsurance = hasInsurance;
         data.plateNumber = plateNumber;
+        (data as any).returnRoute = returnRoute;
       } else if (type === 'isgucu') {
         data.isTeam = isTeam;
         data.workerCount = parseInt(workerCount) || 1;
         data.experienceYears = parseInt(experienceYears) || 0;
         data.dailyWage = parseFloat(dailyWage) || 0;
         data.skills = skills;
+        (data as any).needsAccommodation = needsAccommodation;
+        if (monthlyWage) (data as any).monthlyWage = parseFloat(monthlyWage) || 0;
       } else if (type === 'ekipman') {
         data.rentType = rentType;
         data.brand = brand;
@@ -345,6 +363,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         data.condition = condition;
         data.horsePower = parseInt(horsePower) || 0;
         data.saleType = saleType;
+        if (lastMaintenanceDate) (data as any).lastMaintenanceDate = lastMaintenanceDate;
       } else if (type === 'arazi') {
         data.landSize = parseFloat(landSize) || 0;
         data.landUnit = landUnit;
@@ -354,6 +373,8 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         data.deedStatus = deedStatus;
         data.zoningStatus = zoningStatus;
         data.rentDuration = rentDuration;
+        if (cropHistory) (data as any).cropHistory = cropHistory;
+        if (altitude) (data as any).altitude = parseFloat(altitude) || 0;
       } else if (type === 'depolama') {
         data.storageCapacity = parseFloat(storageCapacity) || 0;
         data.storageCapacityUnit = storageCapacityUnit;
@@ -362,6 +383,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         data.hasSecurity = hasSecurity;
         data.has24Access = has24Access;
         data.rentDuration = rentDuration;
+        (data as any).humidityControl = humidityControl;
       }
 
       await onSubmit(data);
@@ -553,6 +575,17 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                         <ToggleSwitch label={t('listing.organic')} checked={isOrganic} onChange={setIsOrganic} />
                       </div>
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">Teslimat Seçeneği</label>
+                        <SelectButtons options={['TARLADAN TESLİM', 'ADRESE TESLİM', 'DEPODAN TESLİM', 'ALICI ALIR']} value={deliveryOption} onChange={setDeliveryOption} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">Ödeme Yöntemi</label>
+                        <SelectButtons options={['NAKİT', 'HAVALE/EFT', 'KREDİ KARTI', 'ÇEKE UYGUN']} value={paymentMethod} onChange={setPaymentMethod} />
+                      </div>
+                    </div>
+                    <Input label="Ürün Kökeni / Yöre" value={productOrigin} onChange={e => setProductOrigin(e.target.value)} />
                   </>
                 )}
 
@@ -580,11 +613,12 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                         <Input label={t('listing.plateNumber')} value={plateNumber} onChange={e => setPlateNumber(e.target.value)} />
                       )}
                     </div>
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-6 flex-wrap">
                       {vehicleType !== 'FRIGO KAMYON' && (
                         <ToggleSwitch label={t('listing.frigo')} checked={isFrigo} onChange={setIsFrigo} />
                       )}
                       <ToggleSwitch label={t('listing.insurance')} checked={hasInsurance} onChange={setHasInsurance} />
+                      <ToggleSwitch label="Dönüş Yükü Aranıyor" checked={returnRoute} onChange={setReturnRoute} />
                     </div>
                   </>
                 )}
@@ -609,6 +643,12 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                         {listingMode === 'buy' ? t('listing.requiredSkills') : t('listing.skills')}
                       </label>
                       <MultiSelectButtons options={WORKER_SKILLS} values={skills} onChange={setSkills} color="#A47148" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label="Aylık Ücret (TL)" type="number" value={monthlyWage} onChange={e => setMonthlyWage(e.target.value)} />
+                      <div className="flex items-end pb-1">
+                        <ToggleSwitch label="Konaklama Gerekli" checked={needsAccommodation} onChange={setNeedsAccommodation} />
+                      </div>
                     </div>
                   </>
                 )}
@@ -647,6 +687,9 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                       </label>
                       <SelectButtons options={EQUIPMENT_CONDITIONS} value={condition} onChange={setCondition} />
                     </div>
+                    {listingMode === 'sell' && (
+                      <Input label="Son Bakım Tarihi" type="date" value={lastMaintenanceDate} onChange={e => setLastMaintenanceDate(e.target.value)} />
+                    )}
                   </>
                 )}
 
@@ -686,6 +729,10 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                       <ToggleSwitch label={t('listing.waterAvailable')} checked={waterAvailable} onChange={setWaterAvailable} />
                       <ToggleSwitch label={t('listing.hasElectricity')} checked={hasElectricity} onChange={setHasElectricity} />
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label="Geçmiş Ürün (Ekim Geçmişi)" value={cropHistory} onChange={e => setCropHistory(e.target.value)} />
+                      <Input label="Rakım (metre)" type="number" value={altitude} onChange={e => setAltitude(e.target.value)} />
+                    </div>
                   </>
                 )}
 
@@ -714,9 +761,10 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                       <SelectButtons options={RENT_DURATIONS_DEPO} value={rentDuration} onChange={setRentDuration} color="#0077B6" />
                     </div>
                     {subCategory && subCategory !== 'ACIK DEPO' && (
-                      <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-6 flex-wrap">
                         <ToggleSwitch label={t('listing.hasSecurity')} checked={hasSecurity} onChange={setHasSecurity} />
                         <ToggleSwitch label={t('listing.has24Access')} checked={has24Access} onChange={setHas24Access} />
+                        <ToggleSwitch label="Nem Kontrolü" checked={humidityControl} onChange={setHumidityControl} />
                       </div>
                     )}
                   </>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>HasatLink Icon Generator</title>
+<style>
+  body { background: #1a1a1a; color: #fff; font-family: system-ui; display: flex; flex-direction: column; align-items: center; padding: 40px; }
+  canvas { border: 1px solid #333; margin: 20px; }
+  button { padding: 14px 40px; font-size: 18px; background: #2D5A27; color: #fff; border: none; border-radius: 8px; cursor: pointer; margin: 10px; }
+  button:hover { background: #3a7a32; }
+</style>
+</head>
+<body>
+<h1>HasatLink App Icon Generator</h1>
+<canvas id="c" width="1024" height="1024"></canvas>
+<button onclick="download()">Download PNG (1024x1024)</button>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 1024, H = 1024;
+
+function draw() {
+  // Background gradient
+  const bg = ctx.createRadialGradient(W*0.45, H*0.35, 100, W*0.5, H*0.5, W*0.75);
+  bg.addColorStop(0, '#3B7A33');
+  bg.addColorStop(0.5, '#2D5A27');
+  bg.addColorStop(1, '#1A3A15');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle texture
+  ctx.save();
+  ctx.globalAlpha = 0.04;
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1;
+  for (let i = -W; i < W * 2; i += 28) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i + H, H);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Glow behind wheat
+  ctx.save();
+  const glow = ctx.createRadialGradient(W*0.5, H*0.32, 20, W*0.5, H*0.32, 260);
+  glow.addColorStop(0, 'rgba(196,136,58,0.18)');
+  glow.addColorStop(1, 'rgba(196,136,58,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  // Wheat stalk
+  drawWheat(W * 0.5, H * 0.10, 0.95);
+
+  // HASAT text
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetY = 6;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 188px "Segoe UI", Arial, sans-serif';
+  ctx.fillText('HASAT', W * 0.5, H * 0.62);
+  ctx.restore();
+
+  // LiNK text with golden gradient
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur = 15;
+  ctx.shadowOffsetY = 4;
+  const goldGrad = ctx.createLinearGradient(W*0.3, H*0.73, W*0.7, H*0.73);
+  goldGrad.addColorStop(0, '#D4983A');
+  goldGrad.addColorStop(0.5, '#F0C060');
+  goldGrad.addColorStop(1, '#C4883A');
+  ctx.fillStyle = goldGrad;
+  ctx.font = 'bold 168px "Segoe UI", Arial, sans-serif';
+  ctx.fillText('LiNK', W * 0.5, H * 0.765);
+  ctx.restore();
+
+  // Chain link symbol
+  drawChainLink(W * 0.5, H * 0.90, 38);
+
+  // Decorative line
+  ctx.save();
+  const lineGrad = ctx.createLinearGradient(W*0.2, 0, W*0.8, 0);
+  lineGrad.addColorStop(0, 'rgba(196,136,58,0)');
+  lineGrad.addColorStop(0.5, 'rgba(196,136,58,0.5)');
+  lineGrad.addColorStop(1, 'rgba(196,136,58,0)');
+  ctx.strokeStyle = lineGrad;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(W*0.2, H*0.845);
+  ctx.lineTo(W*0.8, H*0.845);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawWheat(cx, topY, scale) {
+  ctx.save();
+  ctx.translate(cx, topY);
+  ctx.scale(scale, scale);
+
+  // Main stem
+  ctx.strokeStyle = '#C4883A';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, 20);
+  ctx.quadraticCurveTo(2, 220, 0, 400);
+  ctx.stroke();
+
+  // Top grain
+  drawGrain(0, 0, 0, 0.85, '#D4983A', '#F0C060');
+
+  // Paired grains
+  const pairs = [
+    [30, 35, 1.0], [70, 30, 1.05], [110, 27, 1.1],
+    [150, 23, 1.15], [190, 20, 1.15], [230, 17, 1.1],
+    [270, 14, 1.0], [310, 11, 0.9]
+  ];
+  for (const [sy, angle, sz] of pairs) {
+    drawGrain(-18, sy, -angle * 0.017, sz, '#D4983A', '#F0C060');
+    drawGrain(18, sy, angle * 0.017, sz, '#D4983A', '#F0C060');
+  }
+
+  // Awns (whiskers)
+  ctx.strokeStyle = 'rgba(212,152,58,0.5)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 5; i++) {
+    const y = i * 35;
+    const sp = (5 - i) * 9;
+    ctx.beginPath();
+    ctx.moveTo(-10, y + 10);
+    ctx.quadraticCurveTo(-sp * 2.5, y - 30, -sp * 4, y - 65);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(10, y + 10);
+    ctx.quadraticCurveTo(sp * 2.5, y - 30, sp * 4, y - 65);
+    ctx.stroke();
+  }
+
+  // Left leaf
+  ctx.save();
+  ctx.translate(-5, 320);
+  ctx.rotate(-0.45);
+  const leafG1 = ctx.createLinearGradient(0, 0, -130, 20);
+  leafG1.addColorStop(0, 'rgba(60,140,50,0.6)');
+  leafG1.addColorStop(1, 'rgba(40,100,35,0.2)');
+  ctx.fillStyle = leafG1;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(-70, -25, -130, 20);
+  ctx.quadraticCurveTo(-65, 5, 0, 0);
+  ctx.fill();
+  ctx.restore();
+
+  // Right leaf
+  ctx.save();
+  ctx.translate(5, 330);
+  ctx.rotate(0.4);
+  const leafG2 = ctx.createLinearGradient(0, 0, 130, 20);
+  leafG2.addColorStop(0, 'rgba(60,140,50,0.6)');
+  leafG2.addColorStop(1, 'rgba(40,100,35,0.2)');
+  ctx.fillStyle = leafG2;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(70, -25, 130, 20);
+  ctx.quadraticCurveTo(65, 5, 0, 0);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+function drawGrain(x, y, angle, size, color, highlight) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.scale(size, size);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 13, 28, 0, 0, Math.PI * 2);
+  const gGrad = ctx.createLinearGradient(-13, 0, 13, 0);
+  gGrad.addColorStop(0, color);
+  gGrad.addColorStop(0.45, highlight);
+  gGrad.addColorStop(1, color);
+  ctx.fillStyle = gGrad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, -22);
+  ctx.lineTo(0, 22);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawChainLink(cx, cy, r) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  const gap = r * 0.7;
+  ctx.lineWidth = 7;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath();
+  ctx.arc(-gap, 0, r, Math.PI * 0.3, Math.PI * 1.7);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(240,192,96,0.55)';
+  ctx.beginPath();
+  ctx.arc(gap, 0, r, -Math.PI * 0.7, Math.PI * 0.7);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath();
+  ctx.arc(-gap, 0, r, -Math.PI * 0.3, Math.PI * 0.3);
+  ctx.stroke();
+  ctx.restore();
+}
+
+draw();
+
+function download() {
+  const a = document.createElement('a');
+  a.download = 'HasatLink-Icon-1024x1024.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+</script>
+</body>
+</html>

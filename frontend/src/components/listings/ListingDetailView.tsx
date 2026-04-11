@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { MapPin, Eye, Phone, Share2, MessageCircle, MessageSquare, Truck, Leaf, Star, Calendar, Weight, Box, Shield, Users, Clock, Wrench, Pencil, Trash2, Droplets, Zap, FileText, Landmark, Thermometer, Clock3, Ruler, ShieldCheck, HandCoins, Navigation } from 'lucide-react';
+import { MapPin, Eye, Phone, Share2, MessageCircle, MessageSquare, Truck, Leaf, Star, Calendar, Weight, Box, Shield, Users, Clock, Wrench, Pencil, Trash2, Droplets, Zap, FileText, Landmark, Thermometer, Clock3, Ruler, ShieldCheck, HandCoins, Navigation, TrendingDown } from 'lucide-react';
 import type { Listing } from '../../types';
 import { formatPrice, formatDate } from '../../utils/formatters';
 import ImageGallery from './ImageGallery';
@@ -96,6 +96,15 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
               <p className="text-[10px] font-medium text-[#0077B6] uppercase">{t('listing.priceBudget')}</p>
             )}
             <p className={`text-2xl font-semibold ${listing.listingMode === 'buy' ? 'text-[#0077B6]' : 'text-[#2D6A4F]'}`}>{formatPrice(listing.price)}</p>
+            {(listing as any).originalPrice && (listing as any).originalPrice > listing.price && (
+              <div className="flex items-center justify-end gap-1 mt-1">
+                <span className="text-xs text-[var(--text-secondary)] line-through">{formatPrice((listing as any).originalPrice)}</span>
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-600">
+                  <TrendingDown size={9} />
+                  %{Math.round(((listing as any).originalPrice - listing.price) / (listing as any).originalPrice * 100)} İndirim
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

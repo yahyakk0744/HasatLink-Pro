@@ -205,6 +205,7 @@ export default function ListingDetailPage() {
   const [offerMessage, setOfferMessage] = useState('');
   const [offerSending, setOfferSending] = useState(false);
   const [similarListings, setSimilarListings] = useState<Listing[]>([]);
+  const [sellerListings, setSellerListings] = useState<Listing[]>([]);
   const [logisticsPool, setLogisticsPool] = useState<Listing[]>([]);
   const [marketAnalytics, setMarketAnalytics] = useState<{ avgPrice: number; minPrice: number; maxPrice: number; count: number; trend: number; city: string } | null>(null);
   const [incomingOffers, setIncomingOffers] = useState<Offer[]>([]);
@@ -218,12 +219,23 @@ export default function ListingDetailPage() {
         setListing(data);
         if (data?.userId) fetchRatings(data.userId);
         setLoading(false);
-        // Fetch similar listings (same category, exclude current)
-        if (data?.type) {
-          api.get<{ listings: Listing[] }>('/listings', { params: { type: data.type, limit: '5' } })
-            .then(res => {
-              setSimilarListings(res.data.listings.filter(l => l._id !== id).slice(0, 4));
-            })
+        // Fetch similar listings using dedicated endpoint
+        if (data?._id) {
+          api.get<{ listings: Listing[] }>(`/listings/${data._id}/similar`)
+            .then(res => setSimilarListings(res.data.listings || []))
+            .catch(() => {
+              // fallback to general search
+              if (data?.type) {
+                api.get<{ listings: Listing[] }>('/listings', { params: { type: data.type, limit: '5' } })
+                  .then(res => setSimilarListings(res.data.listings.filter((l: Listing) => l._id !== id).slice(0, 4)))
+                  .catch(() => {});
+              }
+            });
+        }
+        // Fetch seller's other listings
+        if (data?.userId) {
+          api.get<{ listings: Listing[] }>(`/listings/seller/${data.userId}`)
+            .then(res => setSellerListings((res.data.listings || []).filter((l: Listing) => l._id !== id).slice(0, 4)))
             .catch(() => {});
         }
         // Fetch market analytics
@@ -414,6 +426,33 @@ export default function ListingDetailPage() {
               </div>
               <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
                 {similarListings.map(sl => (
+                  <div key={sl._id} className="w-[260px] flex-shrink-0 snap-start">
+                    <ListingCard listing={sl} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Seller's Other Listings */}
+          {sellerListings.length > 0 && !isOwner && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-[#0077B6]/10 flex items-center justify-center">
+                    <Store size={16} strokeWidth={1.5} className="text-[#0077B6]" />
+                  </div>
+                  <h3 className="text-sm font-semibold tracking-tight">Satıcının Diğer İlanları</h3>
+                </div>
+                <Link
+                  to={`/magaza/${listing.userId}`}
+                  className="text-[11px] font-semibold text-[#0077B6] hover:underline"
+                >
+                  Tümünü Gör →
+                </Link>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
+                {sellerListings.map(sl => (
                   <div key={sl._id} className="w-[260px] flex-shrink-0 snap-start">
                     <ListingCard listing={sl} />
                   </div>

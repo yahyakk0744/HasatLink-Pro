@@ -10,13 +10,13 @@ const iPhone = {
 const outDir = resolve('store-assets/screenshots-new');
 
 const pages = [
-  { name: '01-homepage', url: '/', wait: 2000 },
-  { name: '02-categories', url: '/', scroll: 500, wait: 1500 },
-  { name: '03-market', url: '/pazar', wait: 2000 },
-  { name: '04-hal-prices', url: '/hal-fiyatlari', wait: 2000 },
-  { name: '05-ai-diagnosis', url: '/ai-teshis', wait: 2000 },
-  { name: '06-map', url: '/harita', wait: 3000 },
-  { name: '07-login', url: '/giris', wait: 2000 },
+  { name: '01-giris', url: '/giris', wait: 2000 },
+  { name: '02-anasayfa', url: '/', wait: 2000 },
+  { name: '03-pazar', url: '/pazar', wait: 2000 },
+  { name: '04-uydu-analiz', url: '/uydu-analiz', wait: 3000 },
+  { name: '05-hasatlink-pazari', url: '/hasatlink-pazari', wait: 2000 },
+  { name: '06-hal-fiyatlari', url: '/hal-fiyatlari', wait: 2000 },
+  { name: '07-harita', url: '/harita', wait: 3000 },
 ];
 
 (async () => {

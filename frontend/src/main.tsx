@@ -17,14 +17,6 @@ import './i18n/config'
 import { initGA } from './utils/analytics'
 import { shouldLoadAnalytics, setupStatusBar, setupKeyboard, isNative } from './utils/native'
 
-// Initialize Sentry before anything else
-initSentry()
-
-// Only load Google Analytics on web — avoids ATT/cookie issues on native
-if (shouldLoadAnalytics()) {
-  initGA();
-}
-
 // Native platform setup
 if (isNative) {
   setupStatusBar();
@@ -39,6 +31,18 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+// Defer heavy third-party SDKs until after app is interactive
+// This prevents Sentry & GA from blocking the initial render
+window.addEventListener('load', () => {
+  // Small timeout so the app paints first
+  setTimeout(() => {
+    initSentry()
+    if (shouldLoadAnalytics()) {
+      initGA()
+    }
+  }, 1000)
+})
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -6,7 +6,8 @@ import {
   TrendingUp, AlertOctagon, Leaf, Camera, Sprout, Bug,
   Sun, ZoomIn, ImageOff, ShieldAlert, Timer, Star,
   Package, ShoppingBag, Wrench, Cpu, Search,
-  MessageCircle, Send, Loader2, Microscope,
+  MessageCircle, Send, Microscope, Sparkles,
+  Zap, TrendingDown, Calendar, FlaskConical, CloudRain, GitBranch,
 } from 'lucide-react';
 import api from '../../config/api';
 import type { AIDiagnosisResult, Listing } from '../../types';
@@ -35,15 +36,49 @@ const URGENCY_MAP = {
   critical: { tr: 'Kritik', en: 'Critical', color: 'text-red-600', bg: 'bg-red-50', icon: AlertOctagon },
 };
 
+const ECONOMIC_MAP: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  none:     { label: 'Kayıp Yok',   color: 'text-emerald-700', bg: 'bg-emerald-50',  border: 'border-emerald-200/60' },
+  low:      { label: 'Düşük Kayıp', color: 'text-teal-700',    bg: 'bg-teal-50',     border: 'border-teal-200/60' },
+  medium:   { label: 'Orta Kayıp',  color: 'text-amber-700',   bg: 'bg-amber-50',    border: 'border-amber-200/60' },
+  high:     { label: 'Yüksek Kayıp', color: 'text-orange-700', bg: 'bg-orange-50',   border: 'border-orange-200/60' },
+  critical: { label: 'Kritik Kayıp', color: 'text-red-700',    bg: 'bg-red-50',      border: 'border-red-200/60' },
+};
+
+// Treatment steps parsed from treatment text into actionable checklist
+function buildActionSteps(treatment: string, isTr: boolean): string[] {
+  // Split by sentence or common delimiters
+  const raw = treatment.split(/[.;،]\s+/).filter(s => s.trim().length > 10).slice(0, 5);
+  if (raw.length >= 2) return raw;
+  // Fallback generic steps
+  return isTr
+    ? ['Etkilenen yaprak ve sürgünleri hemen uzaklaştırın', 'Önerilen ilaçla sabah erken saatlerde ilaçlama yapın', 'Sulama sıklığını kontrol edin, aşırı nemden kaçının', 'Komşu bitkileri düzenli kontrol edin', 'Hafta sonra durumu yeniden değerlendirin']
+    : ['Remove affected leaves and shoots immediately', 'Apply recommended treatment early morning', 'Check irrigation frequency, avoid excess moisture', 'Inspect neighboring plants regularly', 'Re-evaluate in one week'];
+}
+
+const QUICK_QUESTIONS_TR = [
+  'Ne kadar ilaç kullanmalıyım?',
+  'Organik çözüm var mı?',
+  'Hasatı etkileyecek mi?',
+  'Komşu bitkilere bulaşır mı?',
+];
+const QUICK_QUESTIONS_EN = [
+  'How much product should I use?',
+  'Any organic solutions?',
+  'Will it affect harvest?',
+  'Can it spread to other plants?',
+];
+
 export default function DiagnosisResult({ result, matchedListings = [], matchedProfessionals = [] }: DiagnosisResultProps) {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
   const lang = isTr ? 'tr' : 'en';
   const isHealthy = result.disease_code === 'saglikli';
+  const actionSteps = !isHealthy ? buildActionSteps(result.treatment, isTr) : [];
 
   const stageInfo = STAGE_MAP[result.stage];
   const riskInfo = RISK_MAP[result.spread_risk];
@@ -197,6 +232,23 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
         </div>
       </div>
 
+      {/* ─── IMMEDIATE ACTION — most prominent, shown first ─── */}
+      {result.immediate_action && !isHealthy && (
+        <div className="rounded-2xl p-4 bg-gradient-to-r from-red-500 to-orange-500 shadow-lg shadow-red-500/20">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+              <Zap size={16} className="text-white" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider mb-0.5">
+                {isTr ? 'ACİL EYLEM' : 'IMMEDIATE ACTION'}
+              </p>
+              <p className="text-[13px] font-semibold text-white leading-relaxed">{result.immediate_action}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stage, Spread Risk, Urgency — 3 metric cards */}
       {!isHealthy && (
         <div className="grid grid-cols-3 gap-2.5">
@@ -227,6 +279,40 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
               {urgencyInfo[lang]}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Economic Impact + Growth Stage */}
+      {!isHealthy && (result.economic_impact || result.growth_stage_pct !== undefined) && (
+        <div className="grid grid-cols-2 gap-2.5">
+          {result.economic_impact && result.economic_impact !== 'none' && (
+            <div className={`rounded-xl p-3.5 border ${ECONOMIC_MAP[result.economic_impact]?.bg || 'bg-amber-50'} ${ECONOMIC_MAP[result.economic_impact]?.border || 'border-amber-200/60'}`}>
+              <TrendingDown size={16} className={`${ECONOMIC_MAP[result.economic_impact]?.color || 'text-amber-700'} mb-1.5`} />
+              <p className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">
+                {isTr ? 'Ekonomik Etki' : 'Economic Impact'}
+              </p>
+              <p className={`text-[12px] font-bold ${ECONOMIC_MAP[result.economic_impact]?.color || 'text-amber-700'}`}>
+                {ECONOMIC_MAP[result.economic_impact]?.label}
+                {typeof result.economic_loss_estimate === 'number' && result.economic_loss_estimate > 0
+                  ? ` ~%${result.economic_loss_estimate}`
+                  : ''}
+              </p>
+            </div>
+          )}
+          {typeof result.growth_stage_pct === 'number' && (
+            <div className="rounded-xl p-3.5 bg-violet-50 border border-violet-200/60">
+              <Sprout size={16} className="text-violet-600 mb-1.5" />
+              <p className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">
+                {isTr ? 'Büyüme' : 'Growth'}
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="flex-1 h-1.5 bg-violet-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-violet-500 rounded-full" style={{ width: `${result.growth_stage_pct}%` }} />
+                </div>
+                <span className="text-[12px] font-bold text-violet-700">%{result.growth_stage_pct}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -278,6 +364,93 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
               <p className="text-[12px] text-violet-800 leading-relaxed">{result.prevention}</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ─── TREATMENT SCHEDULE — day-by-day timeline ─── */}
+      {!isHealthy && result.treatment_schedule && result.treatment_schedule.length > 0 && (
+        <div className="rounded-2xl overflow-hidden border border-indigo-200/30 bg-gradient-to-br from-indigo-50/80 to-violet-50/80 backdrop-blur-md">
+          <div className="p-4 pb-3">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center">
+                <Calendar size={16} className="text-indigo-600" />
+              </div>
+              <p className="text-[12px] font-semibold text-indigo-800 uppercase tracking-wider">
+                {isTr ? 'Tedavi Takvimi' : 'Treatment Schedule'}
+              </p>
+            </div>
+            <div className="relative">
+              {/* Vertical line */}
+              <div className="absolute left-[13px] top-2 bottom-2 w-0.5 bg-indigo-200/60" />
+              <div className="space-y-3">
+                {result.treatment_schedule.map((step, i) => (
+                  <div key={i} className="flex items-start gap-3 relative">
+                    <div className="w-7 h-7 rounded-full bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 z-10">
+                      {step.day === 0 ? isTr ? 'Bug' : 'Now' : `G${step.day}`}
+                    </div>
+                    <div className="flex-1 bg-white/60 rounded-xl p-2.5 border border-indigo-100/60">
+                      <p className="text-[10px] font-bold text-indigo-600 mb-0.5">
+                        {step.day === 0 ? (isTr ? 'Bugün' : 'Today') : (isTr ? `${step.day}. Gün` : `Day ${step.day}`)}
+                      </p>
+                      <p className="text-[12px] text-gray-700 leading-relaxed">{step.action}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── DIFFERENTIAL DIAGNOSIS ─── */}
+      {!isHealthy && result.differential_diagnosis && result.differential_diagnosis.length > 0 && (
+        <div className="rounded-2xl p-4 bg-slate-50/80 backdrop-blur-md border border-slate-200/30">
+          <div className="flex items-center gap-2 mb-2.5">
+            <GitBranch size={15} className="text-slate-600" />
+            <p className="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">
+              {isTr ? 'Alternatif Teşhisler' : 'Differential Diagnosis'}
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            {result.differential_diagnosis.map((d, i) => (
+              <div key={i} className="flex items-start gap-2 text-[12px] text-slate-600">
+                <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-600 text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                <span className="leading-relaxed">{d}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── WEATHER TRIGGERS + LAB CONFIRMATION ─── */}
+      {!isHealthy && (result.weather_triggers || result.lab_confirmation) && (
+        <div className="grid grid-cols-1 gap-2.5">
+          {result.weather_triggers && (
+            <div className="rounded-xl p-3.5 bg-sky-50/80 border border-sky-200/40 flex items-start gap-3">
+              <CloudRain size={15} className="text-sky-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wider mb-0.5">
+                  {isTr ? 'Hava Riski' : 'Weather Risk'}
+                </p>
+                <p className="text-[12px] text-sky-800 leading-relaxed">{result.weather_triggers}</p>
+              </div>
+            </div>
+          )}
+          {result.lab_confirmation && (
+            <div className="rounded-xl p-3.5 bg-amber-50/80 border border-amber-200/40 flex items-start gap-3">
+              <FlaskConical size={15} className="text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-0.5">
+                  {isTr ? 'Laboratuvar Önerisi' : 'Lab Recommended'}
+                </p>
+                <p className="text-[12px] text-amber-800 leading-relaxed">
+                  {isTr
+                    ? 'Kesin teşhis için numune alıp laboratuvar analizi yaptırmanız önerilir.'
+                    : 'Laboratory analysis is recommended to confirm the diagnosis.'}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -429,6 +602,51 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
         </div>
       )}
 
+      {/* ─── AKSİYON PLANI ─── */}
+      {!isHealthy && actionSteps.length > 0 && (
+        <div className="rounded-2xl bg-gradient-to-br from-teal-50/80 to-emerald-50/80 border border-teal-200/40 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-teal-100 flex items-center justify-center shrink-0">
+              <CheckCircle size={16} className="text-teal-600" />
+            </div>
+            <p className="text-[12px] font-semibold text-teal-800 uppercase tracking-wider">
+              {isTr ? 'Aksiyon Planı' : 'Action Plan'}
+            </p>
+            <span className="ml-auto text-[10px] font-medium text-teal-600">
+              {checkedSteps.size}/{actionSteps.length} {isTr ? 'tamamlandı' : 'done'}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {actionSteps.map((step, i) => (
+              <button
+                key={i}
+                onClick={() => setCheckedSteps(prev => {
+                  const next = new Set(prev);
+                  if (next.has(i)) next.delete(i); else next.add(i);
+                  return next;
+                })}
+                className={`w-full flex items-start gap-3 p-2.5 rounded-xl text-left transition-all ${
+                  checkedSteps.has(i) ? 'bg-teal-100/60 opacity-60' : 'bg-white/60 hover:bg-white/80'
+                }`}
+              >
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${
+                  checkedSteps.has(i) ? 'bg-teal-500 border-teal-500' : 'border-teal-300'
+                }`}>
+                  {checkedSteps.has(i) && (
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5L4 7L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span className={`text-[12px] leading-relaxed ${checkedSteps.has(i) ? 'line-through text-teal-600' : 'text-gray-700'}`}>
+                  {step.trim()}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ─── ASK EXPERT BUTTON + CHAT ─── */}
       {!isHealthy && (
         <div className="space-y-3">
@@ -438,27 +656,51 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[13px] font-semibold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 active:scale-[0.98] transition-all"
             >
               <MessageCircle size={16} />
-              {isTr ? 'Muhendise Detayli Sor' : 'Ask Expert'}
+              {isTr ? 'Mühendise Detaylı Sor' : 'Ask Expert'}
             </button>
           ) : (
             <div className="rounded-2xl border border-blue-200/40 bg-white/80 backdrop-blur-md overflow-hidden">
               <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center gap-2">
-                <MessageCircle size={15} className="text-white" />
-                <p className="text-[12px] font-semibold text-white">
-                  {isTr ? 'Ziraat Muhendisi' : 'Agricultural Engineer'}
+                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+                  <Sparkles size={14} className="text-white" />
+                </div>
+                <p className="text-[13px] font-semibold text-white">
+                  {isTr ? 'Ziraat Mühendisi AI' : 'Agricultural Engineer AI'}
                 </p>
+                <span className="ml-auto text-[10px] bg-white/20 px-2 py-0.5 rounded-full text-white/80">
+                  {isTr ? 'Çevrimiçi' : 'Online'}
+                </span>
               </div>
 
               {/* Chat messages */}
               <div className="max-h-[280px] overflow-y-auto p-3 space-y-2.5">
                 {chatMessages.length === 0 && (
-                  <p className="text-[11px] text-gray-400 text-center py-4">
-                    {isTr ? 'Analiz sonucuyla ilgili sorularinizi sorun...' : 'Ask questions about the diagnosis...'}
-                  </p>
+                  <div className="py-3 space-y-2">
+                    <p className="text-[11px] text-gray-400 text-center mb-3">
+                      {isTr ? 'Hızlı soru seçin veya kendiniz yazın:' : 'Pick a quick question or type your own:'}
+                    </p>
+                    {/* Quick question chips */}
+                    <div className="flex flex-wrap gap-2">
+                      {(isTr ? QUICK_QUESTIONS_TR : QUICK_QUESTIONS_EN).map((q) => (
+                        <button
+                          key={q}
+                          onClick={() => { setChatInput(q); }}
+                          className="px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200/60 text-blue-700 text-[11px] font-medium hover:bg-blue-100 transition-colors"
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 {chatMessages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-[12px] leading-relaxed ${
+                    {msg.role === 'ai' && (
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 mr-2 mt-1">
+                        <Sparkles size={11} className="text-white" />
+                      </div>
+                    )}
+                    <div className={`max-w-[80%] px-3.5 py-2.5 rounded-2xl text-[12px] leading-relaxed ${
                       msg.role === 'user'
                         ? 'bg-blue-600 text-white rounded-br-md'
                         : 'bg-gray-100 text-gray-800 rounded-bl-md'
@@ -468,9 +710,14 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
                   </div>
                 ))}
                 {chatLoading && (
-                  <div className="flex justify-start">
-                    <div className="px-3.5 py-2.5 rounded-2xl rounded-bl-md bg-gray-100">
-                      <Loader2 size={14} className="animate-spin text-gray-400" />
+                  <div className="flex justify-start items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
+                      <Sparkles size={11} className="text-white" />
+                    </div>
+                    <div className="px-3.5 py-2.5 rounded-2xl rounded-bl-md bg-gray-100 flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                   </div>
                 )}
@@ -488,7 +735,7 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
                       handleSendChat();
                     }
                   }}
-                  placeholder={isTr ? 'Sorunuzu yazin...' : 'Type your question...'}
+                  placeholder={isTr ? 'Sorunuzu yazın...' : 'Type your question...'}
                   className="flex-1 px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-[12px] text-gray-800 placeholder:text-gray-400 outline-none focus:border-blue-400 transition-colors"
                 />
                 <button

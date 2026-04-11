@@ -1,4 +1,6 @@
 import { MapContainer, TileLayer } from 'react-leaflet';
+// CSS imported here so it only loads when a map component is rendered (lazy pages)
+import 'leaflet/dist/leaflet.css';
 import type { Listing } from '../../types';
 import MapMarker from './MapMarker';
 
