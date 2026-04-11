@@ -36,7 +36,7 @@ export default function ProfileCard({ user, isOwn, onEdit, onMessage }: ProfileC
         </div>
         <div className="flex-1">
           <div className="flex items-center justify-center md:justify-start gap-2">
-            <h2 className="text-xl font-bold tracking-tight break-words">{user.name}</h2>
+            <h2 className="text-xl font-bold tracking-tight break-words text-[var(--text-primary)]">{user.name}</h2>
             {user.isVerified && <CheckCircle size={18} className="text-[var(--accent-green)] shrink-0" />}
           </div>
           {user.location && (

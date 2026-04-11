@@ -396,6 +396,7 @@ export interface PriceAlert {
   subCategory: string;
   targetPrice: number;
   keyword: string;
+  condition?: 'below' | 'above';
   isActive: boolean;
   createdAt: string;
 }

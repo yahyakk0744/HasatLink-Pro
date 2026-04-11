@@ -14,7 +14,7 @@ export const usePriceAlerts = () => {
     } catch {} finally { setLoading(false); }
   }, []);
 
-  const createAlert = useCallback(async (data: { category: string; subCategory?: string; targetPrice: number; keyword?: string }) => {
+  const createAlert = useCallback(async (data: { category: string; subCategory?: string; targetPrice: number; keyword?: string; condition?: 'below' | 'above' }) => {
     const { data: alert } = await api.post('/price-alerts', data);
     setAlerts(prev => [alert, ...prev]);
     return alert;

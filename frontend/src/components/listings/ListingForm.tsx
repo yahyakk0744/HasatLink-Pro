@@ -120,7 +120,7 @@ function StepIndicator({ current, onStep }: { current: number; onStep: (s: numbe
   const { i18n } = useTranslation();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const labels = lang === 'tr'
-    ? ['Gorseller', 'Detaylar', 'Konum & Yayinla']
+    ? ['Görseller', 'Detaylar', 'Konum & Yayınla']
     : ['Images', 'Details', 'Location & Publish'];
 
   return (
@@ -175,7 +175,7 @@ function LivePreview({ data, lang }: { data: Partial<Listing>; lang: string }) {
       </div>
       <div className="p-3">
         <h3 className="text-xs font-semibold tracking-tight line-clamp-1 mb-0.5">
-          {data.title || (lang === 'tr' ? 'Ilan Basligi' : 'Listing Title')}
+          {data.title || (lang === 'tr' ? 'İlan Başlığı' : 'Listing Title')}
         </h3>
         <p className={`text-sm font-bold tracking-tight mb-1.5 ${data.listingMode === 'buy' ? 'text-[#0077B6]' : 'text-[var(--accent-green)]'}`}>
           {formatPrice(data.price || 0)}
@@ -309,7 +309,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (containsProfanity(title) || containsProfanity(description)) {
-      toast.error(lang === 'tr' ? 'Uygunsuz icerik tespit edildi, lutfen duzenleyin' : 'Inappropriate content detected');
+      toast.error(lang === 'tr' ? 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' : 'Inappropriate content detected');
       return;
     }
     setLoading(true);
@@ -484,7 +484,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                       </label>
                     </div>
                     <p className="text-[10px] text-[var(--text-tertiary)] mt-3">
-                      {lang === 'tr' ? 'Ilk gorsel kapak fotografi olarak kullanilir. En fazla 8 gorsel yukleyebilirsiniz.' : 'First image will be used as cover. You can upload up to 8 images.'}
+                      {lang === 'tr' ? 'İlk görsel kapak fotoğrafı olarak kullanılır. En fazla 8 görsel yükleyebilirsiniz.' : 'First image will be used as cover. You can upload up to 8 images.'}
                     </p>
                   </div>
                 </div>
@@ -777,21 +777,21 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
               <div className="space-y-4 animate-fade-in">
                 {/* Negotiable Toggle */}
                 <div className="flex items-center gap-3 py-3 px-4 bg-[#E76F00]/5 rounded-2xl border border-[#E76F00]/10">
-                  <ToggleSwitch label={lang === 'tr' ? 'Pazarliga Acik' : 'Negotiable'} checked={isNegotiable} onChange={setIsNegotiable} />
-                  <span className="text-[10px] text-[#E76F00]">{lang === 'tr' ? 'Alicilar fiyat teklifi gonderebilir' : 'Buyers can send price offers'}</span>
+                  <ToggleSwitch label={lang === 'tr' ? 'Pazarlığa Açık' : 'Negotiable'} checked={isNegotiable} onChange={setIsNegotiable} />
+                  <span className="text-[10px] text-[#E76F00]">{lang === 'tr' ? 'Alıcılar fiyat teklifi gönderebilir' : 'Buyers can send price offers'}</span>
                 </div>
 
                 {/* Transport Options */}
                 {type !== 'lojistik' && (
                   <div className="flex items-center gap-3 py-3 px-4 bg-[#0077B6]/5 rounded-2xl border border-[#0077B6]/10">
-                    <ToggleSwitch label={lang === 'tr' ? 'Nakliye Ariyorum' : 'Need Transport'} checked={needsTransport} onChange={(v) => { setNeedsTransport(v); if (v) setHasTransportCapacity(false); }} />
-                    <span className="text-[10px] text-[#0077B6]">{lang === 'tr' ? 'Urunum icin nakliye destegi ariyorum' : 'I need transport support'}</span>
+                    <ToggleSwitch label={lang === 'tr' ? 'Nakliye Arıyorum' : 'Need Transport'} checked={needsTransport} onChange={(v) => { setNeedsTransport(v); if (v) setHasTransportCapacity(false); }} />
+                    <span className="text-[10px] text-[#0077B6]">{lang === 'tr' ? 'Ürünüm için nakliye desteği arıyorum' : 'I need transport support'}</span>
                   </div>
                 )}
                 {type === 'lojistik' && (
                   <div className="flex items-center gap-3 py-3 px-4 bg-[#0077B6]/5 rounded-2xl border border-[#0077B6]/10">
-                    <ToggleSwitch label={lang === 'tr' ? 'Bos Kapasitem Var' : 'Available Capacity'} checked={hasTransportCapacity} onChange={(v) => { setHasTransportCapacity(v); if (v) setNeedsTransport(false); }} />
-                    <span className="text-[10px] text-[#0077B6]">{lang === 'tr' ? 'Bos donus veya ekstra kapasite mevcut' : 'Empty return or extra capacity available'}</span>
+                    <ToggleSwitch label={lang === 'tr' ? 'Boş Kapasitem Var' : 'Available Capacity'} checked={hasTransportCapacity} onChange={(v) => { setHasTransportCapacity(v); if (v) setNeedsTransport(false); }} />
+                    <span className="text-[10px] text-[#0077B6]">{lang === 'tr' ? 'Boş dönüş veya ekstra kapasite mevcut' : 'Empty return or extra capacity available'}</span>
                   </div>
                 )}
 
@@ -805,7 +805,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                       onChange={e => setLocation(e.target.value)}
                       className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
                     >
-                      <option value="">{lang === 'tr' ? 'Il Secin' : 'Select City'}</option>
+                      <option value="">{lang === 'tr' ? 'İl Seçin' : 'Select City'}</option>
                       {TURKISH_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
@@ -825,8 +825,8 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                     <Trophy size={20} className="text-[#2D6A4F]" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-[#2D6A4F]">+10 Hasat Puan {lang === 'tr' ? 'kazanacaksin!' : 'you will earn!'}</p>
-                    <p className="text-[10px] text-[var(--text-secondary)]">{lang === 'tr' ? 'Bu ilani yayinlayarak sadakat puani kazan' : 'Earn loyalty points by publishing this listing'}</p>
+                    <p className="text-sm font-bold text-[#2D6A4F]">+10 Hasat Puan {lang === 'tr' ? 'kazanacaksın!' : 'you will earn!'}</p>
+                    <p className="text-[10px] text-[var(--text-secondary)]">{lang === 'tr' ? 'Bu ilanı yayınlayarak sadakat puanı kazan' : 'Earn loyalty points by publishing this listing'}</p>
                   </div>
                 </div>
               </div>
@@ -860,7 +860,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
               <div className="flex items-center gap-2 mb-3">
                 <Eye size={14} className="text-[var(--text-secondary)]" />
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-secondary)]">
-                  {lang === 'tr' ? 'Canli Onizleme' : 'Live Preview'}
+                  {lang === 'tr' ? 'Canlı Önizleme' : 'Live Preview'}
                 </span>
               </div>
               <LivePreview data={previewData} lang={lang} />
@@ -873,7 +873,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
           <details className="group">
             <summary className="flex items-center gap-2 cursor-pointer text-[10px] font-semibold uppercase tracking-widest text-[var(--text-secondary)] mb-2">
               <Eye size={12} />
-              {lang === 'tr' ? 'Onizlemeyi Gor' : 'Show Preview'}
+              {lang === 'tr' ? 'Önizlemeyi Gör' : 'Show Preview'}
             </summary>
             <div className="max-w-xs mx-auto">
               <LivePreview data={previewData} lang={lang} />

@@ -120,7 +120,11 @@ export const createListing = async (req: Request, res: Response): Promise<void> 
     // Award points for new listing
     awardPoints(listing.userId, POINT_VALUES.NEW_LISTING);
 
-    // Check price alerts
+    // Send response first, then fire-and-forget notifications (non-blocking)
+    res.status(201).json(listing);
+
+    // Check price alerts (async, does not block response)
+    (async () => {
     try {
       const PriceAlert = require('../models/PriceAlert').default;
       const Notification = require('../models/Notification').default;
@@ -130,15 +134,20 @@ export const createListing = async (req: Request, res: Response): Promise<void> 
       const matchingAlerts = await PriceAlert.find({
         category: listing.type,
         isActive: true,
-        targetPrice: { $gte: listing.price },
         userId: { $ne: listing.userId },
+        $or: [
+          // "below" alerts trigger when listing price is at/below target
+          { $and: [{ $or: [{ condition: 'below' }, { condition: { $exists: false } }] }, { targetPrice: { $gte: listing.price } }] },
+          // "above" alerts trigger when listing price is at/above target
+          { condition: 'above', targetPrice: { $lte: listing.price } },
+        ],
       });
 
       for (const alert of matchingAlerts) {
         const notif = await Notification.create({
           userId: alert.userId,
           type: 'ilan',
-          title: 'Firsat Yakalandi!',
+          title: 'Fırsat Yakalandı!',
           message: `"${listing.title}" - ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(listing.price)} (Hedef: ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(alert.targetPrice)})`,
           relatedId: listing._id.toString(),
         });
@@ -153,8 +162,7 @@ export const createListing = async (req: Request, res: Response): Promise<void> 
         sendPushToUser(alert.userId, { title: notif.title, body: notif.message, url: `/ilan/${listing._id}` }, notif);
       }
     } catch {}
-
-    res.status(201).json(listing);
+    })();
   } catch (error) {
     res.status(500).json({ message: 'İlan oluşturma hatası', error });
   }
@@ -184,27 +192,35 @@ export const updateListing = async (req: Request, res: Response): Promise<void> 
     }
     await listing.save();
 
-    // Price drop alert
+    // Send response first, then fire-and-forget price drop notifications
+    res.json(listing);
+
+    // Price drop alert (async, non-blocking)
     if (req.body.price && Number(req.body.price) < oldPrice) {
+      (async () => {
       try {
         const PriceAlert = require('../models/PriceAlert').default;
         const Notification = require('../models/Notification').default;
         const { sendSocketNotification } = require('../socket');
         const { sendPushToUser } = require('../utils/pushNotification');
 
+        const newPrice = Number(req.body.price);
         const matchingAlerts = await PriceAlert.find({
           category: listing.type,
           isActive: true,
-          targetPrice: { $gte: Number(req.body.price) },
           userId: { $ne: listing.userId },
+          $or: [
+            { $and: [{ $or: [{ condition: 'below' }, { condition: { $exists: false } }] }, { targetPrice: { $gte: newPrice } }] },
+            { condition: 'above', targetPrice: { $lte: newPrice } },
+          ],
         });
 
         for (const alert of matchingAlerts) {
           const notif = await Notification.create({
             userId: alert.userId,
             type: 'ilan',
-            title: 'Fiyat Dustu!',
-            message: `"${listing.title}" fiyati ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(oldPrice)} → ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(Number(req.body.price))}`,
+            title: 'Fiyat Düştü!',
+            message: `"${listing.title}" fiyatı ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(oldPrice)} → ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(newPrice)}`,
             relatedId: listing._id.toString(),
           });
           sendSocketNotification(alert.userId, {
@@ -218,9 +234,8 @@ export const updateListing = async (req: Request, res: Response): Promise<void> 
           sendPushToUser(alert.userId, { title: notif.title, body: notif.message, url: `/ilan/${listing._id}` }, notif);
         }
       } catch {}
+      })();
     }
-
-    res.json(listing);
   } catch (error) {
     res.status(500).json({ message: 'İlan güncelleme hatası', error });
   }

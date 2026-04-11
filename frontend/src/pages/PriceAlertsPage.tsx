@@ -54,13 +54,12 @@ export default function PriceAlertsPage() {
     }
     setSubmitting(true);
     try {
-      // Encode condition into subCategory prefix so backend stores it
-      // If backend supports `condition`, you can add it here
       await createAlert({
         category: form.category,
         subCategory: form.subCategory.trim(),
         targetPrice: price,
         keyword: form.keyword.trim(),
+        condition: form.condition,
       });
       toast.success('Fiyat alarmı oluşturuldu');
       setForm(INITIAL_FORM);

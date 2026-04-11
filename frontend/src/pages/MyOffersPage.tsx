@@ -26,34 +26,20 @@ export default function MyOffersPage() {
   const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const fetchSent = useCallback(async () => {
-    try {
-      const { data } = await api.get('/offers/my');
-      setSentOffers(Array.isArray(data) ? data : (data?.offers || []));
-    } catch {
-      setSentOffers([]);
-    }
-  }, []);
-
-  const fetchReceived = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
     if (!user) return;
     try {
-      // Get all user's active listings, then fetch offers per listing
-      const listingsRes = await api.get('/listings', { params: { userId: user.userId } });
-      const listings = Array.isArray(listingsRes.data) ? listingsRes.data : (listingsRes.data?.listings || []);
-      const all: Offer[] = [];
-      await Promise.all(
-        listings.map(async (l: { _id: string }) => {
-          try {
-            const { data } = await api.get(`/offers/listing/${l._id}`);
-            const items: Offer[] = Array.isArray(data) ? data : (data?.offers || []);
-            all.push(...items);
-          } catch {}
-        })
+      // Backend /offers/my already returns BOTH sent and received
+      // (matches on $or: [{ fromUserId }, { toUserId }])
+      const { data } = await api.get('/offers/my');
+      const all: Offer[] = Array.isArray(data) ? data : (data?.offers || []);
+      const sorted = [...all].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-      all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setReceivedOffers(all);
+      setSentOffers(sorted.filter(o => o.fromUserId === user.userId));
+      setReceivedOffers(sorted.filter(o => o.toUserId === user.userId));
     } catch {
+      setSentOffers([]);
       setReceivedOffers([]);
     }
   }, [user]);
@@ -61,9 +47,8 @@ export default function MyOffersPage() {
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    const p = tab === 'sent' ? fetchSent() : fetchReceived();
-    p.finally(() => setLoading(false));
-  }, [user, tab, fetchSent, fetchReceived]);
+    fetchAll().finally(() => setLoading(false));
+  }, [user, fetchAll]);
 
   if (!authLoading && !user) return <Navigate to="/giris" replace />;
   if (authLoading) return <LoadingSpinner size="lg" className="py-20" />;

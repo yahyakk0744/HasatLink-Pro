@@ -40,7 +40,7 @@ export default function SellerStorePage() {
     let active = true;
     setLoading(true);
     Promise.all([
-      api.get(`/users/${userId}/public`).then(r => r.data).catch(() => null),
+      api.get(`/users/${userId}`).then(r => r.data).catch(() => null),
       api.get('/listings', { params: { userId, status: 'active' } }).then(r => r.data).catch(() => null),
     ]).then(([userRes, listingsRes]) => {
       if (!active) return;

@@ -114,7 +114,7 @@ export default function Header() {
                 ) : (
                   <User size={14} className="md:w-4 md:h-4" />
                 )}
-                <span className="text-xs font-semibold uppercase hidden sm:block">{user.name}</span>
+                <span className="text-xs font-semibold uppercase hidden sm:block text-[var(--text-primary)]">{user.name}</span>
               </Link>
               <button onClick={logout} className="p-1.5 md:p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors hidden sm:flex" title={t('logout')}>
                 <LogOut size={14} className="text-[var(--text-secondary)] md:w-4 md:h-4" />

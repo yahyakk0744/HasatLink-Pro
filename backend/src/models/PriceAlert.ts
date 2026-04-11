@@ -6,6 +6,7 @@ export interface IPriceAlert extends Document {
   subCategory: string;
   targetPrice: number;
   keyword: string;
+  condition: 'below' | 'above';
   isActive: boolean;
   createdAt: Date;
 }
@@ -16,6 +17,7 @@ const PriceAlertSchema = new Schema<IPriceAlert>({
   subCategory: { type: String, default: '' },
   targetPrice: { type: Number, required: true },
   keyword: { type: String, default: '' },
+  condition: { type: String, enum: ['below', 'above'], default: 'below' },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
 });

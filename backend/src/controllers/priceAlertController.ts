@@ -4,12 +4,20 @@ import PriceAlert from '../models/PriceAlert';
 export const createAlert = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).userId;
-    const { category, subCategory, targetPrice, keyword } = req.body;
+    const { category, subCategory, targetPrice, keyword, condition } = req.body;
     if (!category || !targetPrice) {
       res.status(400).json({ message: 'Kategori ve hedef fiyat gerekli' });
       return;
     }
-    const alert = await PriceAlert.create({ userId, category, subCategory: subCategory || '', targetPrice, keyword: keyword || '' });
+    const normalizedCondition = condition === 'above' ? 'above' : 'below';
+    const alert = await PriceAlert.create({
+      userId,
+      category,
+      subCategory: subCategory || '',
+      targetPrice,
+      keyword: keyword || '',
+      condition: normalizedCondition,
+    });
     res.status(201).json(alert);
   } catch (error) {
     res.status(500).json({ message: 'Alarm oluşturma hatası', error });
