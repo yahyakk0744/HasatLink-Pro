@@ -244,7 +244,6 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
   const [toLabel, setToLabel] = useState('');
   const [pricePerKm, setPricePerKm] = useState('25');
   const [result, setResult] = useState<{ distanceKm: number; estimatedPrice: number } | null>(null);
-  const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'search' | 'map'>('search');
   const [selecting, setSelecting] = useState<'from' | 'to' | null>(null);
   const [geocoding, setGeocoding] = useState(false);
@@ -289,25 +288,20 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
     setGeocoding(false);
   };
 
-  const calculate = async () => {
+  const calculate = () => {
     if (!canCalc) return;
-    setLoading(true);
-    try {
-      const { data } = await api.get('/logistics/distance', {
-        params: {
-          fromLat: coords.fromLat,
-          fromLng: coords.fromLng,
-          toLat: coords.toLat,
-          toLng: coords.toLng,
-          pricePerKm,
-        },
-      });
-      setResult(data);
-    } catch {
-      setResult(null);
-    } finally {
-      setLoading(false);
-    }
+    // Haversine formula — client-side, no backend needed
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const R = 6371; // Earth radius in km
+    const dLat = toRad(coords.toLat - coords.fromLat);
+    const dLng = toRad(coords.toLng - coords.fromLng);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(coords.fromLat)) * Math.cos(toRad(coords.toLat)) * Math.sin(dLng / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distanceKm = Math.round(R * c);
+    const price = parseFloat(pricePerKm) || 25;
+    setResult({ distanceKm, estimatedPrice: distanceKm * price });
   };
 
   return (
@@ -460,10 +454,10 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
           </button>
           <button
             onClick={calculate}
-            disabled={loading || !canCalc}
+            disabled={!canCalc}
             className="flex-1 px-4 py-3 bg-[#2D6A4F] text-white rounded-2xl text-sm font-semibold hover:bg-[#1B4332] transition-colors disabled:opacity-50"
           >
-            {loading ? 'Hesaplaniyor...' : 'Hesapla'}
+            Hesapla
           </button>
         </div>
       </div>
