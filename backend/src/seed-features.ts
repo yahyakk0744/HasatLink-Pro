@@ -5,7 +5,6 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import SiteSettings from './models/SiteSettings';
 import HarvestCalendar from './models/HarvestCalendar';
-import LogisticsProvider from './models/LogisticsProvider';
 
 dotenv.config();
 
@@ -41,18 +40,6 @@ const harvestItems = [
   { product: 'Silajlık Mısır', productEn: 'Silage Corn', category: 'hayvancilik', plantMonths: [4, 5], harvestMonths: [8, 9], regions: ['Akdeniz', 'Marmara', 'Karadeniz'], description: 'Büyükbaş hayvan beslemede temel yem kaynağı. Yüksek enerji değeri.', tips: ['Silaj yapımında kuru madde oranı %30-35 olmalı', 'Silo kapatma hızlı yapılmalı', 'Hamur olum döneminde hasat edin'] },
 ];
 
-// ── Nakliyeci Verileri ──
-const logisticsProviders = [
-  { name: 'Ahmet Yılmaz', companyName: 'Yılmaz Nakliyat', phone: '5321234567', whatsapp: '5321234567', city: 'Antalya', district: 'Kepez', vehicleTypes: ['kamyon', 'tir'], capacityKg: 20000, coverageAreas: ['Antalya', 'Burdur', 'Isparta', 'Mersin', 'Konya'], pricePerKm: 22, hasColdChain: false, description: 'Akdeniz Bölgesi tarım ürünleri taşımacılığında 15 yıllık deneyim. Sebze-meyve taşımacılığında uzman.', rating: 4.7, ratingCount: 34, isVerified: true, isActive: true },
-  { name: 'Mehmet Kaya', companyName: 'Kaya Soğuk Zincir', phone: '5339876543', whatsapp: '5339876543', city: 'Mersin', district: 'Akdeniz', vehicleTypes: ['frigo', 'soguk-zincir'], capacityKg: 15000, coverageAreas: ['Mersin', 'Adana', 'Hatay', 'Ankara', 'İstanbul'], pricePerKm: 35, hasColdChain: true, description: 'Soğuk zincir taşımacılık uzmanı. Narenciye ve hassas meyve taşımacılığı. GPS takipli araçlar.', rating: 4.9, ratingCount: 52, isVerified: true, isActive: true },
-  { name: 'Hasan Demir', companyName: 'Demir Lojistik', phone: '5425551234', whatsapp: '5425551234', city: 'İstanbul', district: 'Beylikdüzü', vehicleTypes: ['tir', 'kamyon'], capacityKg: 30000, coverageAreas: ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya'], pricePerKm: 28, hasColdChain: false, description: 'Büyük hacimli tarım ürünü taşımacılığı. Haftanın 7 günü hizmet. Sigortalı taşımacılık.', rating: 4.5, ratingCount: 28, isVerified: true, isActive: true },
-  { name: 'Ali Çelik', companyName: 'Çelik Tarım Nakliye', phone: '5447778899', whatsapp: '5447778899', city: 'Konya', district: 'Selçuklu', vehicleTypes: ['kamyon', 'tir'], capacityKg: 25000, coverageAreas: ['Konya', 'Aksaray', 'Karaman', 'Ankara', 'Eskişehir'], pricePerKm: 20, hasColdChain: false, description: 'İç Anadolu tahıl ve baklagil taşımacılığında uzman. Silo tesislerine direk teslimat.', rating: 4.3, ratingCount: 19, isVerified: false, isActive: true },
-  { name: 'Osman Aydın', companyName: 'Aydın Frigo', phone: '5361112233', whatsapp: '5361112233', city: 'İzmir', district: 'Bornova', vehicleTypes: ['frigo', 'soguk-zincir', 'kamyon'], capacityKg: 18000, coverageAreas: ['İzmir', 'Aydın', 'Manisa', 'Denizli', 'Muğla', 'İstanbul'], pricePerKm: 32, hasColdChain: true, description: 'Ege Bölgesi meyve-sebze soğuk zincir taşımacılığı. Üzüm, incir, zeytin özel paketleme.', rating: 4.8, ratingCount: 41, isVerified: true, isActive: true },
-  { name: 'Mustafa Özkan', companyName: 'Özkan Nakliyat', phone: '5553334455', whatsapp: '5553334455', city: 'Adana', district: 'Seyhan', vehicleTypes: ['kamyon', 'minibus'], capacityKg: 10000, coverageAreas: ['Adana', 'Mersin', 'Hatay', 'Osmaniye', 'Gaziantep'], pricePerKm: 18, hasColdChain: false, description: 'Çukurova Bölgesi pamuk, mısır ve narenciye taşımacılığı. Küçük parti taşıma imkânı.', rating: 4.1, ratingCount: 15, isVerified: false, isActive: true },
-  { name: 'İbrahim Şahin', companyName: 'Şahin Karadeniz Nakliye', phone: '5327776655', whatsapp: '5327776655', city: 'Trabzon', district: 'Ortahisar', vehicleTypes: ['kamyon', 'minibus'], capacityKg: 12000, coverageAreas: ['Trabzon', 'Rize', 'Giresun', 'Ordu', 'Artvin', 'Ankara', 'İstanbul'], pricePerKm: 25, hasColdChain: false, description: 'Karadeniz çay ve fındık taşımacılığında 20 yıl. Dağlık arazi deneyimi.', rating: 4.6, ratingCount: 37, isVerified: true, isActive: true },
-  { name: 'Kemal Arslan', companyName: 'Arslan Soğuk Depo & Nakliye', phone: '5448889900', whatsapp: '5448889900', city: 'Ankara', district: 'Polatlı', vehicleTypes: ['tir', 'frigo', 'soguk-zincir'], capacityKg: 35000, coverageAreas: ['Ankara', 'Konya', 'Kayseri', 'Eskişehir', 'İstanbul', 'İzmir'], pricePerKm: 30, hasColdChain: true, description: 'Türkiye geneli soğuk zincir ve kuru yük taşımacılığı. Depolama + dağıtım entegre hizmet.', rating: 4.4, ratingCount: 23, isVerified: true, isActive: true },
-];
-
 const seed = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hasatlink');
@@ -74,17 +61,11 @@ const seed = async () => {
     await HarvestCalendar.insertMany(harvestItems);
     console.log(`✓ ${harvestItems.length} hasat takvimi ürünü eklendi`);
 
-    // 3) Nakliyeci
-    await LogisticsProvider.deleteMany({});
-    await LogisticsProvider.insertMany(logisticsProviders);
-    console.log(`✓ ${logisticsProviders.length} nakliyeci eklendi`);
-
     console.log('\n═══════════════════════════════════════');
     console.log('  FEATURE SEED TAMAMLANDI!');
-    console.log('  - Forum: AKTİF (kullanıcılar soru soracak)');
+    console.log('  - Forum: AKTİF');
     console.log('  - Hasat Takvimi: AKTİF + veri yüklendi');
-    console.log('  - Nakliyeci Rehberi: AKTİF + veri yüklendi');
-    console.log('  - AI Teşhis: Zaten hardcoded (Gemini API key gerekli)');
+    console.log('  - Nakliyeci: Sadece kullanıcı ilanları');
     console.log('  - Hava Uyarıları, Harita, Başarı Hikayeleri: AKTİF');
     console.log('═══════════════════════════════════════\n');
 

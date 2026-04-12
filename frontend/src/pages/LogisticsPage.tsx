@@ -1,81 +1,63 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import {
-  Truck, MapPin, Phone, Star, Snowflake, Calculator, Search, ChevronRight,
+  Truck, MapPin, Calculator, Search, Clock, Tag,
+  Navigation, MousePointerClick,
 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
 import api from '../config/api';
 import SEO from '../components/ui/SEO';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import { useFeatures } from '../hooks/useFeatures';
+import type { Listing } from '../types';
 
-interface Provider {
-  _id: string;
-  name: string;
-  companyName: string;
-  phone: string;
-  whatsapp: string;
-  city: string;
-  district: string;
-  vehicleTypes: string[];
-  capacityKg: number;
-  coverageAreas: string[];
-  pricePerKm: number;
-  hasColdChain: boolean;
-  description: string;
-  rating: number;
-  ratingCount: number;
-  isVerified: boolean;
-  contactCount: number;
-}
+import 'leaflet/dist/leaflet.css';
 
-const VEHICLE_LABELS: Record<string, string> = {
-  kamyon: 'Kamyon',
-  tir: 'TIR',
-  'soguk-zincir': 'Soğuk Zincir',
-  frigo: 'Frigo',
-  minibus: 'Minibüs',
-};
+// Fix default marker icon
+const defaultIcon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+L.Marker.prototype.options.icon = defaultIcon;
+
+const greenIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+
+const redIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
 
 export default function LogisticsPage() {
-  const { isEnabled, loading: featuresLoading } = useFeatures();
-  const [providers, setProviders] = useState<Provider[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [city, setCity] = useState('');
-  const [coldChain, setColdChain] = useState(false);
-  const [selected, setSelected] = useState<Provider | null>(null);
   const [showCalc, setShowCalc] = useState(false);
 
-  const fetchProviders = () => {
+  const fetchListings = () => {
     setLoading(true);
-    const params: any = {};
+    const params: any = { type: 'lojistik' };
     if (search) params.search = search;
-    if (city) params.city = city;
-    if (coldChain) params.coldChain = 'true';
-    api.get('/logistics', { params })
-      .then(({ data }) => setProviders(data.providers || []))
-      .catch(() => setProviders([]))
+    api.get('/listings', { params })
+      .then(({ data }) => setListings(data.listings || []))
+      .catch(() => setListings([]))
       .finally(() => setLoading(false));
   };
 
-  useEffect(fetchProviders, [city, coldChain]);
-
-  if (!featuresLoading && !isEnabled('logisticsDirectory')) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-fade-in">
-        <Truck size={48} className="mx-auto text-[var(--text-secondary)] mb-4" />
-        <h1 className="text-xl font-bold mb-2">Nakliyeci Rehberi Yakında</h1>
-        <p className="text-sm text-[var(--text-secondary)]">
-          Tarım nakliyecileri ve mesafe hesaplayıcı yakında burada.
-        </p>
-      </div>
-    );
-  }
+  useEffect(fetchListings, []);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 animate-fade-in">
       <SEO
         title="Nakliyeci Rehberi - HasatLink"
-        description="Tarım nakliyecileri, soğuk zincir taşımacılık, mesafe ve maliyet hesaplayıcı."
+        description="Tarım nakliyecileri, mesafe ve maliyet hesaplayıcı."
       />
 
       {/* Header */}
@@ -86,7 +68,7 @@ export default function LogisticsPage() {
             Nakliyeci Rehberi
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Tarım nakliyecileri + mesafe/maliyet hesaplayıcı
+            Nakliyeci ilanları + mesafe/maliyet hesaplayıcı
           </p>
         </div>
         <button
@@ -98,137 +80,67 @@ export default function LogisticsPage() {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-3 mb-6 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
-          <input
-            type="text"
-            placeholder="Nakliyeci ara..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && fetchProviders()}
-            className="w-full pl-11 pr-4 py-3 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl text-sm focus:outline-none focus:border-[#2D6A4F]"
-          />
-        </div>
+      {/* Search */}
+      <div className="relative mb-6">
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
         <input
           type="text"
-          placeholder="Şehir filtrele..."
-          value={city}
-          onChange={e => setCity(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && fetchProviders()}
-          className="px-4 py-3 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl text-sm focus:outline-none focus:border-[#2D6A4F] w-40"
+          placeholder="Nakliyeci veya ilan ara..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && fetchListings()}
+          className="w-full pl-11 pr-4 py-3 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl text-sm focus:outline-none focus:border-[#2D6A4F]"
         />
-        <button
-          onClick={() => setColdChain(!coldChain)}
-          className={`
-            flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-semibold border transition-colors
-            ${coldChain
-              ? 'bg-blue-500/10 border-blue-500/30 text-blue-600'
-              : 'bg-[var(--bg-surface)] border-[var(--border-default)] text-[var(--text-secondary)]'
-            }
-          `}
-        >
-          <Snowflake size={14} />
-          Soğuk Zincir
-        </button>
       </div>
 
-      {/* Providers */}
+      {/* Listings */}
       {loading ? (
         <LoadingSpinner size="lg" className="py-20" />
-      ) : providers.length === 0 ? (
+      ) : listings.length === 0 ? (
         <div className="text-center py-16 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-default)]">
           <Truck size={40} className="mx-auto text-[var(--text-secondary)] mb-3 opacity-50" />
-          <p className="text-sm text-[var(--text-secondary)]">Nakliyeci bulunamadı</p>
+          <p className="font-semibold mb-1">Henüz nakliyeci ilanı yok</p>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Lojistik kategorisinden ilan vererek burada görünebilirsiniz
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {providers.map(p => (
-            <button
-              key={p._id}
-              onClick={() => {
-                setSelected(p);
-                api.post(`/logistics/${p._id}/contact`).catch(() => {});
-              }}
-              className="text-left bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 hover:border-[#2D6A4F]/30 hover:shadow-sm transition-all"
+          {listings.map(l => (
+            <a
+              key={l._id}
+              href={`/ilan/${l._id}`}
+              className="block bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-5 hover:border-[#2D6A4F]/30 hover:shadow-sm transition-all"
             >
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold">{p.companyName || p.name}</h3>
-                    {p.isVerified && (
-                      <span className="px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-600 text-[10px] font-semibold">
-                        ONAYLI
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1 mt-1">
-                    <MapPin size={12} />
-                    {p.city}{p.district ? `, ${p.district}` : ''}
-                  </p>
-                </div>
-                {p.rating > 0 && (
-                  <span className="flex items-center gap-1 text-sm font-bold text-amber-500">
-                    <Star size={14} fill="currentColor" />
-                    {p.rating.toFixed(1)}
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <h3 className="text-base font-bold line-clamp-1">{l.title}</h3>
+                {l.price > 0 && (
+                  <span className="text-sm font-bold text-[#2D6A4F] whitespace-nowrap">
+                    {l.price.toLocaleString('tr-TR')} ₺
                   </span>
                 )}
               </div>
-
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {p.vehicleTypes?.map(v => (
-                  <span key={v} className="px-2 py-0.5 rounded-full bg-[var(--bg-input)] text-[10px] font-medium">
-                    {VEHICLE_LABELS[v] || v}
-                  </span>
-                ))}
-                {p.hasColdChain && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 text-[10px] font-medium">
-                    <Snowflake size={10} />
-                    Soğuk Zincir
+              {l.description && (
+                <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mb-3">{l.description}</p>
+              )}
+              <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
+                <span className="flex items-center gap-1">
+                  <MapPin size={12} />
+                  {l.location}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock size={12} />
+                  {new Date(l.createdAt).toLocaleDateString('tr-TR')}
+                </span>
+                {l.subCategory && (
+                  <span className="flex items-center gap-1">
+                    <Tag size={12} />
+                    {l.subCategory}
                   </span>
                 )}
               </div>
-
-              <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-                <span>{p.pricePerKm ? `${p.pricePerKm} ₺/km` : ''}</span>
-                {p.capacityKg > 0 && <span>{(p.capacityKg / 1000).toFixed(0)} ton kapasite</span>}
-                <ChevronRight size={14} />
-              </div>
-            </button>
+            </a>
           ))}
-        </div>
-      )}
-
-      {/* Provider Detail */}
-      {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelected(null)}>
-          <div className="w-full max-w-md bg-[var(--bg-surface)] rounded-2xl p-6" onClick={e => e.stopPropagation()}>
-            <h2 className="text-xl font-bold mb-1">{selected.companyName || selected.name}</h2>
-            <p className="text-xs text-[var(--text-secondary)] mb-4 flex items-center gap-1">
-              <MapPin size={12} />
-              {selected.city}{selected.district ? `, ${selected.district}` : ''}
-              {selected.coverageAreas?.length > 0 && ` · Kapsam: ${selected.coverageAreas.join(', ')}`}
-            </p>
-            {selected.description && <p className="text-sm mb-4">{selected.description}</p>}
-
-            <div className="flex gap-3 mb-4">
-              {selected.phone && (
-                <a href={`tel:${selected.phone}`} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#2D6A4F] text-white rounded-2xl text-sm font-semibold hover:bg-[#1B4332] transition-colors">
-                  <Phone size={14} />
-                  Ara
-                </a>
-              )}
-              {selected.whatsapp && (
-                <a href={`https://wa.me/90${selected.whatsapp.replace(/\D/g, '').replace(/^90/, '')}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-2xl text-sm font-semibold hover:bg-green-700 transition-colors">
-                  WhatsApp
-                </a>
-              )}
-            </div>
-            <button onClick={() => setSelected(null)} className="w-full px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm font-semibold hover:opacity-80 transition-opacity">
-              Kapat
-            </button>
-          </div>
         </div>
       )}
 
@@ -238,6 +150,7 @@ export default function LogisticsPage() {
   );
 }
 
+/* ── Address Input with Nominatim autocomplete ── */
 function AddressInput({ label, value, onChange, placeholder }: {
   label: string;
   value: string;
@@ -267,11 +180,14 @@ function AddressInput({ label, value, onChange, placeholder }: {
     }, 400);
   };
 
+  // Allow external update (from map click)
+  useEffect(() => { setQuery(value); }, [value]);
+
   return (
     <div className="relative">
       <p className="text-xs text-[var(--text-secondary)] mb-1">{label}</p>
       <div className="relative">
-        <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
+        <Navigation size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
         <input
           type="text"
           value={query}
@@ -284,7 +200,7 @@ function AddressInput({ label, value, onChange, placeholder }: {
         {searching && <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[var(--text-tertiary)] border-t-transparent rounded-full animate-spin" />}
       </div>
       {open && suggestions.length > 0 && (
-        <div className="absolute z-10 top-full mt-1 left-0 right-0 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-[1000] top-full mt-1 left-0 right-0 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-lg max-h-48 overflow-y-auto">
           {suggestions.map((s, i) => (
             <button
               key={i}
@@ -306,6 +222,22 @@ function AddressInput({ label, value, onChange, placeholder }: {
   );
 }
 
+/* ── Map click handler ── */
+function MapClickHandler({ selecting, onSelect }: {
+  selecting: 'from' | 'to' | null;
+  onSelect: (lat: number, lng: number) => void;
+}) {
+  useMapEvents({
+    click(e) {
+      if (selecting) {
+        onSelect(e.latlng.lat, e.latlng.lng);
+      }
+    },
+  });
+  return null;
+}
+
+/* ── Distance Calculator Modal ── */
 function DistanceCalcModal({ onClose }: { onClose: () => void }) {
   const [coords, setCoords] = useState({ fromLat: 0, fromLng: 0, toLat: 0, toLng: 0 });
   const [fromLabel, setFromLabel] = useState('');
@@ -313,8 +245,49 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
   const [pricePerKm, setPricePerKm] = useState('25');
   const [result, setResult] = useState<{ distanceKm: number; estimatedPrice: number } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<'search' | 'map'>('search');
+  const [selecting, setSelecting] = useState<'from' | 'to' | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
 
   const canCalc = coords.fromLat !== 0 && coords.toLat !== 0;
+
+  const fromPos = useMemo(
+    () => (coords.fromLat ? [coords.fromLat, coords.fromLng] as [number, number] : null),
+    [coords.fromLat, coords.fromLng]
+  );
+  const toPos = useMemo(
+    () => (coords.toLat ? [coords.toLat, coords.toLng] as [number, number] : null),
+    [coords.toLat, coords.toLng]
+  );
+
+  // Reverse geocode a latlng to address name
+  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=tr`
+      );
+      const data = await res.json();
+      if (data.display_name) {
+        return data.display_name.split(',').slice(0, 3).join(',');
+      }
+    } catch {}
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  };
+
+  const handleMapClick = async (lat: number, lng: number) => {
+    setGeocoding(true);
+    const name = await reverseGeocode(lat, lng);
+    if (selecting === 'from') {
+      setCoords(c => ({ ...c, fromLat: lat, fromLng: lng }));
+      setFromLabel(name);
+      setSelecting('to');
+    } else if (selecting === 'to') {
+      setCoords(c => ({ ...c, toLat: lat, toLng: lng }));
+      setToLabel(name);
+      setSelecting(null);
+    }
+    setGeocoding(false);
+  };
 
   const calculate = async () => {
     if (!canCalc) return;
@@ -339,31 +312,131 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-md bg-[var(--bg-surface)] rounded-2xl p-6" onClick={e => e.stopPropagation()}>
+      <div
+        className="w-full max-w-lg bg-[var(--bg-surface)] rounded-2xl p-6 max-h-[90vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
           <Calculator size={20} className="text-amber-500" />
           Mesafe ve Maliyet Hesaplayıcı
         </h2>
 
-        <div className="space-y-3 mb-4">
-          <AddressInput
-            label="Nereden"
-            value={fromLabel}
-            onChange={(name, lat, lng) => { setFromLabel(name); setCoords(c => ({ ...c, fromLat: lat, fromLng: lng })); }}
-            placeholder="Şehir veya adres yazın..."
-          />
-          <AddressInput
-            label="Nereye"
-            value={toLabel}
-            onChange={(name, lat, lng) => { setToLabel(name); setCoords(c => ({ ...c, toLat: lat, toLng: lng })); }}
-            placeholder="Şehir veya adres yazın..."
-          />
-          <div>
-            <p className="text-xs text-[var(--text-secondary)] mb-1">Fiyat (₺/km)</p>
-            <input type="number" placeholder="25" value={pricePerKm} onChange={e => setPricePerKm(e.target.value)} className="w-full px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/30" />
-          </div>
+        {/* Mode toggle */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => { setMode('search'); setSelecting(null); }}
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              mode === 'search'
+                ? 'bg-[#2D6A4F] text-white'
+                : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
+            }`}
+          >
+            <Search size={14} />
+            Adres Ara
+          </button>
+          <button
+            onClick={() => { setMode('map'); setSelecting('from'); }}
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              mode === 'map'
+                ? 'bg-[#2D6A4F] text-white'
+                : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
+            }`}
+          >
+            <MousePointerClick size={14} />
+            Haritadan Sec
+          </button>
         </div>
 
+        {mode === 'search' ? (
+          <div className="space-y-3 mb-4">
+            <AddressInput
+              label="Nereden"
+              value={fromLabel}
+              onChange={(name, lat, lng) => { setFromLabel(name); setCoords(c => ({ ...c, fromLat: lat, fromLng: lng })); }}
+              placeholder="Sehir veya adres yazin..."
+            />
+            <AddressInput
+              label="Nereye"
+              value={toLabel}
+              onChange={(name, lat, lng) => { setToLabel(name); setCoords(c => ({ ...c, toLat: lat, toLng: lng })); }}
+              placeholder="Sehir veya adres yazin..."
+            />
+          </div>
+        ) : (
+          <div className="mb-4">
+            {/* Map selection info */}
+            <div className={`mb-2 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2 ${
+              geocoding
+                ? 'bg-amber-500/10 text-amber-600'
+                : selecting === 'from'
+                  ? 'bg-green-500/10 text-green-600'
+                  : selecting === 'to'
+                    ? 'bg-red-500/10 text-red-600'
+                    : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
+            }`}>
+              <MousePointerClick size={14} />
+              {geocoding
+                ? 'Adres aliniyor...'
+                : selecting === 'from'
+                  ? 'Haritada NEREDEN noktasini secin (yesil)'
+                  : selecting === 'to'
+                    ? 'Haritada NEREYE noktasini secin (kirmizi)'
+                    : 'Her iki nokta secildi'
+              }
+            </div>
+
+            {/* Leaflet Map */}
+            <div className="h-64 rounded-xl overflow-hidden border border-[var(--border-default)]">
+              <MapContainer
+                center={[39.0, 35.0]}
+                zoom={6}
+                style={{ height: '100%', width: '100%' }}
+                attributionControl={false}
+              >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <MapClickHandler selecting={selecting} onSelect={handleMapClick} />
+                {fromPos && <Marker position={fromPos} icon={greenIcon} />}
+                {toPos && <Marker position={toPos} icon={redIcon} />}
+              </MapContainer>
+            </div>
+
+            {/* Selected locations display */}
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => setSelecting('from')}
+                className={`flex-1 text-left px-3 py-2 rounded-xl text-xs border transition-colors ${
+                  selecting === 'from' ? 'border-green-500 bg-green-500/5' : 'border-[var(--border-default)]'
+                }`}
+              >
+                <span className="text-green-600 font-semibold">Nereden: </span>
+                {fromLabel || <span className="text-[var(--text-tertiary)]">Secilmedi</span>}
+              </button>
+              <button
+                onClick={() => setSelecting('to')}
+                className={`flex-1 text-left px-3 py-2 rounded-xl text-xs border transition-colors ${
+                  selecting === 'to' ? 'border-red-500 bg-red-500/5' : 'border-[var(--border-default)]'
+                }`}
+              >
+                <span className="text-red-600 font-semibold">Nereye: </span>
+                {toLabel || <span className="text-[var(--text-tertiary)]">Secilmedi</span>}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Price per km */}
+        <div className="mb-4">
+          <p className="text-xs text-[var(--text-secondary)] mb-1">Fiyat (₺/km)</p>
+          <input
+            type="number"
+            placeholder="25"
+            value={pricePerKm}
+            onChange={e => setPricePerKm(e.target.value)}
+            className="w-full px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/30"
+          />
+        </div>
+
+        {/* Result */}
         {result && (
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="p-4 bg-green-500/10 rounded-xl text-center">
@@ -377,10 +450,20 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        {/* Actions */}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm font-semibold hover:opacity-80 transition-opacity">Kapat</button>
-          <button onClick={calculate} disabled={loading || !canCalc} className="flex-1 px-4 py-3 bg-[#2D6A4F] text-white rounded-2xl text-sm font-semibold hover:bg-[#1B4332] transition-colors disabled:opacity-50">
-            {loading ? 'Hesaplanıyor...' : 'Hesapla'}
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm font-semibold hover:opacity-80 transition-opacity"
+          >
+            Kapat
+          </button>
+          <button
+            onClick={calculate}
+            disabled={loading || !canCalc}
+            className="flex-1 px-4 py-3 bg-[#2D6A4F] text-white rounded-2xl text-sm font-semibold hover:bg-[#1B4332] transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Hesaplaniyor...' : 'Hesapla'}
           </button>
         </div>
       </div>
