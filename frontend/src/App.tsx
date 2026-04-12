@@ -78,6 +78,13 @@ export default function App() {
     trackPageView(pathname);
   }, [pathname]);
 
+  // Wake up Render backend immediately on app load (prevents cold start delay)
+  useEffect(() => {
+    import('./config/api').then(({ default: api }) => {
+      api.get('/ping').catch(() => {});
+    });
+  }, []);
+
   // Native: register push notifications & app lifecycle
   useEffect(() => {
     if (!isNative) return;

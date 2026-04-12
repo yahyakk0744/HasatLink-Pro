@@ -123,6 +123,11 @@ app.use('/api', harvestCalendarRoutes);
 app.use('/api', logisticsRoutes);
 app.use('/api', sponsoredContentRoutes);
 
+// Health / keep-alive endpoint — minimal response, no DB hit
+app.get('/api/ping', (_req, res) => {
+  res.json({ ok: true, ts: Date.now() });
+});
+
 // VAPID public key endpoint
 app.get('/api/push/vapid-key', (_req, res) => {
   res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || 'BBQR8Itsvely1iLKMQrjuNbs3pCFq_m1x9KF3vrODBzLaPpSAd7cyOSJ_RibGPC1R6PKtBTGIWUX06HwgnlVbJA' });

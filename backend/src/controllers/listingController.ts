@@ -42,14 +42,31 @@ export const getListings = async (req: Request, res: Response): Promise<void> =>
     else if (sort === 'expensive') sortOption = { price: -1 };
 
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+    // Projection: only send fields ListingCard needs (skip heavy fields like description, documents etc.)
+    const listProjection = {
+      userId: 1, type: 1, listingMode: 1, subCategory: 1, status: 1, title: 1,
+      price: 1, amount: 1, unit: 1, location: 1, coordinates: 1, phone: 1,
+      harvestDate: 1, isOrganic: 1, qualityGrade: 1, isFeatured: 1,
+      is_negotiable: 1, previousPrice: 1, originalPrice: 1,
+      vehicleType: 1, routeFrom: 1, routeTo: 1, capacity: 1, isFrigo: 1,
+      brand: 1, modelName: 1, condition: 1, saleType: 1,
+      landSize: 1, landUnit: 1, soilType: 1,
+      animalBreed: 1, animalCount: 1, animalGender: 1,
+      stats: 1, createdAt: 1,
+      // Only first image for card thumbnail
+      images: { $slice: 1 },
+    };
+
     const [listings, total] = await Promise.all([
-      Listing.find(filter).sort(sortOption).skip(skip).limit(parseInt(limit as string)).lean(),
+      Listing.find(filter, listProjection).sort(sortOption).skip(skip).limit(parseInt(limit as string)).lean(),
       Listing.countDocuments(filter),
     ]);
 
-    // Populate seller info
+    // Populate seller info — single batch query
     const userIds = [...new Set(listings.map((l: any) => l.userId))];
-    const users = await User.find({ userId: { $in: userIds } }).select('userId name profileImage averageRating isVerified trust_score points').lean();
+    const users = userIds.length > 0
+      ? await User.find({ userId: { $in: userIds } }).select('userId name profileImage averageRating isVerified trust_score points').lean()
+      : [];
     const userMap = new Map(users.map((u: any) => [u.userId, u]));
     const enriched = listings.map((l: any) => {
       const seller = userMap.get(l.userId);

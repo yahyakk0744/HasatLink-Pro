@@ -61,7 +61,7 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
         <div
           key={listing._id}
           className="card-enter"
-          style={{ animationDelay: `${index * 60}ms` }}
+          style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
         >
           <ListingCard listing={listing} />
         </div>
