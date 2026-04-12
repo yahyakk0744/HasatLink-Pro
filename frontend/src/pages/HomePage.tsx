@@ -257,89 +257,54 @@ export default function HomePage() {
 
       {/* ─── 3. Hızlı Kategoriler ─── */}
       <AnimatedSection>
-        <section className="max-w-6xl mx-auto px-3 md:px-4 py-8 md:py-14">
-          <div className="text-center mb-6 md:mb-10">
-            <p className="text-[10px] md:text-xs font-bold tracking-[0.25em] uppercase text-[var(--accent-green)] mb-2">
-              {lang === 'tr' ? 'KATEGORİLER' : 'CATEGORIES'}
-            </p>
-            <h2 className="text-2xl md:text-4xl font-black tracking-tight mb-2 text-[var(--text-primary)]">
-              {lang === 'tr' ? 'Neye İhtiyacın Var?' : 'What Do You Need?'}
+        <section className="max-w-6xl mx-auto px-3 md:px-4 py-6 md:py-10">
+          <div className="flex items-end justify-between mb-4 md:mb-6">
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+              {lang === 'tr' ? 'Kategoriler' : 'Categories'}
             </h2>
-            <p className="text-xs md:text-sm text-[var(--text-secondary)] max-w-md mx-auto">
-              {lang === 'tr'
-                ? 'Kategoriler arasında dolaş veya direkt ilan ver.'
-                : 'Browse categories or post a listing directly.'}
-            </p>
+            <span className="text-[11px] text-[var(--text-secondary)]">
+              {lang === 'tr' ? 'Üzerine gel, ilan ver' : 'Hover to post'}
+            </span>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3">
             {Object.entries(CATEGORY_LABELS).map(([key, cat]) => {
               const count = platformStats.categoryCounts[key] || 0;
               const color = CATEGORY_COLORS[key] || '#2D6A4F';
-              const subs = ALL_SUBCATEGORIES[key] ? Object.keys(ALL_SUBCATEGORIES[key]).slice(0, 3) : [];
               return (
                 <Link
                   key={key}
                   to={`/${key}`}
-                  className="group relative overflow-hidden rounded-3xl p-5 md:p-6 transition-all duration-500 hover:-translate-y-1 active:scale-[0.98] bg-[var(--bg-surface)] border border-[var(--border-default)] hover:shadow-2xl min-h-[210px] md:min-h-[230px] flex flex-col"
-                  style={{ '--cat-color': color } as React.CSSProperties}
+                  className="group relative overflow-hidden rounded-2xl p-3 md:p-4 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] bg-[var(--bg-surface)] border border-[var(--border-default)] hover:shadow-lg flex flex-col items-center text-center"
                 >
                   {/* Gradient hover layer */}
                   <div
-                    className="absolute inset-0 opacity-40 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                    style={{ background: `linear-gradient(135deg, ${color}10 0%, ${color}03 55%, transparent 100%)` }}
-                  />
-                  {/* Dot pattern bg */}
-                  <div
-                    className="absolute inset-0 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity pointer-events-none"
-                    style={{
-                      backgroundImage: `radial-gradient(circle at 1px 1px, ${color} 1px, transparent 0)`,
-                      backgroundSize: '18px 18px',
-                    }}
-                  />
-                  {/* Corner glow */}
-                  <div
-                    className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-2xl opacity-0 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none"
-                    style={{ background: color }}
+                    className="absolute inset-0 opacity-30 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                    style={{ background: `linear-gradient(160deg, ${color}10 0%, transparent 70%)` }}
                   />
 
                   {/* Content */}
-                  <div className="relative flex flex-col h-full">
+                  <div className="relative flex flex-col items-center w-full">
                     {/* Icon */}
                     <div
-                      className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center mb-4 transition-all duration-500 group-hover:scale-110 group-hover:-rotate-6"
+                      className="w-11 h-11 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-2 transition-transform duration-300 group-hover:scale-110"
                       style={{
                         background: `${color}15`,
-                        border: `1.5px solid ${color}30`,
-                        boxShadow: `0 6px 18px -6px ${color}50`,
+                        border: `1px solid ${color}25`,
                       }}
                     >
-                      <div style={{ color }}>{CATEGORY_ICONS[key]}</div>
+                      <div style={{ color, transform: 'scale(0.8)' }}>{CATEGORY_ICONS[key]}</div>
                     </div>
 
                     {/* Title & count */}
-                    <h3 className="text-sm md:text-base font-bold tracking-tight mb-0.5 text-[var(--text-primary)]">
+                    <h3 className="text-[11px] md:text-[12px] font-semibold tracking-tight mb-0.5 text-[var(--text-primary)] truncate w-full">
                       {cat[lang]}
                     </h3>
-                    <p className="text-[11px] md:text-xs text-[var(--text-secondary)] mb-3">
-                      {count} {lang === 'tr' ? 'aktif ilan' : 'active listings'}
+                    <p className="text-[10px] text-[var(--text-secondary)]">
+                      {count} {lang === 'tr' ? 'ilan' : 'listings'}
                     </p>
-
-                    {/* Sub-category chips */}
-                    {subs.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-auto mb-10 md:mb-0">
-                        {subs.map((sub) => (
-                          <span
-                            key={sub}
-                            className="text-[9px] md:text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-input)] text-[var(--text-secondary)] font-semibold tracking-wide truncate max-w-[90px]"
-                          >
-                            {sub}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
 
-                  {/* CTA — visible on mobile, slide-up on desktop hover */}
+                  {/* CTA — slide-up on hover (desktop only) */}
                   <button
                     type="button"
                     onClick={(e) => {
@@ -352,11 +317,11 @@ export default function HomePage() {
                       setFormInitialType(key as Listing['type']);
                       setShowForm(true);
                     }}
-                    className="absolute bottom-0 left-0 right-0 translate-y-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-300 px-4 py-2.5 flex items-center justify-center gap-1.5 text-white text-[11px] md:text-xs font-bold tracking-wide z-10"
+                    className="hidden md:flex absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 px-2 py-1.5 items-center justify-center gap-1 text-white text-[10px] font-bold tracking-wide z-10"
                     style={{ background: color }}
                   >
-                    <Plus size={14} strokeWidth={2.5} />
-                    {lang === 'tr' ? 'İLAN VER' : 'POST LISTING'}
+                    <Plus size={11} strokeWidth={3} />
+                    {lang === 'tr' ? 'İLAN VER' : 'POST'}
                   </button>
                 </Link>
               );
