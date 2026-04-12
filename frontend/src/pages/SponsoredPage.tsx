@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Newspaper, Eye, MousePointer, ArrowLeft, ExternalLink, Clock } from 'lucide-react';
+import { Newspaper, ArrowLeft, ExternalLink, Clock } from 'lucide-react';
 import api from '../config/api';
 import SEO from '../components/ui/SEO';
 import LoadingSpinner from '../components/ui/LoadingSpinner';

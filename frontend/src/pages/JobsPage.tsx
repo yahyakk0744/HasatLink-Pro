@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Briefcase, MapPin, Calendar, Users, Clock, Plus, Search, Filter, ChevronRight,
+  Briefcase, MapPin, Users, Clock, Plus, Search, ChevronRight,
 } from 'lucide-react';
 import api from '../config/api';
 import SEO from '../components/ui/SEO';

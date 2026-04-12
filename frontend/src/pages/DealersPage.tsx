@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Store, MapPin, Phone, Star, ExternalLink, Search, Filter, CheckCircle2 } from 'lucide-react';
+import { Store, MapPin, Phone, Star, ExternalLink, Search, CheckCircle2 } from 'lucide-react';
 import api from '../config/api';
 import SEO from '../components/ui/SEO';
 import LoadingSpinner from '../components/ui/LoadingSpinner';

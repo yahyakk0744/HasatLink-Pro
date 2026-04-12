@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, SlidersHorizontal, X, ArrowUpDown, CalendarClock, TrendingDown, LayoutGrid, Map, Bell, Save } from 'lucide-react';
+import { Plus, SlidersHorizontal, X, ArrowUpDown, CalendarClock, TrendingDown, LayoutGrid, Map, Bell } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useAuth } from '../contexts/AuthContext';
 import ListingGrid from '../components/listings/ListingGrid';
