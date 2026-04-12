@@ -23,7 +23,7 @@ export default function CategoryNav() {
   return (
     <nav className="bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center gap-1.5 overflow-x-auto py-2 scrollbar-hide">
+        <div className="flex items-center gap-1.5 overflow-x-auto py-2 scrollbar-hide flex-nowrap">
           {categories.map(([key, cat]) => (
             <NavLink
               key={key}
