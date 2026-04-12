@@ -42,8 +42,8 @@ export default function DealerCard({ item, className = '' }: DealerCardProps) {
     <div
       className={`
         relative overflow-hidden rounded-2xl
-        bg-white/70 backdrop-blur-md
-        border border-white/20
+        bg-[var(--glass-surface)] backdrop-blur-md
+        border border-[var(--glass-border)]
         shadow-sm hover:shadow-md
         transition-all duration-300 ease-out
         hover:-translate-y-0.5
@@ -74,7 +74,7 @@ export default function DealerCard({ item, className = '' }: DealerCardProps) {
       <div className="p-5">
         {/* Header */}
         <div className="flex items-start gap-3.5 mb-3.5">
-          <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0 shadow-sm">
+          <div className="w-12 h-12 rounded-xl overflow-hidden bg-[var(--bg-input)] shrink-0 shadow-sm">
             {dealer.profileImage ? (
               <img src={dealer.profileImage} alt="" className="w-full h-full object-cover" />
             ) : (
@@ -84,10 +84,10 @@ export default function DealerCard({ item, className = '' }: DealerCardProps) {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-[15px] font-semibold text-gray-900 tracking-tight truncate">
+            <h3 className="text-[15px] font-semibold text-[var(--text-primary)] tracking-tight truncate">
               {dealer.companyName}
             </h3>
-            <p className="text-[13px] text-gray-500 truncate">{dealer.name}</p>
+            <p className="text-[13px] text-[var(--text-secondary)] truncate">{dealer.name}</p>
           </div>
         </div>
 
@@ -97,13 +97,13 @@ export default function DealerCard({ item, className = '' }: DealerCardProps) {
             {dealer.specialization_tags.slice(0, 4).map((tag, i) => (
               <span
                 key={i}
-                className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-medium"
+                className="px-2.5 py-1 rounded-lg bg-[var(--accent-green-bg)] text-[var(--accent-green)] text-[11px] font-medium"
               >
                 {tag}
               </span>
             ))}
             {dealer.specialization_tags.length > 4 && (
-              <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-500 text-[11px] font-medium">
+              <span className="px-2.5 py-1 rounded-lg bg-[var(--bg-input)] text-[var(--text-secondary)] text-[11px] font-medium">
                 +{dealer.specialization_tags.length - 4}
               </span>
             )}
@@ -111,8 +111,8 @@ export default function DealerCard({ item, className = '' }: DealerCardProps) {
         )}
 
         {/* Location & distance */}
-        <div className="flex items-center gap-1.5 text-[13px] text-gray-500 mb-4">
-          <MapPin size={14} className="text-gray-400 shrink-0" />
+        <div className="flex items-center gap-1.5 text-[13px] text-[var(--text-secondary)] mb-4">
+          <MapPin size={14} className="text-[var(--text-tertiary)] shrink-0" />
           <span className="truncate">{dealer.address}</span>
           <span className="shrink-0 ml-auto text-emerald-600 font-medium">{distance} km</span>
         </div>
@@ -136,7 +136,7 @@ export default function DealerCard({ item, className = '' }: DealerCardProps) {
           {dealer.website && (
             <button
               onClick={handleClick}
-              className="w-11 flex items-center justify-center py-2.5 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-[0.98] transition-all"
+              className="w-11 flex items-center justify-center py-2.5 rounded-xl bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] active:scale-[0.98] transition-all"
             >
               <ExternalLink size={16} />
             </button>

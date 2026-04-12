@@ -98,7 +98,7 @@ export default function AIDiagnosisPage() {
             onClick={() => handleTabChange(id)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
               activeTab === id
-                ? 'bg-white text-[var(--text-primary)] shadow-sm'
+                ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm'
                 : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
             }`}
           >

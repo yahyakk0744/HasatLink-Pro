@@ -165,7 +165,7 @@ export default function AdminDealersPage() {
             placeholder={isTr ? 'Bayi ara...' : 'Search dealers...'}
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white/70 backdrop-blur-md border border-white/20 text-[14px] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 shadow-sm"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-[var(--glass-surface)] backdrop-blur-md border border-[var(--glass-border)] text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-emerald-400/30 shadow-sm"
           />
         </div>
         <Button size="sm" onClick={() => openModal()}>
@@ -181,7 +181,7 @@ export default function AdminDealersPage() {
           className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
             filterStatus === 'all'
               ? 'bg-emerald-500 text-white shadow-sm'
-              : 'bg-white/70 backdrop-blur-md text-gray-600 border border-white/20 hover:bg-gray-50'
+              : 'bg-[var(--glass-surface)] backdrop-blur-md text-[var(--text-secondary)] border border-[var(--glass-border)] hover:bg-[var(--bg-surface-hover)]'
           }`}
         >
           {isTr ? 'Tümü' : 'All'} ({dealers.length})
@@ -195,7 +195,7 @@ export default function AdminDealersPage() {
               className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
                 filterStatus === s
                   ? 'bg-emerald-500 text-white shadow-sm'
-                  : 'bg-white/70 backdrop-blur-md text-gray-600 border border-white/20 hover:bg-gray-50'
+                  : 'bg-[var(--glass-surface)] backdrop-blur-md text-[var(--text-secondary)] border border-[var(--glass-border)] hover:bg-[var(--bg-surface-hover)]'
               }`}
             >
               {STATUS_LABELS[lang][s]} ({count})
@@ -216,7 +216,7 @@ export default function AdminDealersPage() {
               key={dealer._id}
               className={`
                 relative overflow-hidden rounded-2xl p-5
-                bg-white/70 backdrop-blur-md border border-white/20 shadow-sm
+                bg-[var(--glass-surface)] backdrop-blur-md border border-[var(--glass-border)] shadow-sm
                 hover:shadow-md transition-shadow
                 ${dealer.is_premium_partner ? 'ring-2 ring-amber-400/40' : ''}
               `}

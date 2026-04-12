@@ -367,7 +367,7 @@ export default function ListingsPage() {
           className={`inline-flex items-center gap-1.5 px-4 py-2 text-[11px] font-semibold rounded-full whitespace-nowrap transition-all active:scale-[0.97] ${
             quickFilter === 'today'
               ? 'bg-[#2D6A4F] text-white shadow-sm'
-              : 'bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[#2D6A4F] hover:text-[#2D6A4F]'
+              : 'bg-[var(--glass-surface)] backdrop-blur border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[#2D6A4F] hover:text-[#2D6A4F]'
           }`}
         >
           <CalendarClock size={13} />
@@ -378,7 +378,7 @@ export default function ListingsPage() {
           className={`inline-flex items-center gap-1.5 px-4 py-2 text-[11px] font-semibold rounded-full whitespace-nowrap transition-all active:scale-[0.97] ${
             quickFilter === 'priceDropped'
               ? 'bg-[#0077B6] text-white shadow-sm'
-              : 'bg-white/80 dark:bg-[var(--bg-surface)]/80 backdrop-blur border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[#0077B6] hover:text-[#0077B6]'
+              : 'bg-[var(--glass-surface)] backdrop-blur border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[#0077B6] hover:text-[#0077B6]'
           }`}
         >
           <TrendingDown size={13} />
@@ -389,13 +389,13 @@ export default function ListingsPage() {
         <div className="ml-auto flex bg-[var(--bg-input)] rounded-full p-0.5 shrink-0">
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-full transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
+            className={`p-2 rounded-full transition-all ${viewMode === 'grid' ? 'bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
           >
             <LayoutGrid size={14} />
           </button>
           <button
             onClick={() => setViewMode('map')}
-            className={`p-2 rounded-full transition-all ${viewMode === 'map' ? 'bg-white dark:bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
+            className={`p-2 rounded-full transition-all ${viewMode === 'map' ? 'bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
           >
             <Map size={14} />
           </button>

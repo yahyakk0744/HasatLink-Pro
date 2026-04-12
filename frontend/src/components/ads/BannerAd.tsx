@@ -54,8 +54,8 @@ export default function BannerAd({ slot, className = '' }: BannerAdProps) {
     <div
       className={`
         cursor-pointer overflow-hidden rounded-2xl
-        bg-white/70 backdrop-blur-md
-        border border-white/20
+        bg-[var(--glass-surface)] backdrop-blur-md
+        border border-[var(--glass-border)]
         shadow-sm hover:shadow-md
         transition-all duration-300
         hover:-translate-y-0.5

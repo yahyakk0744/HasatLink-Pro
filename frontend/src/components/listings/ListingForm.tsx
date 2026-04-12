@@ -439,7 +439,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         {/* Step Indicator */}
         <StepIndicator current={step} onStep={setStep} />
 
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Main Form Area */}
           <div className="flex-1 min-w-0">
 
@@ -489,7 +489,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                 {/* Glassmorphism Image Upload Area */}
                 <div>
                   <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-2">{t('listing.images')}</label>
-                  <div className="p-5 rounded-3xl bg-white/50 dark:bg-white/5 backdrop-blur-xl border border-white/20 shadow-lg">
+                  <div className="p-5 rounded-3xl bg-[var(--glass-surface)] backdrop-blur-xl border border-[var(--glass-border)] shadow-lg">
                     <div className="flex gap-3 flex-wrap">
                       {images.map((img, i) => (
                         <div key={i} className="relative w-24 h-24 rounded-2xl overflow-hidden group shadow-md">
@@ -632,7 +632,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                 {type === 'pazar' && (
                   <>
                     <SectionTitle>{t('listing.pazarDetails')}</SectionTitle>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (TL/birim)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
                       <Input label={t('listing.amount')} type="number" value={amount} onChange={e => setAmount(e.target.value)} />
                       <div>
@@ -661,7 +661,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                         <ToggleSwitch label={t('listing.organic')} checked={isOrganic} onChange={setIsOrganic} />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">Teslimat Seçeneği</label>
                         <SelectButtons options={['TARLADAN TESLİM', 'ADRESE TESLİM', 'DEPODAN TESLİM', 'ALICI ALIR']} value={deliveryOption} onChange={setDeliveryOption} />
@@ -760,9 +760,9 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                       <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">
                         {listingMode === 'buy' ? t('listing.preferredBrand') : t('listing.brand')}
                       </label>
-                      <SelectButtons options={EQUIPMENT_BRANDS} value={brand} onChange={setBrand} color="#1A1A1A" />
+                      <SelectButtons options={EQUIPMENT_BRANDS} value={brand} onChange={setBrand} color="#6B4E3D" />
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Input label={listingMode === 'buy' ? t('listing.preferredModel') : t('listing.modelName')} value={modelName} onChange={e => setModelName(e.target.value)} />
                       <Input label={t('listing.year')} type="number" value={yearOfManufacture} onChange={e => setYearOfManufacture(e.target.value)} />
                       <Input label={t('listing.horsePower')} type="number" value={horsePower} onChange={e => setHorsePower(e.target.value)} />
@@ -783,14 +783,12 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                 {type === 'arazi' && (
                   <>
                     <SectionTitle>{t('listing.araziDetails')}</SectionTitle>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (TL)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input label={t('listing.landSize')} type="number" value={landSize} onChange={e => setLandSize(e.target.value)} />
-                        <div>
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.landUnit')}</label>
-                          <SelectButtons options={LAND_UNITS} value={landUnit} onChange={setLandUnit} />
-                        </div>
+                      <Input label={t('listing.landSize')} type="number" value={landSize} onChange={e => setLandSize(e.target.value)} />
+                      <div>
+                        <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.landUnit')}</label>
+                        <SelectButtons options={LAND_UNITS} value={landUnit} onChange={setLandUnit} />
                       </div>
                     </div>
                     <div>
@@ -826,14 +824,12 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                 {type === 'depolama' && (
                   <>
                     <SectionTitle>{t('listing.depolamaDetails')}</SectionTitle>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Input label={(listingMode === 'buy' ? t('listing.priceBudget') : t('listing.price')) + ' (TL)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input label={t('listing.storageCapacity')} type="number" value={storageCapacity} onChange={e => setStorageCapacity(e.target.value)} />
-                        <div>
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.capacityUnit')}</label>
-                          <SelectButtons options={STORAGE_CAPACITY_UNITS} value={storageCapacityUnit} onChange={setStorageCapacityUnit} />
-                        </div>
+                      <Input label={t('listing.storageCapacity')} type="number" value={storageCapacity} onChange={e => setStorageCapacity(e.target.value)} />
+                      <div>
+                        <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{t('listing.capacityUnit')}</label>
+                        <SelectButtons options={STORAGE_CAPACITY_UNITS} value={storageCapacityUnit} onChange={setStorageCapacityUnit} />
                       </div>
                     </div>
                     {subCategory === 'SOGUK HAVA DEPOSU' && (
@@ -860,14 +856,12 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                 {type === 'hayvancilik' && (
                   <>
                     <SectionTitle>{lang === 'tr' ? 'Hayvancılık Detayları' : 'Livestock Details'}</SectionTitle>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Input label={(listingMode === 'buy' ? (lang === 'tr' ? 'Bütçe' : 'Budget') : (lang === 'tr' ? 'Fiyat' : 'Price')) + ' (TL)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input label={lang === 'tr' ? 'Miktar' : 'Amount'} type="number" value={amount} onChange={e => setAmount(e.target.value)} />
-                        <div>
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{lang === 'tr' ? 'Birim' : 'Unit'}</label>
-                          <SelectButtons options={HAYVANCILIK_UNITS} value={unit} onChange={setUnit} />
-                        </div>
+                      <Input label={lang === 'tr' ? 'Miktar' : 'Amount'} type="number" value={amount} onChange={e => setAmount(e.target.value)} />
+                      <div>
+                        <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{lang === 'tr' ? 'Birim' : 'Unit'}</label>
+                        <SelectButtons options={HAYVANCILIK_UNITS} value={unit} onChange={setUnit} />
                       </div>
                     </div>
                     {(subCategory === 'BÜYÜKBAŞ' || subCategory === 'KÜÇÜKBAŞ' || subCategory === 'KANATLI') && ANIMAL_BREEDS[subCategory] && (
@@ -880,7 +874,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                       <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{lang === 'tr' ? 'Cinsiyet' : 'Gender'}</label>
                       <SelectButtons options={ANIMAL_GENDERS} value={animalGender} onChange={setAnimalGender} />
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Input label={lang === 'tr' ? 'Yaş' : 'Age'} type="number" value={animalAge} onChange={e => setAnimalAge(e.target.value)} />
                       <div>
                         <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{lang === 'tr' ? 'Yaş Birimi' : 'Age Unit'}</label>
