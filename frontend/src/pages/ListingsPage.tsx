@@ -208,14 +208,14 @@ export default function ListingsPage() {
               type="date"
               value={harvestDateFrom}
               onChange={e => setHarvestDateFrom(e.target.value)}
-              className="w-1/2 apple-input text-xs"
+              className="flex-1 min-w-0 apple-input text-xs"
               placeholder="Başlangıç"
             />
             <input
               type="date"
               value={harvestDateTo}
               onChange={e => setHarvestDateTo(e.target.value)}
-              className="w-1/2 apple-input text-xs"
+              className="flex-1 min-w-0 apple-input text-xs"
               placeholder="Bitiş"
             />
           </div>
