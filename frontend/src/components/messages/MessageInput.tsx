@@ -48,7 +48,7 @@ export default function MessageInput({ onSend, disabled, conversationId }: Messa
     if (!trimmed || disabled) return;
 
     if (containsProfanity(trimmed)) {
-      toast.error('Uygunsuz icerik tespit edildi, lutfen duzenleyin');
+      toast.error('Uygunsuz içerik tespit edildi, lütfen düzenleyin');
       return;
     }
 
@@ -64,7 +64,7 @@ export default function MessageInput({ onSend, disabled, conversationId }: Messa
   };
 
   const handleAttachAction = (type: 'location' | 'photo') => {
-    toast(`${type === 'location' ? 'Konum' : 'Fotograf'} paylasimi yakinda aktif olacak`, { icon: 'info' });
+    toast(`${type === 'location' ? 'Konum' : 'Fotoğraf'} paylaşımı yakında aktif olacak`, { icon: 'info' });
     setShowAttach(false);
   };
 

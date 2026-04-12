@@ -100,12 +100,12 @@ function SellerCard({ listing, onMessage }: { listing: Listing; onMessage?: () =
       <div className="flex gap-1.5 flex-wrap">
         {listing.sellerVerified && (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-[#0077B6]/10 text-[#0077B6]">
-            <CheckCircle2 size={10} />Onayli Satici
+            <CheckCircle2 size={10} />Onaylı Satıcı
           </span>
         )}
         {(listing.sellerTotalRatings ?? 0) >= 5 && (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">
-            <Zap size={10} />Hizli Yanit
+            <Zap size={10} />Hızlı Yanıt
           </span>
         )}
         {joinYear && new Date().getFullYear() - joinYear >= 1 && (
@@ -159,17 +159,17 @@ function PriceAlertBox({ category, subCategory, currentPrice }: { category: stri
         <div className="w-8 h-8 rounded-xl bg-[var(--accent-orange)]/10 flex items-center justify-center">
           <Bell size={16} strokeWidth={1.5} className="text-[var(--accent-orange)]" />
         </div>
-        <h3 className="text-sm font-semibold tracking-tight">{t('listing.priceAlert') || 'Fiyat Alarmi'}</h3>
+        <h3 className="text-sm font-semibold tracking-tight">{t('listing.priceAlert') || 'Fiyat Alarmı'}</h3>
       </div>
       <p className="text-[11px] text-[var(--text-secondary)] mb-3">
-        Bu kategoride hedef fiyatinizin altinda ilan girildiginde bildirim alin.
+        Bu kategoride hedef fiyatınızın altında ilan girildiğinde bildirim alın.
       </p>
       <div className="flex gap-2">
         <input
           type="number"
           value={targetPrice}
           onChange={e => setTargetPrice(e.target.value)}
-          placeholder={`Hedef fiyat (Guncel: ${currentPrice.toLocaleString('tr-TR')})`}
+          placeholder={`Hedef fiyat (Güncel: ${currentPrice.toLocaleString('tr-TR')})`}
           className="flex-1 px-3 py-2 text-sm bg-[var(--bg-input)] border border-[var(--border-default)] rounded-xl outline-none focus:border-[var(--accent-green)] transition-colors"
         />
         <button
@@ -186,7 +186,7 @@ function PriceAlertBox({ category, subCategory, currentPrice }: { category: stri
       </div>
       {saved && (
         <p className="text-[11px] text-[var(--accent-green)] mt-2 font-medium">
-          Alarm kuruldu! Eslesen ilan girildiginde bildirim alacaksiniz.
+          Alarm kuruldu! Eşleşen ilan girildiğinde bildirim alacaksınız.
         </p>
       )}
     </div>
@@ -607,7 +607,7 @@ export default function ListingDetailPage() {
                 <div className="flex items-center justify-between text-[10px] text-[var(--text-secondary)] mb-1">
                   <span>Bu ilan</span>
                   <span className={listing.price <= marketAnalytics.avgPrice ? 'text-[#2D6A4F] font-semibold' : 'text-[#C1341B] font-semibold'}>
-                    {listing.price <= marketAnalytics.avgPrice ? 'Ortalamanin altinda' : 'Ortalamanin ustunde'}
+                    {listing.price <= marketAnalytics.avgPrice ? 'Ortalamanın altında' : 'Ortalamanın üstünde'}
                   </span>
                 </div>
                 <div className="h-2 rounded-full bg-gradient-to-r from-[#2D6A4F] via-[#F59E0B] to-[#C1341B] relative">
@@ -622,7 +622,7 @@ export default function ListingDetailPage() {
               </div>
               {/* Trend */}
               <div className="flex items-center justify-between px-2.5 py-2 rounded-xl bg-[var(--bg-input)]">
-                <span className="text-[10px] text-[var(--text-secondary)]">30 gunluk trend</span>
+                <span className="text-[10px] text-[var(--text-secondary)]">30 günlük trend</span>
                 <span className={`flex items-center gap-1 text-xs font-semibold ${
                   marketAnalytics.trend > 0 ? 'text-[#C1341B]' : marketAnalytics.trend < 0 ? 'text-[#2D6A4F]' : 'text-[var(--text-secondary)]'
                 }`}>
@@ -631,7 +631,7 @@ export default function ListingDetailPage() {
                 </span>
               </div>
               <p className="text-[9px] text-[var(--text-secondary)] mt-2 text-center">
-                {marketAnalytics.count} aktif ilan uzerinden hesaplandi
+                {marketAnalytics.count} aktif ilan üzerinden hesaplandı
               </p>
             </div>
           )}

@@ -279,9 +279,9 @@ function HealthCard({ status, color, ndvi, trend }: { status: string; color: str
 
 type ImageLayer = 'trueColor' | 'ndvi' | 'falseColor';
 const LAYER_LABELS: Record<ImageLayer, { tr: string; en: string }> = {
-  trueColor: { tr: 'Gercek Renk', en: 'True Color' },
-  ndvi: { tr: 'Bitki Sagligi (NDVI)', en: 'Vegetation (NDVI)' },
-  falseColor: { tr: 'Yakin Kizilotesi', en: 'Near Infrared' },
+  trueColor: { tr: 'Gerçek Renk', en: 'True Color' },
+  ndvi: { tr: 'Bitki Sağlığı (NDVI)', en: 'Vegetation (NDVI)' },
+  falseColor: { tr: 'Yakın Kızılötesi', en: 'Near Infrared' },
 };
 
 function SatelliteImageGallery({ renderedImages, scenes, clearCount, totalCount, lang }: {
@@ -304,7 +304,7 @@ function SatelliteImageGallery({ renderedImages, scenes, clearCount, totalCount,
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Satellite size={16} className="text-violet-500" />
-            <h3 className="text-[13px] font-semibold">{lang === 'tr' ? 'Uydu Goruntuleri' : 'Satellite Images'}</h3>
+            <h3 className="text-[13px] font-semibold">{lang === 'tr' ? 'Uydu Görüntüleri' : 'Satellite Images'}</h3>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-medium">
               Sentinel-2
             </span>
@@ -316,7 +316,7 @@ function SatelliteImageGallery({ renderedImages, scenes, clearCount, totalCount,
               </span>
             ) : (
               <span className="flex items-center gap-1 text-amber-600 font-medium">
-                <Cloud size={12} /> {lang === 'tr' ? 'Bulutlu donem' : 'Cloudy period'}
+                <Cloud size={12} /> {lang === 'tr' ? 'Bulutlu dönem' : 'Cloudy period'}
               </span>
             )}
             <span className="text-[var(--text-tertiary)]">/ {totalCount}</span>
@@ -356,7 +356,7 @@ function SatelliteImageGallery({ renderedImages, scenes, clearCount, totalCount,
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white text-[13px] font-semibold">{LAYER_LABELS[activeLayer][lang]}</p>
-                <p className="text-white/70 text-[11px]">Sentinel-2 L2A — {lang === 'tr' ? 'son 90 gun' : 'last 90 days'}</p>
+                <p className="text-white/70 text-[11px]">Sentinel-2 L2A — {lang === 'tr' ? 'son 90 gün' : 'last 90 days'}</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Eye size={14} className="text-white" />
@@ -619,8 +619,8 @@ export default function SatelliteHealthPage() {
     <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
       <SEO
         title={lang === 'tr' ? 'Uydu Tarla Analizi' : 'Satellite Field Analysis'}
-        description="Sentinel-2 uydu verileriyle tarlanizin saglik durumunu analiz edin."
-        keywords="uydu, NDVI, tarla sagligi, sentinel, tarim, parsel"
+        description="Sentinel-2 uydu verileriyle tarlanızın sağlık durumunu analiz edin."
+        keywords="uydu, NDVI, tarla sağlığı, sentinel, tarım, parsel"
       />
 
       {/* Header */}
@@ -633,7 +633,7 @@ export default function SatelliteHealthPage() {
             {lang === 'tr' ? 'Uydu Tarla Analizi' : 'Satellite Field Analysis'}
           </h1>
           <p className="text-[13px] text-[var(--text-secondary)]">
-            {lang === 'tr' ? 'Tarlanizi haritada cizin, uydu analizi baslasin' : 'Draw your field on the map to start analysis'}
+            {lang === 'tr' ? 'Tarlanızı haritada çizin, uydu analizi başlasın' : 'Draw your field on the map to start analysis'}
           </p>
         </div>
       </div>
@@ -650,7 +650,7 @@ export default function SatelliteHealthPage() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                placeholder={lang === 'tr' ? 'Sehir, ilce veya konum ara...' : 'Search location...'}
+                placeholder={lang === 'tr' ? 'Şehir, ilçe veya konum ara...' : 'Search location...'}
                 className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[var(--bg-input)] border border-[var(--border-default)] text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50"
               />
             </div>
@@ -725,10 +725,10 @@ export default function SatelliteHealthPage() {
                   <Pencil size={14} className="animate-pulse" />
                   <span className="text-[12px] font-semibold">
                     {polygonPoints.length === 0
-                      ? (lang === 'tr' ? 'Tarlanizin kosesine tiklayin' : 'Click a corner of your field')
+                      ? (lang === 'tr' ? 'Tarlanızın köşesine tıklayın' : 'Click a corner of your field')
                       : polygonPoints.length < 3
                         ? (lang === 'tr' ? `${polygonPoints.length} nokta — en az 3 gerekli` : `${polygonPoints.length} points — min 3 needed`)
-                        : (lang === 'tr' ? `${polygonPoints.length} nokta — ilk noktaya tikla veya tamamla` : `${polygonPoints.length} pts — click first point or finish`)}
+                        : (lang === 'tr' ? `${polygonPoints.length} nokta — ilk noktaya tıkla veya tamamla` : `${polygonPoints.length} pts — click first point or finish`)}
                   </span>
                 </div>
               </div>
@@ -737,7 +737,7 @@ export default function SatelliteHealthPage() {
                 <div className="flex items-center gap-2">
                   <CheckCircle size={14} />
                   <span className="text-[12px] font-semibold">
-                    {lang === 'tr' ? `Parsel secildi — ${calcArea().toFixed(2)} hektar` : `Parcel selected — ${calcArea().toFixed(2)} ha`}
+                    {lang === 'tr' ? `Parsel seçildi — ${calcArea().toFixed(2)} hektar` : `Parcel selected — ${calcArea().toFixed(2)} ha`}
                   </span>
                 </div>
               </div>
@@ -753,7 +753,7 @@ export default function SatelliteHealthPage() {
               <button onClick={handleStartDraw}
                 className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white font-semibold text-[13px] flex items-center justify-center gap-2 hover:bg-amber-600 transition-colors">
                 <Pencil size={16} />
-                {lang === 'tr' ? 'Tarlami Ciz' : 'Draw My Field'}
+                {lang === 'tr' ? 'Tarlamı Çiz' : 'Draw My Field'}
               </button>
             )}
             {drawMode && (
@@ -761,7 +761,7 @@ export default function SatelliteHealthPage() {
                 <button onClick={handleCloseDraw} disabled={polygonPoints.length < 3}
                   className="flex-1 py-2.5 rounded-xl bg-emerald-500 text-white font-semibold text-[13px] flex items-center justify-center gap-2 hover:bg-emerald-600 transition-colors disabled:opacity-50">
                   <CheckCircle size={16} />
-                  {lang === 'tr' ? 'Cizimi Tamamla' : 'Finish Drawing'}
+                  {lang === 'tr' ? 'Çizimi Tamamla' : 'Finish Drawing'}
                 </button>
                 <button onClick={handleUndoPoint} disabled={polygonPoints.length === 0}
                   className="px-4 py-2.5 rounded-xl bg-gray-200 text-gray-700 font-medium text-[13px] flex items-center gap-1.5 hover:bg-gray-300 transition-colors disabled:opacity-50">
@@ -780,7 +780,7 @@ export default function SatelliteHealthPage() {
                   {loading ? (
                     <><Loader2 size={18} className="animate-spin" /> {lang === 'tr' ? 'Analiz Ediliyor...' : 'Analyzing...'}</>
                   ) : (
-                    <><Scan size={18} /> {lang === 'tr' ? 'Tarlami Analiz Et' : 'Analyze My Field'}</>
+                    <><Scan size={18} /> {lang === 'tr' ? 'Tarlamı Analiz Et' : 'Analyze My Field'}</>
                   )}
                 </button>
                 <button onClick={handleClearDraw}
@@ -795,7 +795,7 @@ export default function SatelliteHealthPage() {
           {!drawMode && !isPolygonClosed && (
             <p className="text-[10px] text-[var(--text-tertiary)] text-center leading-relaxed">
               {lang === 'tr'
-                ? 'Uydu goruntusu uzerinde tarlanizi gorun, "Tarlami Ciz" ile koselere tiklayarak sinirlarini belirleyin.'
+                ? 'Uydu görüntüsü üzerinde tarlanızı görün, "Tarlamı Çiz" ile köşelere tıklayarak sınırlarını belirleyin.'
                 : 'See your field on satellite imagery, click "Draw My Field" and click the corners to define boundaries.'}
             </p>
           )}
@@ -834,12 +834,12 @@ export default function SatelliteHealthPage() {
           <NDVIChart history={analysis.ndviHistory} />
 
           <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] p-4">
-            <p className="text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">NDVI Renk Skalasi</p>
+            <p className="text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">NDVI Renk Skalası</p>
             <div className="flex rounded-xl overflow-hidden h-3">
               <div className="flex-1 bg-[#991B1B]" /><div className="flex-1 bg-[#DC2626]" /><div className="flex-1 bg-[#D97706]" /><div className="flex-1 bg-[#2D6A4F]" /><div className="flex-1 bg-[#059669]" />
             </div>
             <div className="flex justify-between mt-1.5 text-[9px] text-[var(--text-tertiary)]">
-              <span>0% Kritik</span><span>25% Zayif</span><span>40% Orta</span><span>60% Saglikli</span><span>100% Mukemmel</span>
+              <span>0% Kritik</span><span>25% Zayıf</span><span>40% Orta</span><span>60% Sağlıklı</span><span>100% Mükemmel</span>
             </div>
           </div>
 
@@ -856,12 +856,12 @@ export default function SatelliteHealthPage() {
             <div className="rounded-xl bg-blue-50 border border-blue-200/50 p-3 text-center">
               <Droplets size={16} className="text-blue-600 mx-auto mb-1" />
               <p className="text-[18px] font-bold text-blue-700">{analysis.ndviHistory.length}</p>
-              <p className="text-[9px] text-blue-600 font-medium uppercase">Veri Noktasi</p>
+              <p className="text-[9px] text-blue-600 font-medium uppercase">Veri Noktası</p>
             </div>
             <div className="rounded-xl bg-violet-50 border border-violet-200/50 p-3 text-center">
               <Satellite size={16} className="text-violet-600 mx-auto mb-1" />
               <p className="text-[18px] font-bold text-violet-700">{analysis.images.length}</p>
-              <p className="text-[9px] text-violet-600 font-medium uppercase">Goruntu</p>
+              <p className="text-[9px] text-violet-600 font-medium uppercase">Görüntü</p>
             </div>
           </div>
 

@@ -595,7 +595,7 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
               <Microscope size={16} className="text-blue-600" />
             </div>
             <p className="text-[12px] font-semibold text-blue-800 uppercase tracking-wider">
-              {isTr ? 'Detayli Analiz' : 'Detailed Analysis'}
+              {isTr ? 'Detaylı Analiz' : 'Detailed Analysis'}
             </p>
           </div>
           <p className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-line">{result.gemini_analysis}</p>
@@ -766,7 +766,7 @@ export default function DiagnosisResult({ result, matchedListings = [], matchedP
       });
       setChatMessages(prev => [...prev, { role: 'ai', text: data.answer }]);
     } catch {
-      setChatMessages(prev => [...prev, { role: 'ai', text: isTr ? 'Yanit alinamadi. Tekrar deneyin.' : 'Could not get response. Try again.' }]);
+      setChatMessages(prev => [...prev, { role: 'ai', text: isTr ? 'Yanıt alınamadı. Tekrar deneyin.' : 'Could not get response. Try again.' }]);
     } finally {
       setChatLoading(false);
     }

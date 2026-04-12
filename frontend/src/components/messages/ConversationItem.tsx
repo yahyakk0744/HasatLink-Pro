@@ -32,7 +32,7 @@ export default function ConversationItem({ conversation, currentUid, isActive, o
 
   const otherUid = conversation.participantUids.find((uid) => uid !== currentUid) || '';
   const otherParticipant = conversation.participants?.[otherUid];
-  const name = otherParticipant?.name || 'Kullanici';
+  const name = otherParticipant?.name || 'Kullanıcı';
   const profileImage = otherParticipant?.profileImage || '';
 
   // Count unread messages for this conversation

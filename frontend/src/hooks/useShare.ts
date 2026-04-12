@@ -61,9 +61,9 @@ export const useShare = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success('Story gorseli indirildi!');
+      toast.success('Story görseli indirildi!');
     } catch {
-      toast.error('Story olusturulamadi');
+      toast.error('Story oluşturulamadı');
     }
   }, []);
 

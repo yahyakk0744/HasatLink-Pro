@@ -143,7 +143,7 @@ export default function AccountSettingsPage() {
           <div className="flex items-center gap-2">
             <ShieldX size={18} className="text-red-500" />
             <h2 className="text-sm font-semibold uppercase tracking-wider text-red-600">
-              {isTr ? 'Hesabi Sil' : 'Delete Account'}
+              {isTr ? 'Hesabı Sil' : 'Delete Account'}
             </h2>
           </div>
 
@@ -154,11 +154,11 @@ export default function AccountSettingsPage() {
                 <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[13px] font-semibold text-amber-800 dark:text-amber-300">
-                    {isTr ? 'Hesabiniz silinmek uzere' : 'Your account is scheduled for deletion'}
+                    {isTr ? 'Hesabınız silinmek üzere' : 'Your account is scheduled for deletion'}
                   </p>
                   <p className="text-[12px] text-amber-700 dark:text-amber-400 mt-1">
                     {isTr
-                      ? `Tum verileriniz ${new Date(deletionScheduledAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })} tarihinde kalici olarak silinecek.`
+                      ? `Tüm verileriniz ${new Date(deletionScheduledAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })} tarihinde kalıcı olarak silinecek.`
                       : `All your data will be permanently deleted on ${new Date(deletionScheduledAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}.`}
                   </p>
                 </div>
@@ -169,9 +169,9 @@ export default function AccountSettingsPage() {
                   try {
                     await api.post('/auth/cancel-deletion');
                     setDeletionScheduledAt(null);
-                    toast.success(isTr ? 'Silme istegi iptal edildi' : 'Deletion cancelled');
+                    toast.success(isTr ? 'Silme isteği iptal edildi' : 'Deletion cancelled');
                   } catch (err: any) {
-                    toast.error(err.response?.data?.message || (isTr ? 'Iptal basarisiz' : 'Cancel failed'));
+                    toast.error(err.response?.data?.message || (isTr ? 'İptal başarısız' : 'Cancel failed'));
                   } finally {
                     setCancelling(false);
                   }
@@ -181,8 +181,8 @@ export default function AccountSettingsPage() {
               >
                 <Undo2 size={16} />
                 {cancelling
-                  ? (isTr ? 'Iptal ediliyor...' : 'Cancelling...')
-                  : (isTr ? 'Silme Istegini Iptal Et' : 'Cancel Deletion Request')}
+                  ? (isTr ? 'İptal ediliyor...' : 'Cancelling...')
+                  : (isTr ? 'Silme İsteğini İptal Et' : 'Cancel Deletion Request')}
               </button>
             </div>
           ) : (
@@ -190,7 +190,7 @@ export default function AccountSettingsPage() {
             <div className="space-y-3">
               <p className="text-[12px] text-[var(--text-secondary)] leading-relaxed">
                 {isTr
-                  ? 'Hesabinizi sildiginizde 30 gun boyunca giris yaparak isleimi iptal edebilirsiniz. 30 gun sonra tum verileriniz (ilanlar, mesajlar, yorumlar, puanlar, bildirimler) kalici olarak silinir ve geri alinamaz.'
+                  ? 'Hesabınızı sildiğinizde 30 gün boyunca giriş yaparak işlemi iptal edebilirsiniz. 30 gün sonra tüm verileriniz (ilanlar, mesajlar, yorumlar, puanlar, bildirimler) kalıcı olarak silinir ve geri alınamaz.'
                   : 'After requesting deletion, you have 30 days to cancel by logging in. After 30 days, all your data (listings, messages, comments, ratings, notifications) will be permanently deleted and cannot be recovered.'}
               </p>
               <button
@@ -198,7 +198,7 @@ export default function AccountSettingsPage() {
                 className="w-full py-2.5 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/30 text-red-600 dark:text-red-400 font-semibold text-[13px] flex items-center justify-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
               >
                 <Trash2 size={16} />
-                {isTr ? 'Hesabimi Sil' : 'Delete My Account'}
+                {isTr ? 'Hesabımı Sil' : 'Delete My Account'}
               </button>
             </div>
           )}
@@ -214,10 +214,10 @@ export default function AccountSettingsPage() {
             </div>
             <div>
               <h3 className="text-[17px] font-bold text-[var(--text-primary)]">
-                {isTr ? 'Hesabinizi silmek istediginize emin misiniz?' : 'Are you sure you want to delete your account?'}
+                {isTr ? 'Hesabınızı silmek istediğinize emin misiniz?' : 'Are you sure you want to delete your account?'}
               </h3>
               <p className="text-[12px] text-[var(--text-secondary)] mt-0.5">
-                {isTr ? 'Bu islem 30 gun sonra geri alinamaz' : 'This action cannot be undone after 30 days'}
+                {isTr ? 'Bu işlem 30 gün sonra geri alınamaz' : 'This action cannot be undone after 30 days'}
               </p>
             </div>
           </div>
@@ -228,12 +228,12 @@ export default function AccountSettingsPage() {
             </p>
             <ul className="text-[12px] text-red-600 space-y-0.5">
               {[
-                isTr ? 'Tum ilanlariniz' : 'All your listings',
-                isTr ? 'Mesajlariniz' : 'Your messages',
-                isTr ? 'Yorumlariniz ve puanlariniz' : 'Your comments and ratings',
+                isTr ? 'Tüm ilanlarınız' : 'All your listings',
+                isTr ? 'Mesajlarınız' : 'Your messages',
+                isTr ? 'Yorumlarınız ve puanlarınız' : 'Your comments and ratings',
                 isTr ? 'Bildirimleriniz' : 'Your notifications',
-                isTr ? 'AI teshis gecmisiniz' : 'Your AI diagnosis history',
-                isTr ? 'Favorileriniz ve ayarlariniz' : 'Your favorites and settings',
+                isTr ? 'AI teşhis geçmişiniz' : 'Your AI diagnosis history',
+                isTr ? 'Favorileriniz ve ayarlarınız' : 'Your favorites and settings',
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-red-400" />
@@ -245,28 +245,28 @@ export default function AccountSettingsPage() {
 
           <div className="space-y-3">
             <Input
-              label={isTr ? 'Sifrenizi girin' : 'Enter your password'}
+              label={isTr ? 'Şifrenizi girin' : 'Enter your password'}
               type="password"
               value={deletePassword}
               onChange={e => setDeletePassword(e.target.value)}
-              placeholder={isTr ? 'Onay icin sifreniz' : 'Password for confirmation'}
+              placeholder={isTr ? 'Onay için şifreniz' : 'Password for confirmation'}
             />
             <div>
               <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                {isTr ? 'Neden ayriliyorsunuz? (opsiyonel)' : 'Why are you leaving? (optional)'}
+                {isTr ? 'Neden ayrılıyorsunuz? (opsiyonel)' : 'Why are you leaving? (optional)'}
               </label>
               <select
                 value={deleteReason}
                 onChange={e => setDeleteReason(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl bg-[var(--bg-input)] border border-[var(--border-default)] text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-red-500/20"
               >
-                <option value="">{isTr ? 'Secim yapin...' : 'Select...'}</option>
-                <option value="not-useful">{isTr ? 'Isime yaramadi' : 'Not useful for me'}</option>
-                <option value="privacy">{isTr ? 'Gizlilik endisesi' : 'Privacy concerns'}</option>
-                <option value="too-many-notifications">{isTr ? 'Cok fazla bildirim' : 'Too many notifications'}</option>
-                <option value="found-alternative">{isTr ? 'Baska bir platform buldum' : 'Found an alternative'}</option>
-                <option value="temporary">{isTr ? 'Gecici olarak ayriliyorum' : 'Leaving temporarily'}</option>
-                <option value="other">{isTr ? 'Diger' : 'Other'}</option>
+                <option value="">{isTr ? 'Seçim yapın...' : 'Select...'}</option>
+                <option value="not-useful">{isTr ? 'İşime yaramadı' : 'Not useful for me'}</option>
+                <option value="privacy">{isTr ? 'Gizlilik endişesi' : 'Privacy concerns'}</option>
+                <option value="too-many-notifications">{isTr ? 'Çok fazla bildirim' : 'Too many notifications'}</option>
+                <option value="found-alternative">{isTr ? 'Başka bir platform buldum' : 'Found an alternative'}</option>
+                <option value="temporary">{isTr ? 'Geçici olarak ayrılıyorum' : 'Leaving temporarily'}</option>
+                <option value="other">{isTr ? 'Diğer' : 'Other'}</option>
               </select>
             </div>
           </div>
@@ -276,12 +276,12 @@ export default function AccountSettingsPage() {
               onClick={() => { setShowDeleteModal(false); setDeletePassword(''); setDeleteReason(''); }}
               className="flex-1 py-2.5 rounded-xl bg-[var(--bg-input)] text-[var(--text-primary)] font-semibold text-[13px] hover:bg-[var(--bg-surface-hover)] transition-colors"
             >
-              {isTr ? 'Vazgec' : 'Cancel'}
+              {isTr ? 'Vazgeç' : 'Cancel'}
             </button>
             <button
               onClick={async () => {
                 if (!deletePassword && user?.authProvider !== 'google') {
-                  toast.error(isTr ? 'Sifrenizi girin' : 'Enter your password');
+                  toast.error(isTr ? 'Şifrenizi girin' : 'Enter your password');
                   return;
                 }
                 setDeleting(true);
@@ -291,11 +291,11 @@ export default function AccountSettingsPage() {
                   setShowDeleteModal(false);
                   setDeletePassword('');
                   setDeleteReason('');
-                  toast.success(isTr ? 'Hesap silme istegi alindi. 30 gun sonra silinecek.' : 'Account deletion scheduled. Will be deleted in 30 days.');
+                  toast.success(isTr ? 'Hesap silme isteği alındı. 30 gün sonra silinecek.' : 'Account deletion scheduled. Will be deleted in 30 days.');
                   // Log out after a short delay
                   setTimeout(() => logout(), 2000);
                 } catch (err: any) {
-                  toast.error(err.response?.data?.message || (isTr ? 'Islem basarisiz' : 'Operation failed'));
+                  toast.error(err.response?.data?.message || (isTr ? 'İşlem başarısız' : 'Operation failed'));
                 } finally {
                   setDeleting(false);
                 }
@@ -305,8 +305,8 @@ export default function AccountSettingsPage() {
             >
               <Trash2 size={14} />
               {deleting
-                ? (isTr ? 'Isleniyor...' : 'Processing...')
-                : (isTr ? 'Evet, Hesabimi Sil' : 'Yes, Delete My Account')}
+                ? (isTr ? 'İşleniyor...' : 'Processing...')
+                : (isTr ? 'Evet, Hesabımı Sil' : 'Yes, Delete My Account')}
             </button>
           </div>
         </div>

@@ -337,7 +337,7 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
             }`}
           >
             <MousePointerClick size={14} />
-            Haritadan Sec
+            Haritadan Seç
           </button>
         </div>
 
@@ -347,13 +347,13 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
               label="Nereden"
               value={fromLabel}
               onChange={(name, lat, lng) => { setFromLabel(name); setCoords(c => ({ ...c, fromLat: lat, fromLng: lng })); }}
-              placeholder="Sehir veya adres yazin..."
+              placeholder="Şehir veya adres yazın..."
             />
             <AddressInput
               label="Nereye"
               value={toLabel}
               onChange={(name, lat, lng) => { setToLabel(name); setCoords(c => ({ ...c, toLat: lat, toLng: lng })); }}
-              placeholder="Sehir veya adres yazin..."
+              placeholder="Şehir veya adres yazın..."
             />
           </div>
         ) : (
@@ -370,12 +370,12 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
             }`}>
               <MousePointerClick size={14} />
               {geocoding
-                ? 'Adres aliniyor...'
+                ? 'Adres alınıyor...'
                 : selecting === 'from'
-                  ? 'Haritada NEREDEN noktasini secin (yesil)'
+                  ? 'Haritada NEREDEN noktasını seçin (yeşil)'
                   : selecting === 'to'
-                    ? 'Haritada NEREYE noktasini secin (kirmizi)'
-                    : 'Her iki nokta secildi'
+                    ? 'Haritada NEREYE noktasını seçin (kırmızı)'
+                    : 'Her iki nokta seçildi'
               }
             </div>
 
@@ -403,7 +403,7 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
                 }`}
               >
                 <span className="text-green-600 font-semibold">Nereden: </span>
-                {fromLabel || <span className="text-[var(--text-tertiary)]">Secilmedi</span>}
+                {fromLabel || <span className="text-[var(--text-tertiary)]">Seçilmedi</span>}
               </button>
               <button
                 onClick={() => setSelecting('to')}
@@ -412,7 +412,7 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
                 }`}
               >
                 <span className="text-red-600 font-semibold">Nereye: </span>
-                {toLabel || <span className="text-[var(--text-tertiary)]">Secilmedi</span>}
+                {toLabel || <span className="text-[var(--text-tertiary)]">Seçilmedi</span>}
               </button>
             </div>
           </div>

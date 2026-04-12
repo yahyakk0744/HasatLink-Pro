@@ -100,7 +100,7 @@ export default function StoriesSection() {
                 <Plus size={20} className="text-[var(--accent-green)]" />
               </div>
               <span className="text-[10px] font-medium text-[var(--text-secondary)] mt-1.5 text-center w-16 truncate">
-                {lang === 'tr' ? 'Ilan Ver' : 'Post'}
+                {lang === 'tr' ? 'İlan Ver' : 'Post'}
               </span>
             </Link>
           )}
@@ -175,7 +175,7 @@ export default function StoriesSection() {
             {/* Header */}
             <div className="flex items-center justify-between px-5 pb-3 border-b border-[var(--border-default)]">
               <div>
-                <h3 className="text-sm font-semibold tracking-tight">{lang === 'tr' ? 'Goruntuleyenler' : 'Viewers'}</h3>
+                <h3 className="text-sm font-semibold tracking-tight">{lang === 'tr' ? 'Görüntüleyenler' : 'Viewers'}</h3>
                 <p className="text-[10px] text-[var(--text-secondary)] mt-0.5 truncate max-w-[200px]">{viewerSheet.title}</p>
               </div>
               <button onClick={() => setViewerSheet(null)} className="p-2 hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors">
@@ -187,12 +187,12 @@ export default function StoriesSection() {
               {viewersLoading ? (
                 <div className="flex flex-col items-center py-8 gap-2">
                   <div className="w-6 h-6 border-2 border-[var(--accent-green)]/30 border-t-[var(--accent-green)] rounded-full animate-spin" />
-                  <span className="text-xs text-[var(--text-secondary)]">{lang === 'tr' ? 'Yukleniyor...' : 'Loading...'}</span>
+                  <span className="text-xs text-[var(--text-secondary)]">{lang === 'tr' ? 'Yükleniyor...' : 'Loading...'}</span>
                 </div>
               ) : viewers.length === 0 ? (
                 <div className="flex flex-col items-center py-8 gap-2">
                   <Eye size={24} className="text-[var(--text-tertiary)]" />
-                  <span className="text-xs text-[var(--text-secondary)]">{lang === 'tr' ? 'Henuz goruntuleyen yok' : 'No viewers yet'}</span>
+                  <span className="text-xs text-[var(--text-secondary)]">{lang === 'tr' ? 'Henüz görüntüleyen yok' : 'No viewers yet'}</span>
                 </div>
               ) : (
                 viewers.map(v => (

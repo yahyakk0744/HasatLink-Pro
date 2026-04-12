@@ -35,10 +35,10 @@ export interface SatelliteAnalysis {
 }
 
 const HEALTH_LABELS: Record<string, { tr: string; en: string }> = {
-  excellent: { tr: 'Mukemmel', en: 'Excellent' },
-  good: { tr: 'Saglikli', en: 'Good' },
+  excellent: { tr: 'Mükemmel', en: 'Excellent' },
+  good: { tr: 'Sağlıklı', en: 'Good' },
   moderate: { tr: 'Orta', en: 'Moderate' },
-  poor: { tr: 'Zayif', en: 'Poor' },
+  poor: { tr: 'Zayıf', en: 'Poor' },
   critical: { tr: 'Kritik', en: 'Critical' },
   unknown: { tr: 'Bilinmiyor', en: 'Unknown' },
 };

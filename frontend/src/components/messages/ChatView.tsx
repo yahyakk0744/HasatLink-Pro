@@ -25,7 +25,7 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
 
   const otherUid = conversation.participantUids?.find((uid) => uid !== currentUid) || '';
   const otherParticipant = conversation.participants?.[otherUid];
-  const otherName = otherParticipant?.name || 'Kullanici';
+  const otherName = otherParticipant?.name || 'Kullanıcı';
   const otherOnline = isUserOnline(otherParticipant?.userId || otherUid);
 
   // Join/leave conversation room via Socket.IO
@@ -136,7 +136,7 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
           conversationId: conversation.id,
           message: { senderId: currentUid, text, createdAt: new Date().toISOString(), read: false },
           recipientId: otherParticipant?.userId || otherUid,
-          senderName: currentParticipant?.name || 'Kullanici',
+          senderName: currentParticipant?.name || 'Kullanıcı',
         });
       }
     } catch {
@@ -174,7 +174,7 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
             ) : (
               <>
                 <span className={`text-[11px] font-medium ${otherOnline ? 'text-green-600' : 'text-[var(--text-secondary)]'}`}>
-                  {otherOnline ? 'Cevrimici' : 'Cevrimdisi'}
+                  {otherOnline ? 'Çevrimiçi' : 'Çevrimdışı'}
                 </span>
                 <span className="text-[10px] text-[var(--text-secondary)] mx-1">·</span>
                 <Link

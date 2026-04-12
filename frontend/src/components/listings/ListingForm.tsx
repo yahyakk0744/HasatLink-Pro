@@ -89,14 +89,14 @@ function MultiSelectButtons({ options, values, onChange, color = '#2D6A4F' }: { 
 }
 
 const TURKISH_CITIES = [
-  'Adana','Adiyaman','Afyonkarahisar','Agri','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin',
-  'Aydin','Balikesir','Bartin','Batman','Bayburt','Bilecik','Bingol','Bitlis','Bolu','Burdur',
-  'Bursa','Canakkale','Cankiri','Corum','Denizli','Diyarbakir','Duzce','Edirne','Elazig','Erzincan',
-  'Erzurum','Eskisehir','Gaziantep','Giresun','Gumushane','Hakkari','Hatay','Igdir','Isparta','Istanbul',
-  'Izmir','Kahramanmaras','Karabuk','Karaman','Kars','Kastamonu','Kayseri','Kirikkale','Kirklareli','Kirsehir',
-  'Kilis','Kocaeli','Konya','Kutahya','Malatya','Manisa','Mardin','Mersin','Mugla','Mus',
-  'Nevsehir','Nigde','Ordu','Osmaniye','Rize','Sakarya','Samsun','Sanliurfa','Siirt','Sinop',
-  'Sirnak','Sivas','Tekirdag','Tokat','Trabzon','Tunceli','Usak','Van','Yalova','Yozgat','Zonguldak',
+  'Adana','Adıyaman','Afyonkarahisar','Ağrı','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin',
+  'Aydın','Balıkesir','Bartın','Batman','Bayburt','Bilecik','Bingöl','Bitlis','Bolu','Burdur',
+  'Bursa','Çanakkale','Çankırı','Çorum','Denizli','Diyarbakır','Düzce','Edirne','Elazığ','Erzincan',
+  'Erzurum','Eskişehir','Gaziantep','Giresun','Gümüşhane','Hakkari','Hatay','Iğdır','Isparta','İstanbul',
+  'İzmir','Kahramanmaraş','Karabük','Karaman','Kars','Kastamonu','Kayseri','Kırıkkale','Kırklareli','Kırşehir',
+  'Kilis','Kocaeli','Konya','Kütahya','Malatya','Manisa','Mardin','Mersin','Muğla','Muş',
+  'Nevşehir','Niğde','Ordu','Osmaniye','Rize','Sakarya','Samsun','Şanlıurfa','Siirt','Sinop',
+  'Şırnak','Sivas','Tekirdağ','Tokat','Trabzon','Tunceli','Uşak','Van','Yalova','Yozgat','Zonguldak',
 ];
 
 function SectionTitle({ children }: { children: string }) {
@@ -604,13 +604,13 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                 {/* Product Selection */}
                 {productOptions.length > 0 && (
                   <div>
-                    <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-2">{t('listing.product') || 'Urun Secin'}</label>
+                    <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-2">{t('listing.product') || 'Ürün Seçin'}</label>
                     <select
                       value={title}
                       onChange={e => setTitle(e.target.value)}
                       className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
                     >
-                      <option value="">{t('listing.selectProduct') || 'Urun secin...'}</option>
+                      <option value="">{t('listing.selectProduct') || 'Ürün seçin...'}</option>
                       {productOptions.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </div>

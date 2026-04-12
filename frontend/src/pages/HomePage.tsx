@@ -21,7 +21,7 @@ import ListingMap from '../components/map/ListingMap';
 import BannerCarousel from '../components/ads/BannerCarousel';
 import ListingForm from '../components/listings/ListingForm';
 import FAB from '../components/ui/FAB';
-import { CATEGORY_LABELS } from '../utils/constants';
+import { CATEGORY_LABELS, ALL_SUBCATEGORIES } from '../utils/constants';
 import SEO from '../components/ui/SEO';
 import JsonLd from '../components/ui/JsonLd';
 import api from '../config/api';
@@ -77,12 +77,13 @@ function SkeletonCard() {
 }
 
 const CATEGORY_ICONS: Record<string, ReactNode> = {
-  pazar: <Wheat size={24} strokeWidth={1.5} />,
-  lojistik: <Truck size={24} strokeWidth={1.5} />,
-  isgucu: <HardHat size={24} strokeWidth={1.5} />,
-  ekipman: <Tractor size={24} strokeWidth={1.5} />,
-  arazi: <Mountain size={24} strokeWidth={1.5} />,
-  depolama: <Warehouse size={24} strokeWidth={1.5} />,
+  pazar: <Wheat size={28} strokeWidth={1.5} />,
+  lojistik: <Truck size={28} strokeWidth={1.5} />,
+  isgucu: <HardHat size={28} strokeWidth={1.5} />,
+  ekipman: <Tractor size={28} strokeWidth={1.5} />,
+  arazi: <Mountain size={28} strokeWidth={1.5} />,
+  depolama: <Warehouse size={28} strokeWidth={1.5} />,
+  hayvancilik: <span className="text-[26px] leading-none">🐄</span>,
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -92,6 +93,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   ekipman: '#6B4E3D',
   arazi: '#52796F',
   depolama: '#5C677D',
+  hayvancilik: '#C1341B',
 };
 
 export default function HomePage() {
@@ -255,21 +257,107 @@ export default function HomePage() {
 
       {/* ─── 3. Hızlı Kategoriler ─── */}
       <AnimatedSection>
-        <section className="max-w-6xl mx-auto px-3 md:px-4 py-6 md:py-10">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-center mb-5 md:mb-8">
-            {lang === 'tr' ? 'Kategoriler' : 'Categories'}
-          </h2>
-          <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+        <section className="max-w-6xl mx-auto px-3 md:px-4 py-8 md:py-14">
+          <div className="text-center mb-6 md:mb-10">
+            <p className="text-[10px] md:text-xs font-bold tracking-[0.25em] uppercase text-[var(--accent-green)] mb-2">
+              {lang === 'tr' ? 'KATEGORİLER' : 'CATEGORIES'}
+            </p>
+            <h2 className="text-2xl md:text-4xl font-black tracking-tight mb-2 text-[var(--text-primary)]">
+              {lang === 'tr' ? 'Neye İhtiyacın Var?' : 'What Do You Need?'}
+            </h2>
+            <p className="text-xs md:text-sm text-[var(--text-secondary)] max-w-md mx-auto">
+              {lang === 'tr'
+                ? 'Kategoriler arasında dolaş veya direkt ilan ver.'
+                : 'Browse categories or post a listing directly.'}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
             {Object.entries(CATEGORY_LABELS).map(([key, cat]) => {
               const count = platformStats.categoryCounts[key] || 0;
               const color = CATEGORY_COLORS[key] || '#2D6A4F';
+              const subs = ALL_SUBCATEGORIES[key] ? Object.keys(ALL_SUBCATEGORIES[key]).slice(0, 3) : [];
               return (
-                <Link key={key} to={`/${key}`} className="group relative rounded-2xl p-4 md:p-6 text-center transition-all duration-300 hover:-translate-y-1 active:scale-[0.97] bg-[var(--bg-surface)] border border-[var(--border-default)] hover:shadow-[var(--shadow-card-hover)]" style={{ '--cat-color': color } as React.CSSProperties}>
-                  <div className="w-12 h-12 md:w-14 md:h-14 mx-auto mb-2 md:mb-3 rounded-full flex items-center justify-center backdrop-blur-sm transition-transform duration-300 group-hover:scale-110" style={{ background: `${color}12`, border: `1.5px solid ${color}25` }}>
-                    <div style={{ color }}>{CATEGORY_ICONS[key]}</div>
+                <Link
+                  key={key}
+                  to={`/${key}`}
+                  className="group relative overflow-hidden rounded-3xl p-5 md:p-6 transition-all duration-500 hover:-translate-y-1 active:scale-[0.98] bg-[var(--bg-surface)] border border-[var(--border-default)] hover:shadow-2xl min-h-[210px] md:min-h-[230px] flex flex-col"
+                  style={{ '--cat-color': color } as React.CSSProperties}
+                >
+                  {/* Gradient hover layer */}
+                  <div
+                    className="absolute inset-0 opacity-40 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                    style={{ background: `linear-gradient(135deg, ${color}10 0%, ${color}03 55%, transparent 100%)` }}
+                  />
+                  {/* Dot pattern bg */}
+                  <div
+                    className="absolute inset-0 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity pointer-events-none"
+                    style={{
+                      backgroundImage: `radial-gradient(circle at 1px 1px, ${color} 1px, transparent 0)`,
+                      backgroundSize: '18px 18px',
+                    }}
+                  />
+                  {/* Corner glow */}
+                  <div
+                    className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-2xl opacity-0 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none"
+                    style={{ background: color }}
+                  />
+
+                  {/* Content */}
+                  <div className="relative flex flex-col h-full">
+                    {/* Icon */}
+                    <div
+                      className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center mb-4 transition-all duration-500 group-hover:scale-110 group-hover:-rotate-6"
+                      style={{
+                        background: `${color}15`,
+                        border: `1.5px solid ${color}30`,
+                        boxShadow: `0 6px 18px -6px ${color}50`,
+                      }}
+                    >
+                      <div style={{ color }}>{CATEGORY_ICONS[key]}</div>
+                    </div>
+
+                    {/* Title & count */}
+                    <h3 className="text-sm md:text-base font-bold tracking-tight mb-0.5 text-[var(--text-primary)]">
+                      {cat[lang]}
+                    </h3>
+                    <p className="text-[11px] md:text-xs text-[var(--text-secondary)] mb-3">
+                      {count} {lang === 'tr' ? 'aktif ilan' : 'active listings'}
+                    </p>
+
+                    {/* Sub-category chips */}
+                    {subs.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-auto mb-10 md:mb-0">
+                        {subs.map((sub) => (
+                          <span
+                            key={sub}
+                            className="text-[9px] md:text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-input)] text-[var(--text-secondary)] font-semibold tracking-wide truncate max-w-[90px]"
+                          >
+                            {sub}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <h3 className="text-[11px] md:text-sm font-semibold tracking-tight mb-0.5">{cat[lang]}</h3>
-                  <p className="text-[10px] md:text-xs text-[var(--text-secondary)]">{count} {lang === 'tr' ? 'ilan' : 'listings'}</p>
+
+                  {/* CTA — visible on mobile, slide-up on desktop hover */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!user) {
+                        navigate('/giris');
+                        return;
+                      }
+                      setFormInitialType(key as Listing['type']);
+                      setShowForm(true);
+                    }}
+                    className="absolute bottom-0 left-0 right-0 translate-y-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-300 px-4 py-2.5 flex items-center justify-center gap-1.5 text-white text-[11px] md:text-xs font-bold tracking-wide z-10"
+                    style={{ background: color }}
+                  >
+                    <Plus size={14} strokeWidth={2.5} />
+                    {lang === 'tr' ? 'İLAN VER' : 'POST LISTING'}
+                  </button>
                 </Link>
               );
             })}

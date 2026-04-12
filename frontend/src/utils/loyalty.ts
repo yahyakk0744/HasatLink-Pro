@@ -29,7 +29,7 @@ const RANKS: LoyaltyBadge[] = [
   },
   {
     rank: 'gold',
-    label: { tr: 'Altin Hasat Ortagi', en: 'Gold Harvest Partner' },
+    label: { tr: 'Altın Hasat Ortağı', en: 'Gold Harvest Partner' },
     icon: '\uD83E\uDD47',
     color: '#B8860B',
     bgColor: 'rgba(184, 134, 11, 0.1)',
@@ -38,7 +38,7 @@ const RANKS: LoyaltyBadge[] = [
   },
   {
     rank: 'silver',
-    label: { tr: 'Gumus Tuccar', en: 'Silver Merchant' },
+    label: { tr: 'Gümüş Tüccar', en: 'Silver Merchant' },
     icon: '\uD83E\uDD48',
     color: '#6B7280',
     bgColor: 'rgba(107, 114, 128, 0.1)',
@@ -47,7 +47,7 @@ const RANKS: LoyaltyBadge[] = [
   },
   {
     rank: 'bronze',
-    label: { tr: 'Bronz Uretici', en: 'Bronze Producer' },
+    label: { tr: 'Bronz Üretici', en: 'Bronze Producer' },
     icon: '\uD83E\uDD49',
     color: '#A47148',
     bgColor: 'rgba(164, 113, 72, 0.1)',
@@ -56,7 +56,7 @@ const RANKS: LoyaltyBadge[] = [
   },
   {
     rank: 'starter',
-    label: { tr: 'Yeni Ciftci', en: 'New Farmer' },
+    label: { tr: 'Yeni Çiftçi', en: 'New Farmer' },
     icon: '\uD83C\uDF31',
     color: '#2D6A4F',
     bgColor: 'rgba(45, 106, 79, 0.1)',

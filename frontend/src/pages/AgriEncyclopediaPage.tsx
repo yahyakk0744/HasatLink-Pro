@@ -16,8 +16,8 @@ export default function AgriEncyclopediaPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 animate-fade-in">
       <SEO
-        title={isTr ? 'Tarim Ansiklopedisi' : 'Agriculture Encyclopedia'}
-        description={isTr ? 'Bitki hastaliklari, tedavi yontemleri ve korunma bilgileri.' : 'Plant diseases, treatments and prevention information.'}
+        title={isTr ? 'Tarım Ansiklopedisi' : 'Agriculture Encyclopedia'}
+        description={isTr ? 'Bitki hastalıkları, tedavi yöntemleri ve korunma bilgileri.' : 'Plant diseases, treatments and prevention information.'}
         keywords="hastalık kütüphanesi, bitki hastalıkları, tarım ansiklopedisi, tedavi"
       />
 

@@ -86,9 +86,9 @@ export default function AdminSettingsPage() {
     try {
       await api.put('/admin/settings', { maintenanceMode: newValue });
       setForm(f => ({ ...f, maintenanceMode: newValue }));
-      toast.success(newValue ? 'Bakim modu aktif edildi' : 'Bakim modu kapatildi');
+      toast.success(newValue ? 'Bakım modu aktif edildi' : 'Bakım modu kapatıldı');
     } catch {
-      toast.error('Bakim modu degistirilemedi');
+      toast.error('Bakım modu değiştirilemedi');
     } finally {
       setTogglingMaintenance(false);
     }
@@ -100,7 +100,7 @@ export default function AdminSettingsPage() {
       await api.put('/admin/settings', form);
       toast.success('Ayarlar kaydedildi');
     } catch {
-      toast.error('Kaydetme basarisiz');
+      toast.error('Kaydetme başarısız');
     } finally {
       setSaving(false);
     }
@@ -108,7 +108,7 @@ export default function AdminSettingsPage() {
 
   if (loading) {
     return (
-      <AdminLayout title="Site Ayarlari" icon={<Settings size={24} />}>
+      <AdminLayout title="Site Ayarları" icon={<Settings size={24} />}>
         <LoadingSpinner size="lg" className="py-20" />
       </AdminLayout>
     );
@@ -127,7 +127,7 @@ export default function AdminSettingsPage() {
           }`}
         >
           <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-4">
-            Bakim Modu
+            Bakım Modu
           </h2>
 
           <div className="flex items-start gap-4">
@@ -146,10 +146,10 @@ export default function AdminSettingsPage() {
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div>
                   <p className="text-sm font-semibold text-[var(--text-primary)]">
-                    {form.maintenanceMode ? 'Bakim Modu Aktif' : 'Bakim Modu Kapali'}
+                    {form.maintenanceMode ? 'Bakım Modu Aktif' : 'Bakım Modu Kapalı'}
                   </p>
                   <p className="text-xs text-[var(--text-secondary)] mt-1">
-                    Bakim modu aktifken kullanicilar siteye erisemez
+                    Bakım modu aktifken kullanıcılar siteye erişemez
                   </p>
                 </div>
 
@@ -176,7 +176,7 @@ export default function AdminSettingsPage() {
               {form.maintenanceMode && (
                 <div className="mt-3 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl">
                   <p className="text-xs text-red-600 font-medium">
-                    Dikkat: Site su anda bakim modunda. Kullanicilar siteye erisemiyor.
+                    Dikkat: Site şu anda bakım modunda. Kullanıcılar siteye erişemiyor.
                   </p>
                 </div>
               )}
@@ -192,7 +192,7 @@ export default function AdminSettingsPage() {
 
           <div className="space-y-4">
             <Input
-              label="Site Basligi"
+              label="Site Başlığı"
               value={form.siteTitle}
               onChange={e => setForm(f => ({ ...f, siteTitle: e.target.value }))}
               placeholder="HasatLink"
@@ -200,12 +200,12 @@ export default function AdminSettingsPage() {
 
             <div>
               <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">
-                Site Aciklamasi
+                Site Açıklaması
               </label>
               <textarea
                 value={form.siteDescription}
                 onChange={e => setForm(f => ({ ...f, siteDescription: e.target.value }))}
-                placeholder="HasatLink - Tarim Pazari"
+                placeholder="HasatLink - Tarım Pazarı"
                 rows={3}
                 className="w-full px-4 py-3 bg-[var(--bg-input)] border border-transparent rounded-2xl text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:border-[#2D6A4F] focus:ring-4 focus:ring-[#2D6A4F]/20 focus:bg-[var(--focus-bg)] transition-all resize-none"
               />
@@ -226,7 +226,7 @@ export default function AdminSettingsPage() {
                   className="w-12 h-12 object-contain rounded-lg"
                   onError={e => (e.currentTarget.style.display = 'none')}
                 />
-                <span className="text-xs text-[var(--text-secondary)]">Logo onizleme</span>
+                <span className="text-xs text-[var(--text-secondary)]">Logo önizleme</span>
               </div>
             )}
           </div>
