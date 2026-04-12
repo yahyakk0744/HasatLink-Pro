@@ -14,7 +14,7 @@ import toast from 'react-hot-toast';
 export default function AccountSettingsPage() {
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
-  const { user, updateUserData, logout } = useAuth();
+  const { user, loading: authLoading, updateUserData, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [username, setUsername] = useState('');
@@ -73,6 +73,7 @@ export default function AccountSettingsPage() {
     }
   };
 
+  if (authLoading) return <LoadingSpinner size="lg" className="py-20" />;
   if (!user) return <Navigate to="/giris" replace />;
   if (loading) return <LoadingSpinner size="lg" className="py-20" />;
 

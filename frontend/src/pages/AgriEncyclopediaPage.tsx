@@ -8,8 +8,9 @@ import SEO from '../components/ui/SEO';
 export default function AgriEncyclopediaPage() {
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
+  if (authLoading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="animate-spin rounded-full h-8 w-8 border-2 border-emerald-500 border-t-transparent" /></div>;
   if (!user) return <Navigate to="/giris" replace />;
 
   return (

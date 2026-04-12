@@ -21,13 +21,14 @@ const RISK_STYLE: Record<string, { bg: string; text: string; label: string }> = 
 export default function AIDiagnosisPage() {
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('diagnose');
   const [history, setHistory] = useState<AIDiagnosisHistory[]>([]);
   const [alerts, setAlerts] = useState<RegionalAlert[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [alertsLoading, setAlertsLoading] = useState(false);
 
+  if (authLoading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="animate-spin rounded-full h-8 w-8 border-2 border-emerald-500 border-t-transparent" /></div>;
   if (!user) return <Navigate to="/giris" replace />;
 
   const loadHistory = async () => {

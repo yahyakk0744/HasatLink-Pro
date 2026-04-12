@@ -21,10 +21,11 @@ const FILTER_TYPES = [
 
 export default function NotificationsPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { notifications, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications } = useNotificationContext();
   const [filter, setFilter] = useState('all');
 
+  if (authLoading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="animate-spin rounded-full h-8 w-8 border-2 border-emerald-500 border-t-transparent" /></div>;
   if (!user) return <Navigate to="/giris" replace />;
 
   const filtered = filter === 'all' ? notifications : notifications.filter(n => n.type === filter);
