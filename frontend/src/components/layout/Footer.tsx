@@ -131,6 +131,7 @@ export default function Footer() {
               <Link to="/ekipman" className="text-xs text-white/60 hover:text-white">{t('categories.ekipman')}</Link>
               <Link to="/arazi" className="text-xs text-white/60 hover:text-white">{t('categories.arazi')}</Link>
               <Link to="/depolama" className="text-xs text-white/60 hover:text-white">{t('categories.depolama')}</Link>
+              <Link to="/hayvancilik" className="text-xs text-white/60 hover:text-white">{t('categories.hayvancilik')}</Link>
             </div>
           </AccordionSection>
 
@@ -223,6 +224,7 @@ export default function Footer() {
                 <Link to="/ekipman" className="text-sm text-white/70 hover:text-white">{t('categories.ekipman')}</Link>
                 <Link to="/arazi" className="text-sm text-white/70 hover:text-white">{t('categories.arazi')}</Link>
                 <Link to="/depolama" className="text-sm text-white/70 hover:text-white">{t('categories.depolama')}</Link>
+                <Link to="/hayvancilik" className="text-sm text-white/70 hover:text-white">{t('categories.hayvancilik')}</Link>
               </div>
             </div>
 

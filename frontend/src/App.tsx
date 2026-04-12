@@ -122,6 +122,7 @@ export default function App() {
             <Route path="/ekipman" element={<ListingsPage />} />
             <Route path="/arazi" element={<ListingsPage />} />
             <Route path="/depolama" element={<ListingsPage />} />
+            <Route path="/hayvancilik" element={<ListingsPage />} />
             <Route path="/ilan/:id" element={<ListingDetailPage />} />
             <Route path="/profil" element={<ProfilePage />} />
             <Route path="/profil/:userId" element={<ProfilePage />} />

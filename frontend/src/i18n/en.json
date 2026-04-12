@@ -48,7 +48,8 @@
     "isgucu": "WORKFORCE",
     "ekipman": "EQUIPMENT",
     "arazi": "LAND",
-    "depolama": "STORAGE"
+    "depolama": "STORAGE",
+    "hayvancilik": "LIVESTOCK"
   },
   "listing": {
     "create": "Create Listing",

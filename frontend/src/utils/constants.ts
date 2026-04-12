@@ -5,6 +5,7 @@ export const CATEGORIES = {
   ekipman: ['HEPSİ', 'TRAKTÖR', 'PULLUK', 'DRON', 'İLAÇLAMA MAK.', 'SULAMA SİSTEMİ', 'SERA EKİPMANI', 'BİÇERDÖVER', 'DİĞER'],
   arazi: ['HEPSİ', 'TARLA', 'BAĞ', 'BAHÇE', 'ZEYTİNLİK', 'SERA ALANI', 'MERA', 'DİĞER'],
   depolama: ['HEPSİ', 'SOĞUK HAVA DEPOSU', 'KURU DEPO', 'TAHIL SİLOSU', 'AÇIK DEPO', 'DİĞER'],
+  hayvancilik: ['HEPSİ', 'BÜYÜKBAŞ', 'KÜÇÜKBAŞ', 'KANATLI', 'ARICILIK', 'SU ÜRÜNLERİ', 'YEM', 'HAYVANSAL ÜRÜN', 'DİĞER'],
 } as const;
 
 // Pazar alt kategorileri — detaylı ürün listesi
@@ -42,6 +43,7 @@ export const CATEGORY_LABELS: Record<string, { tr: string; en: string; icon: str
   ekipman: { tr: 'EKİPMAN', en: 'EQUIPMENT', icon: '🚜' },
   arazi: { tr: 'ARAZİ', en: 'LAND', icon: '🏞️' },
   depolama: { tr: 'DEPOLAMA', en: 'STORAGE', icon: '📦' },
+  hayvancilik: { tr: 'HAYVANCILIK', en: 'LIVESTOCK', icon: '🐄' },
 };
 
 export const COLORS = {
@@ -106,6 +108,10 @@ export const LISTING_MODE_LABELS: Record<string, Record<string, { tr: string; en
     sell: { tr: 'SATILIK', en: 'FOR SALE' },
     buy:  { tr: 'KİRALIK', en: 'FOR RENT' },
   },
+  hayvancilik: {
+    sell: { tr: 'SATIŞ', en: 'SELL' },
+    buy:  { tr: 'ALIM', en: 'BUY' },
+  },
 };
 
 export const LISTING_MODE_COLORS: Record<string, string> = {
@@ -123,3 +129,84 @@ export const RENT_DURATIONS_ARAZI = ['YILLIK', 'SEZONLUK', '3 YILLIK', '5 YILLIK
 // Depolama specific options
 export const STORAGE_CAPACITY_UNITS = ['ton', 'm³', 'palet'];
 export const RENT_DURATIONS_DEPO = ['GÜNLÜK', 'HAFTALIK', 'AYLIK', 'YILLIK'];
+
+// ─── Lojistik alt kategorileri ───
+export const LOJISTIK_SUBCATEGORIES: Record<string, string[]> = {
+  DAMPERLİ: ['Kum-Çakıl', 'Tarım Ürünü', 'Toprak', 'Maden', 'İnşaat Malzemesi'],
+  TIR: ['Komple Yük', 'Parsiyel Yük', 'Proje Taşıma', 'Konteyner'],
+  'SIVI TANKER': ['Su', 'Süt', 'Mazot', 'Sıvı Gübre', 'İlaç'],
+  FRİGO: ['Meyve-Sebze', 'Et-Balık', 'Süt Ürünleri', 'Dondurulmuş Gıda'],
+  KAMYONET: ['Şehiriçi', 'Şehirlerarası', 'Parça Eşya', 'Paket Servis'],
+};
+
+// ─── İşgücü alt kategorileri ───
+export const ISGUCU_SUBCATEGORIES: Record<string, string[]> = {
+  OPERATÖR: ['Traktör Operatörü', 'Biçerdöver Operatörü', 'İş Makinesi', 'Dron Operatörü'],
+  'İLAÇLAMA EKİBİ': ['Herbisit', 'Fungisit', 'İnsektisit', 'Dron İlaçlama'],
+  İŞÇİ: ['Mevsimlik İşçi', 'Daimi İşçi', 'Gündelik İşçi', 'Part-Time'],
+  BUDAMACI: ['Bağ Budama', 'Meyve Ağacı', 'Zeytin Budama', 'Gül Budama'],
+  'HASAT EKİBİ': ['Elle Hasat', 'Makineli Hasat', 'Zeytin Toplama', 'Fındık Toplama'],
+  'OT BİÇME': ['Çim Biçme', 'Ot Toplama', 'Balya Yapma', 'Silaj Biçme'],
+};
+
+// ─── Ekipman alt kategorileri ───
+export const EKIPMAN_SUBCATEGORIES: Record<string, string[]> = {
+  TRAKTÖR: ['Mini Traktör', 'Bahçe Traktörü', 'Tarla Traktörü', 'Bağ Traktörü'],
+  PULLUK: ['Kulaklı Pulluk', 'Diskli Pulluk', 'Çizel', 'Kazayağı', 'Goble Diskaro'],
+  DRON: ['İlaçlama Dronu', 'Haritalama Dronu', 'Gözetleme Dronu'],
+  'İLAÇLAMA MAK.': ['Sırt Pompası', 'Motorlu Pülverizatör', 'Turbo Atomizör', 'Çekilir İlaçlama'],
+  'SULAMA SİSTEMİ': ['Damlama', 'Yağmurlama', 'Pivot', 'Hortum Makarası', 'Pompa'],
+  'SERA EKİPMANI': ['Sera Örtüsü', 'İskelet', 'Havalandırma', 'Isıtma Sistemi', 'Topraksız Tarım'],
+  BİÇERDÖVER: ['Hububat Biçerdöver', 'Mısır Tablası', 'Çeltik Tablası'],
+};
+
+// ─── Arazi alt kategorileri ───
+export const ARAZI_SUBCATEGORIES: Record<string, string[]> = {
+  TARLA: ['Sulanabilir Tarla', 'Kuru Tarla', 'Nadasa Bırakılmış'],
+  BAĞ: ['Şaraplık Üzüm', 'Sofralık Üzüm', 'Kurutmalık'],
+  BAHÇE: ['Meyve Bahçesi', 'Sebze Bahçesi', 'Fındık Bahçesi', 'Ceviz Bahçesi', 'Narenciye'],
+  ZEYTİNLİK: ['Yağlık Zeytin', 'Sofralık Zeytin', 'Karışık'],
+  'SERA ALANI': ['Cam Sera', 'Plastik Sera', 'Yüksek Tünel'],
+  MERA: ['Otlak', 'Çayır', 'Yaylak'],
+};
+
+// ─── Depolama alt kategorileri ───
+export const DEPOLAMA_SUBCATEGORIES: Record<string, string[]> = {
+  'SOĞUK HAVA DEPOSU': ['+2°C / +8°C (Meyve-Sebze)', '-18°C / -25°C (Dondurulmuş)', '0°C / +4°C (Et-Süt)'],
+  'KURU DEPO': ['Hububat', 'Bakliyat', 'Gübre', 'Tohum'],
+  'TAHIL SİLOSU': ['Buğday', 'Arpa', 'Mısır', 'Çeltik'],
+  'AÇIK DEPO': ['Saman', 'Odun', 'Makine Parkı'],
+};
+
+// ─── Hayvancılık alt kategorileri ───
+export const HAYVANCILIK_SUBCATEGORIES: Record<string, string[]> = {
+  BÜYÜKBAŞ: ['İnek', 'Boğa', 'Dana', 'Düve', 'Tosun', 'Buzağı', 'Manda'],
+  KÜÇÜKBAŞ: ['Koyun', 'Koç', 'Kuzu', 'Keçi', 'Teke', 'Oğlak'],
+  KANATLI: ['Tavuk', 'Horoz', 'Hindi', 'Kaz', 'Ördek', 'Bıldırcın', 'Güvercin', 'Deve Kuşu'],
+  ARICILIK: ['Arı Kovanı', 'Bal', 'Bal Mumu', 'Propolis', 'Arı Sütü', 'Polen', 'Ana Arı'],
+  'SU ÜRÜNLERİ': ['Alabalık', 'Levrek', 'Çipura', 'Sazan', 'Kerevit', 'Midye', 'Karides'],
+  YEM: ['Yonca', 'Saman', 'Silaj', 'Küspe', 'Karma Yem', 'Besi Yemi', 'Süt Yemi', 'Tavuk Yemi'],
+  'HAYVANSAL ÜRÜN': ['Süt', 'Yumurta', 'Peynir', 'Tereyağı', 'Yoğurt', 'Bal', 'Deri', 'Yün', 'Et'],
+};
+
+// ─── Tüm alt kategorileri tek map'te birleştir ───
+export const ALL_SUBCATEGORIES: Record<string, Record<string, string[]>> = {
+  pazar: PAZAR_SUBCATEGORIES,
+  lojistik: LOJISTIK_SUBCATEGORIES,
+  isgucu: ISGUCU_SUBCATEGORIES,
+  ekipman: EKIPMAN_SUBCATEGORIES,
+  arazi: ARAZI_SUBCATEGORIES,
+  depolama: DEPOLAMA_SUBCATEGORIES,
+  hayvancilik: HAYVANCILIK_SUBCATEGORIES,
+};
+
+// ─── Hayvancılık (Livestock) specific options ───
+export const ANIMAL_BREEDS: Record<string, string[]> = {
+  BÜYÜKBAŞ: ['Simental', 'Holstein', 'Jersey', 'Angus', 'Hereford', 'Yerli Kara', 'Montofon', 'Charolais', 'Limousin', 'Boz Irk'],
+  KÜÇÜKBAŞ: ['Merinos', 'İvesi', 'Akkaraman', 'Morkaraman', 'Kıvırcık', 'Sakız', 'Dağlıç', 'Saanen', 'Kilis', 'Ankara (Tiftik)'],
+  KANATLI: ['Yumurta Tavuğu', 'Etlik Piliç', 'Köy Tavuğu', 'Bronz Hindi', 'Beyaz Hindi', 'Emden Kazı', 'Bıldırcın'],
+};
+export const ANIMAL_AGE_UNITS = ['AY', 'YIL'];
+export const ANIMAL_GENDERS = ['DİŞİ', 'ERKEK', 'KARIŞIK'];
+export const ANIMAL_HEALTH_DOCS = ['SAĞLIK BELGESİ', 'AŞI KARTI', 'KULAK KÜPE NO', 'PASAPORT'];
+export const HAYVANCILIK_UNITS = ['adet', 'baş', 'kovan', 'kg', 'litre', 'ton', 'düzine'];

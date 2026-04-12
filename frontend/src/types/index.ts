@@ -54,7 +54,7 @@ export interface Message {
 export interface Listing {
   _id: string;
   userId: string;
-  type: 'pazar' | 'lojistik' | 'isgucu' | 'ekipman' | 'arazi' | 'depolama';
+  type: 'pazar' | 'lojistik' | 'isgucu' | 'ekipman' | 'arazi' | 'depolama' | 'hayvancilik';
   listingMode: 'sell' | 'buy';
   subCategory: string;
   status: string;
@@ -112,6 +112,16 @@ export interface Listing {
   temperatureMax: number;
   hasSecurity: boolean;
   has24Access: boolean;
+  // Hayvancılık
+  animalBreed?: string;
+  animalAge?: number;
+  animalAgeUnit?: string;
+  animalGender?: string;
+  animalCount?: number;
+  healthDocs?: string[];
+  earTagNumber?: string;
+  isVaccinated?: boolean;
+  weight?: number;
   isFeatured?: boolean;
   is_negotiable?: boolean;
   needsTransport?: boolean;

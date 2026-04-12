@@ -84,6 +84,16 @@ export interface IListing extends Document {
   altitude: number;
   // Depolama (ek)
   humidityControl: boolean;
+  // Hayvancılık
+  animalBreed: string;
+  animalAge: number;
+  animalAgeUnit: string;
+  animalGender: string;
+  animalCount: number;
+  healthDocs: string[];
+  earTagNumber: string;
+  isVaccinated: boolean;
+  weight: number;
   // Fiyat düşüşü takibi
   originalPrice: number;
   priceUpdatedAt: string;
@@ -94,7 +104,7 @@ export interface IListing extends Document {
 
 const ListingSchema = new Schema<IListing>({
   userId: { type: String, required: true },
-  type: { type: String, required: true, enum: ['pazar', 'lojistik', 'isgucu', 'ekipman', 'arazi', 'depolama'] },
+  type: { type: String, required: true, enum: ['pazar', 'lojistik', 'isgucu', 'ekipman', 'arazi', 'depolama', 'hayvancilik'] },
   listingMode: { type: String, enum: ['sell', 'buy'], default: 'sell' },
   subCategory: { type: String, default: '' },
   status: { type: String, default: 'active', enum: ['active', 'pending', 'sold', 'rented', 'closed'] },
@@ -179,6 +189,16 @@ const ListingSchema = new Schema<IListing>({
   altitude: { type: Number, default: 0 },
   // Depolama (ek)
   humidityControl: { type: Boolean, default: false },
+  // Hayvancılık
+  animalBreed: { type: String, default: '' },
+  animalAge: { type: Number, default: 0 },
+  animalAgeUnit: { type: String, default: 'AY' },
+  animalGender: { type: String, default: '' },
+  animalCount: { type: Number, default: 0 },
+  healthDocs: [{ type: String }],
+  earTagNumber: { type: String, default: '' },
+  isVaccinated: { type: Boolean, default: false },
+  weight: { type: Number, default: 0 },
   // Fiyat düşüşü takibi
   originalPrice: { type: Number, default: 0 },
   priceUpdatedAt: { type: String, default: '' },

@@ -12,7 +12,7 @@ import { formatPrice, formatDate } from '../utils/formatters';
 import type { User, Listing } from '../types';
 import toast from 'react-hot-toast';
 
-type CategoryFilter = 'hepsi' | 'pazar' | 'lojistik' | 'isgucu' | 'ekipman' | 'arazi' | 'depolama';
+type CategoryFilter = 'hepsi' | 'pazar' | 'lojistik' | 'isgucu' | 'ekipman' | 'arazi' | 'depolama' | 'hayvancilik';
 
 const CATEGORY_TABS: { key: CategoryFilter; label: string }[] = [
   { key: 'hepsi', label: 'Hepsi' },
@@ -22,6 +22,7 @@ const CATEGORY_TABS: { key: CategoryFilter; label: string }[] = [
   { key: 'ekipman', label: 'Ekipman' },
   { key: 'arazi', label: 'Arazi' },
   { key: 'depolama', label: 'Depolama' },
+  { key: 'hayvancilik', label: 'Hayvancılık' },
 ];
 
 export default function SellerStorePage() {

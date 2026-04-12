@@ -7,7 +7,7 @@ import Button from '../ui/Button';
 import LocationPicker from '../map/LocationPicker';
 import Badge from '../ui/Badge';
 import {
-  CATEGORIES, CATEGORY_LABELS, PAZAR_SUBCATEGORIES,
+  CATEGORIES, CATEGORY_LABELS, ALL_SUBCATEGORIES,
   PAZAR_UNITS, QUALITY_GRADES, STORAGE_TYPES,
   VEHICLE_TYPES,
   WORKER_SKILLS,
@@ -15,6 +15,7 @@ import {
   LISTING_MODE_LABELS,
   SOIL_TYPES, LAND_UNITS, DEED_STATUSES, ZONING_STATUSES, RENT_DURATIONS_ARAZI,
   STORAGE_CAPACITY_UNITS, RENT_DURATIONS_DEPO,
+  ANIMAL_BREEDS, ANIMAL_AGE_UNITS, ANIMAL_GENDERS, ANIMAL_HEALTH_DOCS, HAYVANCILIK_UNITS,
 } from '../../utils/constants';
 import type { Listing } from '../../types';
 import { containsProfanity } from '../../utils/profanityFilter';
@@ -267,6 +268,17 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const [needsTransport, setNeedsTransport] = useState(initialData?.needsTransport || false);
   const [hasTransportCapacity, setHasTransportCapacity] = useState(initialData?.hasTransportCapacity || false);
 
+  // Hayvancılık
+  const [animalBreed, setAnimalBreed] = useState((initialData as any)?.animalBreed || '');
+  const [animalAge, setAnimalAge] = useState((initialData as any)?.animalAge?.toString() || '');
+  const [animalAgeUnit, setAnimalAgeUnit] = useState((initialData as any)?.animalAgeUnit || 'AY');
+  const [animalGender, setAnimalGender] = useState((initialData as any)?.animalGender || '');
+  const [animalCount, setAnimalCount] = useState((initialData as any)?.animalCount?.toString() || '');
+  const [healthDocs, setHealthDocs] = useState<string[]>((initialData as any)?.healthDocs || []);
+  const [earTagNumber, setEarTagNumber] = useState((initialData as any)?.earTagNumber || '');
+  const [isVaccinated, setIsVaccinated] = useState((initialData as any)?.isVaccinated || false);
+  const [animalWeight, setAnimalWeight] = useState((initialData as any)?.weight?.toString() || '');
+
   // Video & Documents
   const [videoUrl, setVideoUrl] = useState(initialData?.videoUrl || '');
   const [documents, setDocuments] = useState<{ name: string; url: string }[]>(initialData?.documents || []);
@@ -288,7 +300,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const [humidityControl, setHumidityControl] = useState((initialData as any)?.humidityControl || false);
 
   const subCategories = CATEGORIES[type as keyof typeof CATEGORIES]?.filter(c => c !== 'HEPSİ') || [];
-  const productOptions = type === 'pazar' && subCategory ? (PAZAR_SUBCATEGORIES[subCategory] || []) : [];
+  const productOptions = subCategory ? (ALL_SUBCATEGORIES[type]?.[subCategory] || []) : [];
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -396,6 +408,16 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         data.has24Access = has24Access;
         data.rentDuration = rentDuration;
         (data as any).humidityControl = humidityControl;
+      } else if (type === 'hayvancilik') {
+        (data as any).animalBreed = animalBreed;
+        (data as any).animalAge = parseInt(animalAge) || 0;
+        (data as any).animalAgeUnit = animalAgeUnit;
+        (data as any).animalGender = animalGender;
+        (data as any).animalCount = parseInt(animalCount) || 0;
+        (data as any).healthDocs = healthDocs;
+        (data as any).earTagNumber = earTagNumber;
+        (data as any).isVaccinated = isVaccinated;
+        (data as any).weight = parseFloat(animalWeight) || 0;
       }
 
       await onSubmit(data);
@@ -831,6 +853,50 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                         <ToggleSwitch label="Nem Kontrolü" checked={humidityControl} onChange={setHumidityControl} />
                       </div>
                     )}
+                  </>
+                )}
+
+                {/* === HAYVANCILIK SPECIFIC === */}
+                {type === 'hayvancilik' && (
+                  <>
+                    <SectionTitle>{lang === 'tr' ? 'Hayvancılık Detayları' : 'Livestock Details'}</SectionTitle>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label={(listingMode === 'buy' ? (lang === 'tr' ? 'Bütçe' : 'Budget') : (lang === 'tr' ? 'Fiyat' : 'Price')) + ' (TL)'} type="number" value={price} onChange={e => setPrice(e.target.value)} required />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input label={lang === 'tr' ? 'Miktar' : 'Amount'} type="number" value={amount} onChange={e => setAmount(e.target.value)} />
+                        <div>
+                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{lang === 'tr' ? 'Birim' : 'Unit'}</label>
+                          <SelectButtons options={HAYVANCILIK_UNITS} value={unit} onChange={setUnit} />
+                        </div>
+                      </div>
+                    </div>
+                    {(subCategory === 'BÜYÜKBAŞ' || subCategory === 'KÜÇÜKBAŞ' || subCategory === 'KANATLI') && ANIMAL_BREEDS[subCategory] && (
+                      <div>
+                        <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{lang === 'tr' ? 'Irk' : 'Breed'}</label>
+                        <SelectButtons options={ANIMAL_BREEDS[subCategory]} value={animalBreed} onChange={setAnimalBreed} color="#A47148" />
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{lang === 'tr' ? 'Cinsiyet' : 'Gender'}</label>
+                      <SelectButtons options={ANIMAL_GENDERS} value={animalGender} onChange={setAnimalGender} />
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <Input label={lang === 'tr' ? 'Yaş' : 'Age'} type="number" value={animalAge} onChange={e => setAnimalAge(e.target.value)} />
+                      <div>
+                        <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{lang === 'tr' ? 'Yaş Birimi' : 'Age Unit'}</label>
+                        <SelectButtons options={ANIMAL_AGE_UNITS} value={animalAgeUnit} onChange={setAnimalAgeUnit} />
+                      </div>
+                      <Input label={lang === 'tr' ? 'Ağırlık (kg)' : 'Weight (kg)'} type="number" value={animalWeight} onChange={e => setAnimalWeight(e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label={lang === 'tr' ? 'Adet / Baş Sayısı' : 'Head Count'} type="number" value={animalCount} onChange={e => setAnimalCount(e.target.value)} />
+                      <Input label={lang === 'tr' ? 'Kulak Küpe No' : 'Ear Tag Number'} value={earTagNumber} onChange={e => setEarTagNumber(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-1.5">{lang === 'tr' ? 'Sağlık Belgeleri' : 'Health Documents'}</label>
+                      <MultiSelectButtons options={ANIMAL_HEALTH_DOCS} values={healthDocs} onChange={setHealthDocs} color="#2D6A4F" />
+                    </div>
+                    <ToggleSwitch label={lang === 'tr' ? 'Aşıları Tam' : 'Vaccinated'} checked={isVaccinated} onChange={setIsVaccinated} />
                   </>
                 )}
               </div>

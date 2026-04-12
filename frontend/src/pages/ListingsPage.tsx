@@ -9,7 +9,7 @@ import ListingMap from '../components/map/ListingMap';
 import SubCategoryBar from '../components/layout/SubCategoryBar';
 import ListingForm from '../components/listings/ListingForm';
 import FAB from '../components/ui/FAB';
-import { CATEGORIES, CATEGORY_LABELS, LISTING_MODE_LABELS, PAZAR_SUBCATEGORIES } from '../utils/constants';
+import { CATEGORIES, CATEGORY_LABELS, LISTING_MODE_LABELS, ALL_SUBCATEGORIES } from '../utils/constants';
 import SEO from '../components/ui/SEO';
 import type { Listing } from '../types';
 import toast from 'react-hot-toast';
@@ -40,7 +40,7 @@ export default function ListingsPage() {
   const navigate = useNavigate();
   const { listings, loading, fetchListings, createListing } = useListings();
   const pathType = window.location.pathname.replace('/', '') || 'pazar';
-  const type = ['pazar', 'lojistik', 'isgucu', 'ekipman', 'arazi', 'depolama'].includes(pathType) ? pathType : 'pazar';
+  const type = ['pazar', 'lojistik', 'isgucu', 'ekipman', 'arazi', 'depolama', 'hayvancilik'].includes(pathType) ? pathType : 'pazar';
   const [searchParams] = useSearchParams();
   const search = searchParams.get('search') || '';
 
@@ -65,7 +65,7 @@ export default function ListingsPage() {
 
   const subCategories = CATEGORIES[type as keyof typeof CATEGORIES] || CATEGORIES.pazar;
   const catLabel = CATEGORY_LABELS[type];
-  const productOptions = type === 'pazar' && subCategory !== 'HEPSİ' ? (PAZAR_SUBCATEGORIES[subCategory] || []) : [];
+  const productOptions = subCategory !== 'HEPSİ' ? (ALL_SUBCATEGORIES[type]?.[subCategory] || []) : [];
 
   useEffect(() => {
     const params: Record<string, string> = { type };

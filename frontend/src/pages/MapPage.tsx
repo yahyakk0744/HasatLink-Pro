@@ -8,7 +8,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import SEO from '../components/ui/SEO';
 import { useFeatures } from '../hooks/useFeatures';
 
-const ALL_TYPES = ['pazar', 'lojistik', 'isgucu', 'ekipman', 'arazi', 'depolama'] as const;
+const ALL_TYPES = ['pazar', 'lojistik', 'isgucu', 'ekipman', 'arazi', 'depolama', 'hayvancilik'] as const;
 
 export default function MapPage() {
   const { isEnabled, loading: featuresLoading } = useFeatures();

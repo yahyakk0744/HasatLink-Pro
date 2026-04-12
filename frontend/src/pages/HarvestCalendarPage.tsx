@@ -31,6 +31,7 @@ const CATEGORIES = [
   { value: 'tahil', label: 'Tahıl' },
   { value: 'baklagil', label: 'Baklagil' },
   { value: 'yem-bitkileri', label: 'Yem Bitkileri' },
+  { value: 'hayvancilik', label: 'Hayvancılık' },
 ];
 
 export default function HarvestCalendarPage() {
