@@ -10,23 +10,23 @@ const STATUS_CONFIG = {
   pending: {
     label: { tr: 'Değerlendiriliyor', en: 'Pending' },
     icon: Clock,
-    bg: 'bg-amber-50',
-    text: 'text-amber-700',
-    border: 'border-amber-200/50',
+    bg: 'bg-amber-50 dark:bg-amber-900/20',
+    text: 'text-amber-700 dark:text-amber-400',
+    border: 'border-amber-200/50 dark:border-amber-700/30',
   },
   accepted: {
     label: { tr: 'Kabul Edildi', en: 'Accepted' },
     icon: CheckCircle,
-    bg: 'bg-emerald-50',
-    text: 'text-emerald-700',
-    border: 'border-emerald-200/50',
+    bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+    text: 'text-emerald-700 dark:text-emerald-400',
+    border: 'border-emerald-200/50 dark:border-emerald-700/30',
   },
   rejected: {
     label: { tr: 'Reddedildi', en: 'Rejected' },
     icon: XCircle,
-    bg: 'bg-red-50',
-    text: 'text-red-700',
-    border: 'border-red-200/50',
+    bg: 'bg-red-50 dark:bg-red-900/20',
+    text: 'text-red-700 dark:text-red-400',
+    border: 'border-red-200/50 dark:border-red-700/30',
   },
 };
 

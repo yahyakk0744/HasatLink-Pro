@@ -149,13 +149,13 @@ export default function AccountSettingsPage() {
           {deletionScheduledAt ? (
             // Deletion is scheduled — show warning + cancel button
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30">
                 <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-[13px] font-semibold text-amber-800">
+                  <p className="text-[13px] font-semibold text-amber-800 dark:text-amber-300">
                     {isTr ? 'Hesabiniz silinmek uzere' : 'Your account is scheduled for deletion'}
                   </p>
-                  <p className="text-[12px] text-amber-700 mt-1">
+                  <p className="text-[12px] text-amber-700 dark:text-amber-400 mt-1">
                     {isTr
                       ? `Tum verileriniz ${new Date(deletionScheduledAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })} tarihinde kalici olarak silinecek.`
                       : `All your data will be permanently deleted on ${new Date(deletionScheduledAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}.`}
@@ -194,7 +194,7 @@ export default function AccountSettingsPage() {
               </p>
               <button
                 onClick={() => setShowDeleteModal(true)}
-                className="w-full py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-600 font-semibold text-[13px] flex items-center justify-center gap-2 hover:bg-red-100 transition-colors"
+                className="w-full py-2.5 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/30 text-red-600 dark:text-red-400 font-semibold text-[13px] flex items-center justify-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
               >
                 <Trash2 size={16} />
                 {isTr ? 'Hesabimi Sil' : 'Delete My Account'}
@@ -208,7 +208,7 @@ export default function AccountSettingsPage() {
       <Modal isOpen={showDeleteModal} onClose={() => { setShowDeleteModal(false); setDeletePassword(''); setDeleteReason(''); }}>
         <div className="space-y-5">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
               <AlertTriangle size={24} className="text-red-600" />
             </div>
             <div>
@@ -221,8 +221,8 @@ export default function AccountSettingsPage() {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-red-50 border border-red-200 space-y-1.5">
-            <p className="text-[11px] font-semibold text-red-700 uppercase tracking-wider">
+          <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/30 space-y-1.5">
+            <p className="text-[11px] font-semibold text-red-700 dark:text-red-400 uppercase tracking-wider">
               {isTr ? 'Silinecek veriler:' : 'Data that will be deleted:'}
             </p>
             <ul className="text-[12px] text-red-600 space-y-0.5">
@@ -273,7 +273,7 @@ export default function AccountSettingsPage() {
           <div className="flex gap-3">
             <button
               onClick={() => { setShowDeleteModal(false); setDeletePassword(''); setDeleteReason(''); }}
-              className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[13px] hover:bg-gray-200 transition-colors"
+              className="flex-1 py-2.5 rounded-xl bg-[var(--bg-input)] text-[var(--text-primary)] font-semibold text-[13px] hover:bg-[var(--bg-surface-hover)] transition-colors"
             >
               {isTr ? 'Vazgec' : 'Cancel'}
             </button>

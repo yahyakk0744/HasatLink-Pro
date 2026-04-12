@@ -23,10 +23,10 @@ const STATUS_LABELS: Record<string, Record<AdStatus, string>> = {
 };
 
 const STATUS_COLORS: Record<AdStatus, string> = {
-  active: 'bg-emerald-50 text-emerald-700',
-  pending: 'bg-amber-50 text-amber-700',
-  rejected: 'bg-red-50 text-red-700',
-  expired: 'bg-gray-100 text-gray-500',
+  active: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400',
+  pending: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400',
+  rejected: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400',
+  expired: 'bg-[var(--bg-input)] text-[var(--text-secondary)]',
 };
 
 const emptyDealer = (): Partial<Dealer> => ({
@@ -270,7 +270,7 @@ export default function AdminDealersPage() {
               {dealer.target_regions?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-3">
                   {dealer.target_regions.map((region: string, i: number) => (
-                    <span key={i} className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[11px] font-medium flex items-center gap-0.5">
+                    <span key={i} className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-[11px] font-medium flex items-center gap-0.5">
                       <MapPin size={10} /> {region}
                     </span>
                   ))}

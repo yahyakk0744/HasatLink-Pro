@@ -13,9 +13,9 @@ import type { AIDiagnosisHistory, RegionalAlert } from '../types';
 type Tab = 'diagnose' | 'history' | 'alerts';
 
 const RISK_STYLE: Record<string, { bg: string; text: string; label: string }> = {
-  high:     { bg: 'bg-red-50 border-red-200/60',    text: 'text-red-700',    label: 'Yüksek Risk' },
-  medium:   { bg: 'bg-amber-50 border-amber-200/60', text: 'text-amber-700',  label: 'Orta Risk' },
-  low:      { bg: 'bg-emerald-50 border-emerald-200/60', text: 'text-emerald-700', label: 'Düşük Risk' },
+  high:     { bg: 'bg-red-50 dark:bg-red-900/20 border-red-200/60 dark:border-red-700/30',    text: 'text-red-700 dark:text-red-400',    label: 'Yüksek Risk' },
+  medium:   { bg: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200/60 dark:border-amber-700/30', text: 'text-amber-700 dark:text-amber-400',  label: 'Orta Risk' },
+  low:      { bg: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200/60 dark:border-emerald-700/30', text: 'text-emerald-700 dark:text-emerald-400', label: 'Düşük Risk' },
 };
 
 export default function AIDiagnosisPage() {
@@ -210,7 +210,7 @@ export default function AIDiagnosisPage() {
                   <div key={i} className={`rounded-2xl border p-4 ${risk.bg}`}>
                     <div className="flex items-start gap-3">
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                        alert.risk_level === 'high' ? 'bg-red-100' : alert.risk_level === 'medium' ? 'bg-amber-100' : 'bg-emerald-100'
+                        alert.risk_level === 'high' ? 'bg-red-100 dark:bg-red-900/30' : alert.risk_level === 'medium' ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30'
                       }`}>
                         <AlertTriangle size={17} className={risk.text} />
                       </div>

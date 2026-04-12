@@ -13,16 +13,16 @@ export default function AnalyticsCards({ stats }: AnalyticsCardsProps) {
     { label: t('stats.totalViews'), value: stats.totalViews, icon: Eye, color: '#0077B6' },
     { label: t('stats.totalInteractions'), value: stats.totalWhatsapp, icon: MessageCircle, color: '#2D6A4F' },
     { label: t('stats.totalShares'), value: stats.totalShares, icon: Share2, color: '#A47148' },
-    { label: t('stats.activeListings'), value: stats.activeListings, icon: FileText, color: '#1A1A1A' },
+    { label: t('stats.activeListings'), value: stats.activeListings, icon: FileText, color: 'var(--text-primary)' },
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {cards.map(card => (
         <div key={card.label} className="bg-[var(--bg-surface)] rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <card.icon size={16} style={{ color: card.color }} />
-            <span className="text-[10px] font-medium uppercase tracking-wider text-[#6B6560]">{card.label}</span>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-secondary)]">{card.label}</span>
           </div>
           <p className="text-2xl font-semibold tracking-tight">{card.value.toLocaleString()}</p>
         </div>

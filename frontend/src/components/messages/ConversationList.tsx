@@ -31,13 +31,13 @@ export default function ConversationList({
           <MessageSquare size={24} className="text-[var(--text-secondary)]" />
         </div>
         <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">{t('messages.empty')}</h3>
-        <p className="text-xs text-[#6B6560]">{t('messages.emptyDescription')}</p>
+        <p className="text-xs text-[var(--text-secondary)]">{t('messages.emptyDescription')}</p>
       </div>
     );
   }
 
   return (
-    <div className="divide-y divide-[#F5F3EF]">
+    <div className="divide-y divide-[var(--divider)]">
       {conversations.map((conv) => (
         <ConversationItem
           key={conv.id}

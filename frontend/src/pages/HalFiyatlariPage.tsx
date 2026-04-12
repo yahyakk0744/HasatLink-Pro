@@ -136,7 +136,7 @@ export default function HalFiyatlariPage() {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-sm text-amber-800">
+        <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-2xl text-sm text-amber-800 dark:text-amber-300">
           {error}
         </div>
       )}

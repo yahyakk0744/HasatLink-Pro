@@ -7,9 +7,9 @@ import {
 import { useAIDiagnosis } from '../../hooks/useAIDiagnosis';
 
 const URGENCY_STYLES = {
-  low: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/50' },
-  medium: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200/50' },
-  critical: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200/50' },
+  low: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200/50 dark:border-emerald-700/30' },
+  medium: { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200/50 dark:border-amber-700/30' },
+  critical: { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400', border: 'border-red-200/50 dark:border-red-700/30' },
 };
 
 const CROP_ICONS: Record<string, string> = {
@@ -112,7 +112,7 @@ export default function DiseaseLibrary() {
               {/* Card header */}
               <button
                 onClick={() => setExpandedId(isExpanded ? null : d.disease_code)}
-                className={`w-full flex items-center gap-3 p-4 text-left hover:bg-black/[0.02] transition-colors`}
+                className={`w-full flex items-center gap-3 p-4 text-left hover:bg-[var(--bg-surface-hover)] transition-colors`}
               >
                 <div className={`w-10 h-10 rounded-xl ${style.bg} flex items-center justify-center shrink-0`}>
                   <Bug size={18} className={style.text} />
@@ -124,7 +124,7 @@ export default function DiseaseLibrary() {
                       {CROP_ICONS[d.crop_type] || '🌱'} {d.crop_type}
                     </span>
                     {d.is_seasonal && (
-                      <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-600 text-[9px] font-bold animate-pulse">
+                      <span className="px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[9px] font-bold animate-pulse">
                         {isTr ? 'AKTIF' : 'ACTIVE'}
                       </span>
                     )}
@@ -165,7 +165,7 @@ export default function DiseaseLibrary() {
                       <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase mb-1.5">{isTr ? 'Önerilen Ürünler' : 'Products'}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {d.recommended_products.map(p => (
-                          <span key={p} className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-medium border border-blue-200/40">
+                          <span key={p} className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-[10px] font-medium border border-blue-200/40 dark:border-blue-700/30">
                             {p}
                           </span>
                         ))}
@@ -179,7 +179,7 @@ export default function DiseaseLibrary() {
                       <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase mb-1.5">{isTr ? 'Yaygın Bölgeler' : 'Active Regions'}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {d.active_regions.map(r => (
-                          <span key={r} className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-medium border border-amber-200/40">
+                          <span key={r} className="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-[10px] font-medium border border-amber-200/40 dark:border-amber-700/30">
                             {r}
                           </span>
                         ))}

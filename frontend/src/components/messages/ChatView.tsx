@@ -164,7 +164,7 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
               </span>
             )}
           </div>
-          <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--bg-surface)] ${otherOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
+          <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--bg-surface)] ${otherOnline ? 'bg-green-500' : 'bg-[var(--text-tertiary)]'}`} />
         </div>
         <div className="flex-1 min-w-0 mr-2">
           <h3 className="text-[15px] font-semibold text-[var(--text-primary)] truncate">{otherName}</h3>
@@ -173,10 +173,10 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
               <span className="text-[11px] text-[#2D6A4F] font-medium animate-pulse">yazıyor...</span>
             ) : (
               <>
-                <span className={`text-[11px] font-medium ${otherOnline ? 'text-green-600' : 'text-[#6B6560]'}`}>
+                <span className={`text-[11px] font-medium ${otherOnline ? 'text-green-600' : 'text-[var(--text-secondary)]'}`}>
                   {otherOnline ? 'Cevrimici' : 'Cevrimdisi'}
                 </span>
-                <span className="text-[10px] text-[#6B6560] mx-1">·</span>
+                <span className="text-[10px] text-[var(--text-secondary)] mx-1">·</span>
                 <Link
                   to={`/ilan/${conversation.listingId}`}
                   className="text-[11px] text-[#2D6A4F] font-medium hover:underline truncate"
@@ -231,10 +231,10 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
         {/* Typing indicator */}
         {isTyping && (
           <div className="flex justify-start mb-2">
-            <div className="bg-[#E9E9EB] rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-[#8E8E93] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 bg-[#8E8E93] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 bg-[#8E8E93] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="bg-[var(--bg-input)] rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </div>
         )}

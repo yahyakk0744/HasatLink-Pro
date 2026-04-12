@@ -48,12 +48,12 @@ export default function MessageBubble({ message, isOwn, showTail = true }: Messa
       <div
         className={`relative max-w-[75%] px-3.5 py-2 shadow-sm ${
           isOwn
-            ? `bg-[#2D6A4F] text-white ${showTail ? 'rounded-[20px] rounded-br-[6px]' : 'rounded-[20px]'}`
-            : `bg-[#E9E9EB] text-[#1C1C1E] ${showTail ? 'rounded-[20px] rounded-bl-[6px]' : 'rounded-[20px]'}`
+            ? `bg-[var(--accent-green)] text-white ${showTail ? 'rounded-[20px] rounded-br-[6px]' : 'rounded-[20px]'}`
+            : `bg-[var(--bg-input)] text-[var(--text-primary)] ${showTail ? 'rounded-[20px] rounded-bl-[6px]' : 'rounded-[20px]'}`
         }`}
       >
         <p className="text-[15px] leading-[1.35] break-words whitespace-pre-wrap">{message.text}</p>
-        <div className={`flex items-center justify-end gap-0.5 mt-0.5 -mb-0.5 ${isOwn ? 'text-white/55' : 'text-[#8E8E93]'}`}>
+        <div className={`flex items-center justify-end gap-0.5 mt-0.5 -mb-0.5 ${isOwn ? 'text-white/55' : 'text-[var(--text-tertiary)]'}`}>
           <span className="text-[10px]">{formatTime(message.createdAt)}</span>
           {isOwn && <ReadReceipt read={message.read} delivered={message.delivered} />}
         </div>
