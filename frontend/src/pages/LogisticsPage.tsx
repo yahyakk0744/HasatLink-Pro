@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Truck, MapPin, Phone, Star, Snowflake, Calculator, Search, ChevronRight,
 } from 'lucide-react';
@@ -238,24 +238,95 @@ export default function LogisticsPage() {
   );
 }
 
+function AddressInput({ label, value, onChange, placeholder }: {
+  label: string;
+  value: string;
+  onChange: (val: string, lat: number, lng: number) => void;
+  placeholder: string;
+}) {
+  const [query, setQuery] = useState(value);
+  const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [open, setOpen] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const searchAddress = (q: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (q.length < 3) { setSuggestions([]); setOpen(false); return; }
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&countrycodes=tr&accept-language=tr`
+        );
+        const data = await res.json();
+        setSuggestions(data);
+        setOpen(data.length > 0);
+      } catch { setSuggestions([]); }
+      setSearching(false);
+    }, 400);
+  };
+
+  return (
+    <div className="relative">
+      <p className="text-xs text-[var(--text-secondary)] mb-1">{label}</p>
+      <div className="relative">
+        <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
+        <input
+          type="text"
+          value={query}
+          onChange={e => { setQuery(e.target.value); searchAddress(e.target.value); }}
+          onFocus={() => suggestions.length > 0 && setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 200)}
+          placeholder={placeholder}
+          className="w-full pl-9 pr-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/30"
+        />
+        {searching && <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[var(--text-tertiary)] border-t-transparent rounded-full animate-spin" />}
+      </div>
+      {open && suggestions.length > 0 && (
+        <div className="absolute z-10 top-full mt-1 left-0 right-0 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-lg max-h-48 overflow-y-auto">
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              onMouseDown={() => {
+                const name = s.display_name.split(',').slice(0, 3).join(',');
+                setQuery(name);
+                onChange(name, parseFloat(s.lat), parseFloat(s.lon));
+                setOpen(false);
+              }}
+              className="w-full text-left px-3 py-2.5 text-[13px] hover:bg-[var(--bg-surface-hover)] transition-colors flex items-start gap-2 border-b border-[var(--border-default)] last:border-0"
+            >
+              <MapPin size={12} className="text-[var(--text-tertiary)] mt-0.5 shrink-0" />
+              <span className="line-clamp-2">{s.display_name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DistanceCalcModal({ onClose }: { onClose: () => void }) {
-  const [form, setForm] = useState({ fromLat: '', fromLng: '', toLat: '', toLng: '', pricePerKm: '25' });
+  const [coords, setCoords] = useState({ fromLat: 0, fromLng: 0, toLat: 0, toLng: 0 });
+  const [fromLabel, setFromLabel] = useState('');
+  const [toLabel, setToLabel] = useState('');
+  const [pricePerKm, setPricePerKm] = useState('25');
   const [result, setResult] = useState<{ distanceKm: number; estimatedPrice: number } | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const canCalc = coords.fromLat !== 0 && coords.toLat !== 0;
+
   const calculate = async () => {
-    if (!form.fromLat || !form.fromLng || !form.toLat || !form.toLng) {
-      return;
-    }
+    if (!canCalc) return;
     setLoading(true);
     try {
       const { data } = await api.get('/logistics/distance', {
         params: {
-          fromLat: form.fromLat,
-          fromLng: form.fromLng,
-          toLat: form.toLat,
-          toLng: form.toLng,
-          pricePerKm: form.pricePerKm,
+          fromLat: coords.fromLat,
+          fromLng: coords.fromLng,
+          toLat: coords.toLat,
+          toLng: coords.toLng,
+          pricePerKm,
         },
       });
       setResult(data);
@@ -275,17 +346,22 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
         </h2>
 
         <div className="space-y-3 mb-4">
-          <p className="text-xs text-[var(--text-secondary)]">Nereden (Enlem / Boylam)</p>
-          <div className="grid grid-cols-2 gap-2">
-            <input type="number" step="any" placeholder="Enlem (ör: 39.92)" value={form.fromLat} onChange={e => setForm(f => ({ ...f, fromLat: e.target.value }))} className="px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/30" />
-            <input type="number" step="any" placeholder="Boylam (ör: 32.85)" value={form.fromLng} onChange={e => setForm(f => ({ ...f, fromLng: e.target.value }))} className="px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/30" />
+          <AddressInput
+            label="Nereden"
+            value={fromLabel}
+            onChange={(name, lat, lng) => { setFromLabel(name); setCoords(c => ({ ...c, fromLat: lat, fromLng: lng })); }}
+            placeholder="Şehir veya adres yazın..."
+          />
+          <AddressInput
+            label="Nereye"
+            value={toLabel}
+            onChange={(name, lat, lng) => { setToLabel(name); setCoords(c => ({ ...c, toLat: lat, toLng: lng })); }}
+            placeholder="Şehir veya adres yazın..."
+          />
+          <div>
+            <p className="text-xs text-[var(--text-secondary)] mb-1">Fiyat (₺/km)</p>
+            <input type="number" placeholder="25" value={pricePerKm} onChange={e => setPricePerKm(e.target.value)} className="w-full px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/30" />
           </div>
-          <p className="text-xs text-[var(--text-secondary)]">Nereye (Enlem / Boylam)</p>
-          <div className="grid grid-cols-2 gap-2">
-            <input type="number" step="any" placeholder="Enlem" value={form.toLat} onChange={e => setForm(f => ({ ...f, toLat: e.target.value }))} className="px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/30" />
-            <input type="number" step="any" placeholder="Boylam" value={form.toLng} onChange={e => setForm(f => ({ ...f, toLng: e.target.value }))} className="px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/30" />
-          </div>
-          <input type="number" placeholder="₺/km (varsayılan: 25)" value={form.pricePerKm} onChange={e => setForm(f => ({ ...f, pricePerKm: e.target.value }))} className="w-full px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/30" />
         </div>
 
         {result && (
@@ -303,7 +379,7 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
 
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm font-semibold hover:opacity-80 transition-opacity">Kapat</button>
-          <button onClick={calculate} disabled={loading} className="flex-1 px-4 py-3 bg-[#2D6A4F] text-white rounded-2xl text-sm font-semibold hover:bg-[#1B4332] transition-colors disabled:opacity-50">
+          <button onClick={calculate} disabled={loading || !canCalc} className="flex-1 px-4 py-3 bg-[#2D6A4F] text-white rounded-2xl text-sm font-semibold hover:bg-[#1B4332] transition-colors disabled:opacity-50">
             {loading ? 'Hesaplanıyor...' : 'Hesapla'}
           </button>
         </div>
