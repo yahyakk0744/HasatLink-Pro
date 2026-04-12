@@ -6,7 +6,7 @@ import {
   BarChart3, ShoppingBag, PackageOpen, Search, Wheat, Truck, HardHat,
   Tractor, Mountain, Warehouse, Users, Building2, Layers,
   UserPlus, MessageCircle, AlertTriangle, Plus, Sparkles,
-  Package, Wrench, Mail,
+  Package, Wrench,
 } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useAuth } from '../contexts/AuthContext';
@@ -571,59 +571,6 @@ export default function HomePage() {
                 <p className="text-xs font-semibold text-[var(--text-primary)]">{item.label}</p>
               </Link>
             ))}
-          </div>
-        </section>
-      </AnimatedSection>
-
-      {/* ─── 8.7. Haftalık Bülten ─── */}
-      <AnimatedSection>
-        <section className="max-w-3xl mx-auto px-3 md:px-4 py-6 md:py-8">
-          <div className="bg-gradient-to-br from-[#2D6A4F] to-[#1B4332] rounded-3xl p-6 md:p-8 text-white relative overflow-hidden">
-            <div className="absolute right-0 top-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute left-4 bottom-4 w-16 h-16 bg-white/5 rounded-full" />
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-3">
-                <Mail size={20} />
-                <h3 className="text-lg font-bold tracking-tight">{lang === 'tr' ? 'Haftalık Fiyat Bülteni' : 'Weekly Price Newsletter'}</h3>
-              </div>
-              <p className="text-sm text-white/70 mb-4 max-w-md">
-                {lang === 'tr'
-                  ? 'Her pazartesi güncel hal fiyatları, piyasa trendleri ve fırsatları e-posta kutunuza gelsin.'
-                  : 'Get weekly market prices, trends and opportunities delivered to your inbox every Monday.'}
-              </p>
-              <form
-                onSubmit={e => {
-                  e.preventDefault();
-                  const form = e.target as HTMLFormElement;
-                  const email = (form.elements.namedItem('nl_email') as HTMLInputElement)?.value;
-                  if (email) {
-                    api.post('/newsletter/subscribe', { email })
-                      .then(() => {
-                        import('react-hot-toast').then(({ default: toast }) => toast.success(lang === 'tr' ? 'Bültene kayıt başarılı!' : 'Subscribed!'));
-                        (form.elements.namedItem('nl_email') as HTMLInputElement).value = '';
-                      })
-                      .catch(() => {
-                        import('react-hot-toast').then(({ default: toast }) => toast.error(lang === 'tr' ? 'Kayıt yapılamadı' : 'Failed'));
-                      });
-                  }
-                }}
-                className="flex gap-2"
-              >
-                <input
-                  name="nl_email"
-                  type="email"
-                  required
-                  placeholder={lang === 'tr' ? 'E-posta adresiniz' : 'Your email'}
-                  className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-sm placeholder-white/40 focus:outline-none focus:border-white/50 text-white"
-                />
-                <button
-                  type="submit"
-                  className="px-5 py-3 bg-white text-[#2D6A4F] rounded-2xl text-sm font-bold hover:bg-white/90 transition-colors shrink-0"
-                >
-                  {lang === 'tr' ? 'Abone Ol' : 'Subscribe'}
-                </button>
-              </form>
-            </div>
           </div>
         </section>
       </AnimatedSection>
