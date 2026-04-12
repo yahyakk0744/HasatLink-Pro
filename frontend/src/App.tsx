@@ -29,6 +29,7 @@ const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const AdminContactsPage = lazy(() => import('./pages/AdminContactsPage'));
 const AdminSettingsPage = lazy(() => import('./pages/AdminSettingsPage'));
+const AdminFeaturesPage = lazy(() => import('./pages/AdminFeaturesPage'));
 const AdminRevenuePage = lazy(() => import('./pages/AdminRevenuePage'));
 const AdminAdsPage = lazy(() => import('./pages/AdminAdsPage'));
 const AdminDealersPage = lazy(() => import('./pages/AdminDealersPage'));
@@ -51,6 +52,18 @@ const AgriEncyclopediaPage = lazy(() => import('./pages/AgriEncyclopediaPage'));
 const SellerStorePage = lazy(() => import('./pages/SellerStorePage'));
 const PriceAlertsPage = lazy(() => import('./pages/PriceAlertsPage'));
 const MyOffersPage = lazy(() => import('./pages/MyOffersPage'));
+const ForumPage = lazy(() => import('./pages/ForumPage'));
+const ForumDetailPage = lazy(() => import('./pages/ForumDetailPage'));
+const HarvestCalendarPage = lazy(() => import('./pages/HarvestCalendarPage'));
+const JobsPage = lazy(() => import('./pages/JobsPage'));
+const LogisticsPage = lazy(() => import('./pages/LogisticsPage'));
+const ReferralPage = lazy(() => import('./pages/ReferralPage'));
+const SponsoredPage = lazy(() => import('./pages/SponsoredPage'));
+const WeatherAlertsPage = lazy(() => import('./pages/WeatherAlertsPage'));
+const SuccessStoriesPage = lazy(() => import('./pages/SuccessStoriesPage'));
+const DealersPage = lazy(() => import('./pages/DealersPage'));
+const PremiumPage = lazy(() => import('./pages/PremiumPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 
 function PageLoader() {
   return <LoadingSpinner size="lg" className="py-20" />;
@@ -128,6 +141,19 @@ export default function App() {
             <Route path="/magaza/:userId" element={<SellerStorePage />} />
             <Route path="/fiyat-alarmlari" element={<PriceAlertsPage />} />
             <Route path="/tekliflerim" element={<MyOffersPage />} />
+            <Route path="/forum" element={<ForumPage />} />
+            <Route path="/forum/:id" element={<ForumDetailPage />} />
+            <Route path="/hasat-takvimi" element={<HarvestCalendarPage />} />
+            <Route path="/is-ilanlari" element={<JobsPage />} />
+            <Route path="/nakliyeci" element={<LogisticsPage />} />
+            <Route path="/davet" element={<ReferralPage />} />
+            <Route path="/sponsorlu" element={<SponsoredPage />} />
+            <Route path="/sponsorlu/:slug" element={<SponsoredPage />} />
+            <Route path="/hava-uyarilari" element={<WeatherAlertsPage />} />
+            <Route path="/basari-hikayeleri" element={<SuccessStoriesPage />} />
+            <Route path="/bayiler" element={<DealersPage />} />
+            <Route path="/premium" element={<PremiumPage />} />
+            <Route path="/raporlar" element={<ReportsPage />} />
             <Route path="/admin" element={<AdminDashboardPage />} />
             <Route path="/admin/ilanlar" element={<AdminListingsPage />} />
             <Route path="/admin/kullanicilar" element={<AdminUsersPage />} />
@@ -135,6 +161,7 @@ export default function App() {
             <Route path="/admin/pazar-fiyatlari" element={<AdminPazarPricesPage />} />
             <Route path="/admin/mesajlar" element={<AdminContactsPage />} />
             <Route path="/admin/ayarlar" element={<AdminSettingsPage />} />
+            <Route path="/admin/ozellikler" element={<AdminFeaturesPage />} />
             <Route path="/admin/gelir" element={<AdminRevenuePage />} />
             <Route path="/admin/reklamlar" element={<AdminAdsPage />} />
             <Route path="/admin/bayiler" element={<AdminDealersPage />} />

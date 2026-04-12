@@ -19,6 +19,11 @@ import ReviewForm from '../components/ratings/ReviewForm';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import EmptyState from '../components/ui/EmptyState';
 import CommentSection from '../components/comments/CommentSection';
+import QASection from '../components/listings/QASection';
+import DemandForm from '../components/listings/DemandForm';
+import ListingStats from '../components/listings/ListingStats';
+import ReportModal from '../components/moderation/ReportModal';
+import JsonLd from '../components/ui/JsonLd';
 import toast from 'react-hot-toast';
 
 function SellerCard({ listing, onMessage }: { listing: Listing; onMessage?: () => void }) {
@@ -209,6 +214,7 @@ export default function ListingDetailPage() {
   const [logisticsPool, setLogisticsPool] = useState<Listing[]>([]);
   const [marketAnalytics, setMarketAnalytics] = useState<{ avgPrice: number; minPrice: number; maxPrice: number; count: number; trend: number; city: string } | null>(null);
   const [incomingOffers, setIncomingOffers] = useState<Offer[]>([]);
+  const [showReport, setShowReport] = useState(false);
 
   const isOwner = !!(user && listing && user.userId === listing.userId);
 
@@ -372,6 +378,24 @@ export default function ListingDetailPage() {
         ogImage={listing.images?.[0]}
         keywords={`${listing.type}, ${listing.subCategory}, tarım, ilan`}
       />
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: listing.title,
+        description: listing.description?.slice(0, 300),
+        image: listing.images?.[0],
+        offers: {
+          '@type': 'Offer',
+          price: listing.price,
+          priceCurrency: 'TRY',
+          availability: listing.status === 'active' ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+          seller: { '@type': 'Person', name: listing.sellerName },
+        },
+        ...(listing.sellerRating > 0 && {
+          aggregateRating: { '@type': 'AggregateRating', ratingValue: listing.sellerRating, ratingCount: listing.sellerTotalRatings || 1 },
+        }),
+        ...(listing.location && { areaServed: listing.location }),
+      }} />
       <Link to={`/${listing.type}`} className="flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-4 transition-colors">
         <ArrowLeft size={16} />
         {t('back')}
@@ -388,7 +412,16 @@ export default function ListingDetailPage() {
             onDelete={() => setShowDeleteConfirm(true)}
             onMessage={!isOwner ? handleMessage : undefined}
             onOffer={!isOwner ? () => setShowOfferModal(true) : undefined}
+            onReport={!isOwner && user ? () => setShowReport(true) : undefined}
           />
+
+          {/* Q&A Section */}
+          <QASection listingId={listing._id} sellerId={listing.userId} isOwner={isOwner} />
+
+          {/* Demand Form — for buyers */}
+          {user && !isOwner && listing.type === 'pazar' && (
+            <DemandForm category={listing.type} subCategory={listing.subCategory} />
+          )}
 
           {/* Comments */}
           <CommentSection listingId={listing._id} />
@@ -525,6 +558,11 @@ export default function ListingDetailPage() {
                 );
               })}
             </div>
+          )}
+
+          {/* Listing Stats — Owner only */}
+          {isOwner && listing?._id && (
+            <ListingStats listingId={listing._id} />
           )}
 
           {/* Mini Map */}
@@ -723,6 +761,16 @@ export default function ListingDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Report Modal */}
+      {listing && (
+        <ReportModal
+          isOpen={showReport}
+          onClose={() => setShowReport(false)}
+          targetType="listing"
+          targetId={listing._id}
+        />
       )}
     </div>
   );

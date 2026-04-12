@@ -5,6 +5,10 @@ export const POINT_VALUES = {
   ACCEPTED_OFFER: 50,
   FIVE_STAR_REVIEW: 20,
   PROFILE_VERIFIED: 100,
+  QUESTION_ASKED: 5,
+  ANSWER_GIVEN: 10,
+  BEST_ANSWER: 25,
+  REFERRAL_COMPLETED: 100,
 } as const;
 
 export async function awardPoints(userId: string, amount: number): Promise<void> {

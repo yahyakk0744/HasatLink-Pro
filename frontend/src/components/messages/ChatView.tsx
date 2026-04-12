@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Phone, Video } from 'lucide-react';
 import { useMessages } from '../../hooks/useMessages';
 import { useSocket } from '../../contexts/SocketContext';
+import { useFeatures } from '../../hooks/useFeatures';
 import type { Conversation, Message } from '../../types';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
@@ -18,6 +19,7 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
   const [isTyping, setIsTyping] = useState(false);
   const { subscribeToMessages, sendMessage, markAsRead } = useMessages();
   const { socket, isUserOnline } = useSocket();
+  const { isEnabled } = useFeatures();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -164,7 +166,7 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
           </div>
           <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--bg-surface)] ${otherOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 mr-2">
           <h3 className="text-[15px] font-semibold text-[var(--text-primary)] truncate">{otherName}</h3>
           <div className="flex items-center gap-1">
             {isTyping ? (
@@ -184,6 +186,31 @@ export default function ChatView({ conversation, currentUid, onBack }: ChatViewP
               </>
             )}
           </div>
+        </div>
+        {/* Voice / Video Call buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {isEnabled('voiceMessages') && (
+            <button
+              onClick={() => {
+                import('react-hot-toast').then(({ default: t }) => t('Sesli arama yakında aktif olacak', { icon: '🎙️' }));
+              }}
+              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--bg-input)] transition-colors"
+              title="Sesli Arama"
+            >
+              <Phone size={16} className="text-[var(--text-secondary)]" />
+            </button>
+          )}
+          {isEnabled('videoCall') && (
+            <button
+              onClick={() => {
+                import('react-hot-toast').then(({ default: t }) => t('Görüntülü arama yakında aktif olacak', { icon: '📹' }));
+              }}
+              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--bg-input)] transition-colors"
+              title="Görüntülü Arama"
+            >
+              <Video size={16} className="text-[var(--text-secondary)]" />
+            </button>
+          )}
         </div>
       </div>
 

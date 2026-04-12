@@ -116,6 +116,11 @@ export interface Listing {
   is_negotiable?: boolean;
   needsTransport?: boolean;
   hasTransportCapacity?: boolean;
+  // Media & docs
+  videoUrl?: string;
+  documents?: { name: string; url: string }[];
+  previousPrice?: number;
+  updatedAt?: string;
   // Stats
   stats: { views: number; whatsappClicks: number; shares: number };
   // Populated seller info

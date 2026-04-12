@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { MapPin, Eye, Phone, Share2, MessageCircle, MessageSquare, Truck, Leaf, Star, Calendar, Weight, Box, Shield, Users, Clock, Wrench, Pencil, Trash2, Droplets, Zap, FileText, Landmark, Thermometer, Clock3, Ruler, ShieldCheck, HandCoins, Navigation, TrendingDown } from 'lucide-react';
+import { MapPin, Eye, Phone, Share2, MessageCircle, MessageSquare, Truck, Leaf, Star, Calendar, Weight, Box, Shield, Users, Clock, Wrench, Pencil, Trash2, Droplets, Zap, FileText, Landmark, Thermometer, Clock3, Ruler, ShieldCheck, HandCoins, Navigation, TrendingDown, Flag, Play, Download, RefreshCw, QrCode } from 'lucide-react';
 import type { Listing } from '../../types';
 import { formatPrice, formatDate } from '../../utils/formatters';
 import ImageGallery from './ImageGallery';
@@ -17,6 +17,7 @@ interface ListingDetailViewProps {
   onDelete?: () => void;
   onMessage?: () => void;
   onOffer?: () => void;
+  onReport?: () => void;
 }
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
@@ -41,7 +42,7 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
   );
 }
 
-export default function ListingDetailView({ listing, onWaClick, onShare: _onShare, isOwner, onEdit, onDelete, onMessage, onOffer }: ListingDetailViewProps) {
+export default function ListingDetailView({ listing, onWaClick, onShare: _onShare, isOwner, onEdit, onDelete, onMessage, onOffer, onReport }: ListingDetailViewProps) {
   const { t, i18n } = useTranslation();
   const { shareListing } = useShare();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
@@ -73,6 +74,29 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
         </div>
       </div>
 
+      {/* Video Player */}
+      {listing.videoUrl && (
+        <div className="bg-[var(--bg-surface)] rounded-2xl overflow-hidden">
+          <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+            <Play size={14} className="text-[#C1341B]" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Video</span>
+          </div>
+          <div className="aspect-video">
+            {listing.videoUrl.includes('youtube') || listing.videoUrl.includes('youtu.be') ? (
+              <iframe
+                src={listing.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                className="w-full h-full"
+                allowFullScreen
+                loading="lazy"
+                title="İlan videosu"
+              />
+            ) : (
+              <video src={listing.videoUrl} controls className="w-full h-full object-cover" preload="metadata" />
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-[var(--bg-surface)] rounded-2xl p-4 space-y-3">
         <div className="flex items-start justify-between gap-4">
@@ -96,12 +120,12 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
               <p className="text-[10px] font-medium text-[#0077B6] uppercase">{t('listing.priceBudget')}</p>
             )}
             <p className={`text-2xl font-semibold ${listing.listingMode === 'buy' ? 'text-[#0077B6]' : 'text-[#2D6A4F]'}`}>{formatPrice(listing.price)}</p>
-            {(listing as any).originalPrice && (listing as any).originalPrice > listing.price && (
+            {listing.previousPrice && listing.previousPrice > listing.price && (
               <div className="flex items-center justify-end gap-1 mt-1">
-                <span className="text-xs text-[var(--text-secondary)] line-through">{formatPrice((listing as any).originalPrice)}</span>
+                <span className="text-xs text-[var(--text-secondary)] line-through">{formatPrice(listing.previousPrice)}</span>
                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-600">
                   <TrendingDown size={9} />
-                  %{Math.round(((listing as any).originalPrice - listing.price) / (listing as any).originalPrice * 100)} İndirim
+                  %{Math.round((listing.previousPrice - listing.price) / listing.previousPrice * 100)} Fiyat Düştü
                 </span>
               </div>
             )}
@@ -150,8 +174,37 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
           <span className="flex items-center gap-1"><MapPin size={12} />{listing.location}</span>
           <span className="flex items-center gap-1"><Eye size={12} />{listing.stats?.views || 0} {t('listing.views')}</span>
           <span>{formatDate(listing.createdAt)}</span>
+          {listing.updatedAt && listing.updatedAt !== listing.createdAt && (
+            <span className="flex items-center gap-1 text-[#2D6A4F]">
+              <RefreshCw size={10} />
+              Güncellendi: {formatDate(listing.updatedAt)}
+            </span>
+          )}
         </div>
       </div>
+
+      {/* Documents / Certificates */}
+      {listing.documents && listing.documents.length > 0 && (
+        <DetailSection title="Belgeler & Sertifikalar">
+          <div className="space-y-2">
+            {listing.documents.map((doc, i) => (
+              <a
+                key={i}
+                href={doc.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-input)] hover:bg-[var(--bg-surface-hover)] transition-colors"
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#0077B6]/10 flex items-center justify-center shrink-0">
+                  <FileText size={14} className="text-[#0077B6]" />
+                </div>
+                <span className="text-sm font-medium flex-1 truncate">{doc.name}</span>
+                <Download size={14} className="text-[var(--text-secondary)] shrink-0" />
+              </a>
+            ))}
+          </div>
+        </DetailSection>
+      )}
 
       {/* PAZAR Details */}
       {listing.type === 'pazar' && (listing.qualityGrade || listing.storageType || listing.harvestDate || listing.isOrganic || listing.minOrderAmount > 0) && (
@@ -314,6 +367,25 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
           >
             <Share2 size={18} />
           </button>
+          <button
+            onClick={() => {
+              const url = `${window.location.origin}/ilan/${listing._id}`;
+              window.open(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`, '_blank');
+            }}
+            className="flex items-center justify-center w-12 h-12 bg-[var(--bg-input)] rounded-2xl hover:bg-[var(--bg-surface-hover)] active:scale-95 transition-all"
+            title="QR Kod"
+          >
+            <QrCode size={18} />
+          </button>
+          {!isOwner && onReport && (
+            <button
+              onClick={onReport}
+              className="flex items-center justify-center w-12 h-12 bg-[var(--bg-input)] rounded-2xl hover:bg-red-50 dark:hover:bg-red-500/10 active:scale-95 transition-all"
+              title="Şikayet Et"
+            >
+              <Flag size={16} className="text-[var(--text-secondary)]" />
+            </button>
+          )}
         </div>
       </div>
       {/* Spacer for sticky bar */}

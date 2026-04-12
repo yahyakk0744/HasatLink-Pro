@@ -32,6 +32,14 @@ import priceAlertRoutes from './routes/priceAlertRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import offerRoutes from './routes/offerRoutes';
 import satelliteRoutes from './routes/satelliteRoutes';
+import settingsRoutes from './routes/settingsRoutes';
+import forumRoutes from './routes/forumRoutes';
+import jobRoutes from './routes/jobRoutes';
+import referralRoutes from './routes/referralRoutes';
+import weatherAlertRoutes from './routes/weatherAlertRoutes';
+import harvestCalendarRoutes from './routes/harvestCalendarRoutes';
+import logisticsRoutes from './routes/logisticsRoutes';
+import sponsoredContentRoutes from './routes/sponsoredContentRoutes';
 import { expireOutdatedDealers } from './controllers/dealerController';
 import { processExpiredDeletions } from './controllers/userController';
 
@@ -106,6 +114,14 @@ app.use('/api', priceAlertRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api', offerRoutes);
 app.use('/api', satelliteRoutes);
+app.use('/api', settingsRoutes);
+app.use('/api', forumRoutes);
+app.use('/api', jobRoutes);
+app.use('/api', referralRoutes);
+app.use('/api', weatherAlertRoutes);
+app.use('/api', harvestCalendarRoutes);
+app.use('/api', logisticsRoutes);
+app.use('/api', sponsoredContentRoutes);
 
 // VAPID public key endpoint
 app.get('/api/push/vapid-key', (_req, res) => {

@@ -26,6 +26,9 @@ export interface IUser extends Document {
   createdAt: Date;
   deletionScheduledAt: Date | null;
   deletionReason: string;
+  referralCode: string;
+  referredBy: string;
+  referralCount: number;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -54,6 +57,9 @@ const UserSchema = new Schema<IUser>({
   createdAt: { type: Date, default: Date.now },
   deletionScheduledAt: { type: Date, default: null },
   deletionReason: { type: String, default: '' },
+  referralCode: { type: String, default: '', sparse: true, index: true },
+  referredBy: { type: String, default: '' },
+  referralCount: { type: Number, default: 0 },
 });
 
 // firebaseUid already has sparse index via schema field option

@@ -140,6 +140,8 @@ export default function Footer() {
               <Link to="/ai-teshis" className="text-xs text-white/60 hover:text-white">{t('ai.title')}</Link>
               <Link to="/hal-fiyatlari" className="text-xs text-white/60 hover:text-white">{isTr ? 'Hal Fiyatları' : 'Market Prices'}</Link>
               <Link to="/hasatlink-pazari" className="text-xs text-white/60 hover:text-white">{isTr ? 'HasatLink Pazarı' : 'HasatLink Market'}</Link>
+              <Link to="/forum" className="text-xs text-white/60 hover:text-white">{isTr ? 'Çiftçi Forumu' : 'Farmer Forum'}</Link>
+              <Link to="/hasat-takvimi" className="text-xs text-white/60 hover:text-white">{isTr ? 'Hasat Takvimi' : 'Harvest Calendar'}</Link>
               <Link to="/iletisim" className="text-xs text-white/60 hover:text-white">{isTr ? 'İletişim' : 'Contact'}</Link>
             </div>
           </AccordionSection>
@@ -232,6 +234,8 @@ export default function Footer() {
                 <Link to="/ai-teshis" className="text-sm text-white/70 hover:text-white">{t('ai.title')}</Link>
                 <Link to="/hal-fiyatlari" className="text-sm text-white/70 hover:text-white">{isTr ? 'Hal Fiyatları' : 'Market Prices'}</Link>
                 <Link to="/hasatlink-pazari" className="text-sm text-white/70 hover:text-white">{isTr ? 'HasatLink Pazarı' : 'HasatLink Market'}</Link>
+                <Link to="/forum" className="text-sm text-white/70 hover:text-white">{isTr ? 'Çiftçi Forumu' : 'Farmer Forum'}</Link>
+                <Link to="/hasat-takvimi" className="text-sm text-white/70 hover:text-white">{isTr ? 'Hasat Takvimi' : 'Harvest Calendar'}</Link>
                 <Link to="/iletisim" className="text-sm text-white/70 hover:text-white">{isTr ? 'İletişim' : 'Contact'}</Link>
               </div>
             </div>

@@ -15,6 +15,8 @@ import RatingStars from '../components/ratings/RatingStars';
 import ReviewCard from '../components/ratings/ReviewCard';
 import ReviewForm from '../components/ratings/ReviewForm';
 import { useRatings } from '../hooks/useRatings';
+import BroadcastMessage from '../components/profile/BroadcastMessage';
+import BulkUpload from '../components/listings/BulkUpload';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import SEO from '../components/ui/SEO';
 import type { User } from '../types';
@@ -121,6 +123,10 @@ export default function ProfilePage() {
       {targetUserId && <MyListings userId={targetUserId} isOwn={isOwn} />}
 
       {isOwn && <MyOffers />}
+
+      {isOwn && <BroadcastMessage />}
+
+      {isOwn && <BulkUpload />}
 
       {/* Ratings Section */}
       <div className="space-y-3">

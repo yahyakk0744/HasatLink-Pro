@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { BadgeCheck, Star, MessageCircle, User as UserIcon, Eye, Package, Calendar, Store } from 'lucide-react';
+import { BadgeCheck, Star, MessageCircle, User as UserIcon, Eye, Package, Calendar, Store, QrCode, Share2, ShoppingCart } from 'lucide-react';
 import api from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useMessages } from '../hooks/useMessages';
@@ -239,6 +239,33 @@ export default function SellerStorePage() {
                 <UserIcon size={16} />
                 Profil
               </Link>
+              <button
+                onClick={() => {
+                  const url = window.location.href;
+                  if (navigator.share) {
+                    navigator.share({ title: `${seller.name} - HasatLink Mağaza`, url });
+                  } else {
+                    navigator.clipboard.writeText(url);
+                    toast.success('Mağaza linki kopyalandı!');
+                  }
+                }}
+                className="flex items-center justify-center w-10 h-10 rounded-xl border transition-colors"
+                style={{ borderColor: 'var(--border-default)' }}
+                title="Paylaş"
+              >
+                <Share2 size={16} />
+              </button>
+              <button
+                onClick={() => {
+                  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(window.location.href)}`;
+                  window.open(qrUrl, '_blank');
+                }}
+                className="flex items-center justify-center w-10 h-10 rounded-xl border transition-colors"
+                style={{ borderColor: 'var(--border-default)' }}
+                title="QR Kod"
+              >
+                <QrCode size={16} />
+              </button>
             </div>
           </div>
         </div>
@@ -268,6 +295,35 @@ export default function SellerStorePage() {
           );
         })}
       </div>
+
+      {/* Bulk Offer CTA */}
+      {authUser && authUser.userId !== seller.userId && listings.length > 0 && (
+        <div className="rounded-2xl p-4 border flex items-center gap-4" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+          <div className="w-10 h-10 rounded-xl bg-[#E76F00]/10 flex items-center justify-center shrink-0">
+            <ShoppingCart size={20} className="text-[#E76F00]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-semibold">Toplu Alım Talebi</h3>
+            <p className="text-[10px] text-[var(--text-secondary)]">Bu satıcının birden fazla ürünü için toplu teklif gönderin</p>
+          </div>
+          <button
+            onClick={async () => {
+              try {
+                await api.post('/demands', {
+                  category: 'pazar',
+                  subCategory: 'Toplu Alım',
+                  description: `${seller.name} mağazasından toplu alım talebi`,
+                  sellerId: seller.userId,
+                });
+                toast.success('Toplu alım talebiniz satıcıya iletildi!');
+              } catch { toast.error('Talep gönderilemedi'); }
+            }}
+            className="shrink-0 px-4 py-2.5 bg-[#E76F00] text-white rounded-xl text-xs font-semibold hover:opacity-90 active:scale-95 transition-all"
+          >
+            Teklif Gönder
+          </button>
+        </div>
+      )}
 
       {/* Listings Grid */}
       {filteredListings.length === 0 ? (

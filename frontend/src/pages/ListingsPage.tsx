@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, SlidersHorizontal, X, ArrowUpDown, CalendarClock, TrendingDown, LayoutGrid, Map } from 'lucide-react';
+import { Plus, SlidersHorizontal, X, ArrowUpDown, CalendarClock, TrendingDown, LayoutGrid, Map, Bell, Save } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import { useAuth } from '../contexts/AuthContext';
 import ListingGrid from '../components/listings/ListingGrid';
@@ -30,6 +30,7 @@ const SORT_OPTIONS = [
   { value: 'oldest', labelTr: 'En Eski', labelEn: 'Oldest' },
   { value: 'cheapest', labelTr: 'En Ucuz', labelEn: 'Cheapest' },
   { value: 'expensive', labelTr: 'En Pahalı', labelEn: 'Most Expensive' },
+  { value: 'nearest', labelTr: 'En Yakın', labelEn: 'Nearest' },
 ];
 
 export default function ListingsPage() {
@@ -56,6 +57,11 @@ export default function ListingsPage() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [quickFilter, setQuickFilter] = useState<'none' | 'today' | 'priceDropped'>('none');
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [onlyOrganic, setOnlyOrganic] = useState(false);
+  const [onlyNegotiable, setOnlyNegotiable] = useState(false);
+  const [harvestDateFrom, setHarvestDateFrom] = useState('');
+  const [harvestDateTo, setHarvestDateTo] = useState('');
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const subCategories = CATEGORIES[type as keyof typeof CATEGORIES] || CATEGORIES.pazar;
   const catLabel = CATEGORY_LABELS[type];
@@ -83,14 +89,36 @@ export default function ListingsPage() {
     setMaxPrice('');
     setSort('newest');
     setQuickFilter('none');
+    setOnlyOrganic(false);
+    setOnlyNegotiable(false);
   }, [type]);
 
   // Client-side quick filtering
-  const filteredListings = quickFilter === 'none'
+  let filteredListings = quickFilter === 'none'
     ? listings
     : quickFilter === 'today'
       ? listings.filter(l => Date.now() - new Date(l.createdAt).getTime() < 24 * 60 * 60 * 1000)
       : listings.filter(l => l.is_negotiable);
+  if (onlyOrganic) filteredListings = filteredListings.filter(l => l.isOrganic);
+  if (onlyNegotiable) filteredListings = filteredListings.filter(l => l.is_negotiable);
+  if (harvestDateFrom) filteredListings = filteredListings.filter(l => l.harvestDate && l.harvestDate >= harvestDateFrom);
+  if (harvestDateTo) filteredListings = filteredListings.filter(l => l.harvestDate && l.harvestDate <= harvestDateTo);
+
+  // Distance-based sorting
+  if (sort === 'nearest' && userLocation) {
+    const distCalc = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+    filteredListings = [...filteredListings].sort((a, b) => {
+      const dA = a.coordinates?.lat ? distCalc(userLocation.lat, userLocation.lng, a.coordinates.lat, a.coordinates.lng) : Infinity;
+      const dB = b.coordinates?.lat ? distCalc(userLocation.lat, userLocation.lng, b.coordinates.lat, b.coordinates.lng) : Infinity;
+      return dA - dB;
+    });
+  }
 
   const handleCreate = async (data: Partial<Listing>) => {
     const result = await createListing({ ...data, type: type as Listing['type'] });
@@ -105,9 +133,13 @@ export default function ListingsPage() {
     setMinPrice('');
     setMaxPrice('');
     setSort('newest');
+    setHarvestDateFrom('');
+    setHarvestDateTo('');
+    setOnlyOrganic(false);
+    setOnlyNegotiable(false);
   };
 
-  const hasActiveFilters = city || minPrice || maxPrice || sort !== 'newest';
+  const hasActiveFilters = city || minPrice || maxPrice || sort !== 'newest' || harvestDateFrom || harvestDateTo || onlyOrganic || onlyNegotiable;
 
   const filterPanel = (
     <div className="space-y-4">
@@ -164,6 +196,86 @@ export default function ListingsPage() {
           ))}
         </select>
       </div>
+
+      {/* Harvest Date Filter */}
+      {type === 'pazar' && (
+        <div>
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
+            {lang === 'tr' ? 'Hasat Tarihi' : 'Harvest Date'}
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={harvestDateFrom}
+              onChange={e => setHarvestDateFrom(e.target.value)}
+              className="w-1/2 apple-input text-xs"
+              placeholder="Başlangıç"
+            />
+            <input
+              type="date"
+              value={harvestDateTo}
+              onChange={e => setHarvestDateTo(e.target.value)}
+              className="w-1/2 apple-input text-xs"
+              placeholder="Bitiş"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Quick Toggles */}
+      {type === 'pazar' && (
+        <div className="space-y-2">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
+            {lang === 'tr' ? 'Özellikler' : 'Features'}
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={onlyOrganic} onChange={() => setOnlyOrganic(!onlyOrganic)}
+              className="w-4 h-4 rounded accent-[#2D6A4F]" />
+            <span className="text-sm">{lang === 'tr' ? 'Sadece Organik' : 'Organic Only'}</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={onlyNegotiable} onChange={() => setOnlyNegotiable(!onlyNegotiable)}
+              className="w-4 h-4 rounded accent-[#2D6A4F]" />
+            <span className="text-sm">{lang === 'tr' ? 'Pazarlık Yapılabilir' : 'Negotiable'}</span>
+          </label>
+        </div>
+      )}
+
+      {/* Distance Sort — get location */}
+      {sort === 'nearest' && !userLocation && (
+        <button
+          onClick={() => {
+            navigator.geolocation?.getCurrentPosition(
+              pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+              () => toast.error(lang === 'tr' ? 'Konum alınamadı' : 'Location unavailable')
+            );
+          }}
+          className="w-full py-2.5 text-xs font-semibold uppercase tracking-wider text-[#0077B6] bg-[#0077B6]/10 rounded-xl hover:bg-[#0077B6]/20 transition-colors"
+        >
+          {lang === 'tr' ? '📍 Konumumu Paylaş' : '📍 Share My Location'}
+        </button>
+      )}
+
+      {/* Saved Search */}
+      {user && (
+        <button
+          onClick={async () => {
+            try {
+              const searchData = {
+                type, subCategory: subCategory !== 'HEPSİ' ? subCategory : undefined,
+                city: city || undefined, minPrice: minPrice || undefined,
+                maxPrice: maxPrice || undefined, onlyOrganic, keyword: search || undefined,
+              };
+              await (await import('../config/api')).default.post('/saved-searches', searchData);
+              toast.success(lang === 'tr' ? 'Arama kaydedildi! Yeni ilanlardan haberdar olacaksınız.' : 'Search saved!');
+            } catch { toast.error(lang === 'tr' ? 'Kayıt başarısız' : 'Save failed'); }
+          }}
+          className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#2D6A4F] bg-[#2D6A4F]/10 rounded-xl hover:bg-[#2D6A4F]/20 transition-colors"
+        >
+          <Bell size={12} />
+          {lang === 'tr' ? 'Aramayı Kaydet & Bildirim Al' : 'Save Search & Get Alerts'}
+        </button>
+      )}
 
       {/* Clear filters */}
       {hasActiveFilters && (

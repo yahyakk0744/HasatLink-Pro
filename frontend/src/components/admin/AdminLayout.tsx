@@ -15,6 +15,7 @@ import {
   MessageSquare,
   DollarSign,
   Settings,
+  ToggleLeft,
   Menu,
   X,
   Home,
@@ -40,6 +41,7 @@ const navItems = [
   { label: 'Blog', icon: FileText, path: '/admin/blog' },
   { label: 'İletişim', icon: MessageSquare, path: '/admin/mesajlar' },
   { label: 'Gelir', icon: DollarSign, path: '/admin/gelir' },
+  { label: 'Özellikler', icon: ToggleLeft, path: '/admin/ozellikler' },
   { label: 'Ayarlar', icon: Settings, path: '/admin/ayarlar' },
 ];
 

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Shield, Clock3, ArrowRight, Heart, Star, Sparkles, ShieldCheck, TrendingUp, HandCoins } from 'lucide-react';
+import { MapPin, Eye, Clock, Leaf, Truck, Users, Wrench, Droplets, Shield, Clock3, ArrowRight, Heart, Star, Sparkles, ShieldCheck, TrendingUp, TrendingDown, HandCoins, Crown } from 'lucide-react';
 import type { Listing } from '../../types';
 import { formatPrice, timeAgo } from '../../utils/formatters';
 import Badge from '../ui/Badge';
@@ -44,7 +44,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
   return (
     <Link to={`/ilan/${listing._id}`} className="group">
-      <div className="surface-card-hover rounded-3xl overflow-hidden spring-tap">
+      <div className={`surface-card-hover rounded-3xl overflow-hidden spring-tap ${listing.isFeatured ? 'ring-2 ring-amber-400/60 shadow-[0_0_12px_rgba(251,191,36,0.15)]' : ''}`}>
         {/* Image */}
         <div className="relative aspect-[4/3] bg-[var(--bg-input)] overflow-hidden">
           {listing.images?.[0] ? (
@@ -90,6 +90,11 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
           {/* Top-right: dynamic badges + heart */}
           <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
+            {listing.isFeatured && (
+              <span className="inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-white shadow-sm">
+                <Crown size={8} className="mr-0.5" />{lang === 'tr' ? 'ÖNE ÇIKAN' : 'FEATURED'}
+              </span>
+            )}
             {isNew(listing.createdAt) && (
               <span className="inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-[#E76F00]/80 backdrop-blur-md text-white border border-white/20">
                 <Sparkles size={8} className="mr-0.5" />{lang === 'tr' ? 'YENİ' : 'NEW'}
@@ -103,6 +108,11 @@ export default function ListingCard({ listing }: ListingCardProps) {
             {listing.is_negotiable && (
               <span className="inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-[#0077B6]/80 backdrop-blur-md text-white border border-white/20">
                 <HandCoins size={8} className="mr-0.5" />{lang === 'tr' ? 'PAZARLIK' : 'NEGOTIABLE'}
+              </span>
+            )}
+            {listing.previousPrice && listing.previousPrice > listing.price && (
+              <span className="inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-[#C1341B]/80 backdrop-blur-md text-white border border-white/20">
+                <TrendingDown size={8} className="mr-0.5" />{lang === 'tr' ? 'FİYAT DÜŞTÜ' : 'PRICE DROP'}
               </span>
             )}
             <button

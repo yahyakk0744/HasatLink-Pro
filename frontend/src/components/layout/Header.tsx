@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, Bell, User, LogOut, MessageSquare, Sun, Moon, Shield } from 'lucide-react';
+import { Search, Bell, User, LogOut, MessageSquare, Sun, Moon, Shield, Mic } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotificationContext } from '../../contexts/NotificationContext';
 import { useMessageContext } from '../../contexts/MessageContext';
@@ -18,6 +18,27 @@ export default function Header() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  const startVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'tr-TR';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0]?.[0]?.transcript || '';
+      if (transcript) {
+        setSearchQuery(transcript);
+        navigate(`/pazar?search=${encodeURIComponent(transcript)}`);
+      }
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.start();
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,8 +67,18 @@ export default function Header() {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="w-full pl-10 pr-4 py-2 bg-[var(--bg-input)] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
+              className="w-full pl-10 pr-10 py-2 bg-[var(--bg-input)] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
             />
+            {('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) && (
+              <button
+                type="button"
+                onClick={startVoiceSearch}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-[var(--text-secondary)] hover:text-[var(--accent-green)]'}`}
+                title="Sesli Arama"
+              >
+                <Mic size={14} />
+              </button>
+            )}
           </div>
         </form>
 

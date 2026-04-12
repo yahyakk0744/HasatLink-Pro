@@ -1,14 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Map } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
 import ListingMap from '../components/map/ListingMap';
 import { CATEGORY_COLORS, CATEGORY_LABELS_TR } from '../components/map/MapMarker';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import SEO from '../components/ui/SEO';
+import { useFeatures } from '../hooks/useFeatures';
 
 const ALL_TYPES = ['pazar', 'lojistik', 'isgucu', 'ekipman', 'arazi', 'depolama'] as const;
 
 export default function MapPage() {
+  const { isEnabled, loading: featuresLoading } = useFeatures();
+
+  if (!featuresLoading && !isEnabled('mapView')) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-fade-in">
+        <Map size={48} className="mx-auto text-[var(--text-secondary)] mb-4" />
+        <h1 className="text-xl font-bold mb-2">Harita Görünümü Yakında</h1>
+        <p className="text-sm text-[var(--text-secondary)]">İlanları haritada görme özelliği yakında aktif olacak.</p>
+      </div>
+    );
+  }
   const { t } = useTranslation();
   const { listings, loading, fetchListings } = useListings();
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(ALL_TYPES));

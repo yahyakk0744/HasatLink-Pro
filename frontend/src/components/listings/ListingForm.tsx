@@ -267,6 +267,14 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
   const [needsTransport, setNeedsTransport] = useState(initialData?.needsTransport || false);
   const [hasTransportCapacity, setHasTransportCapacity] = useState(initialData?.hasTransportCapacity || false);
 
+  // Video & Documents
+  const [videoUrl, setVideoUrl] = useState(initialData?.videoUrl || '');
+  const [documents, setDocuments] = useState<{ name: string; url: string }[]>(initialData?.documents || []);
+
+  // Scheduling
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [autoRenew, setAutoRenew] = useState(false);
+
   // New fields
   const [paymentMethod, setPaymentMethod] = useState((initialData as any)?.paymentMethod || '');
   const [deliveryOption, setDeliveryOption] = useState((initialData as any)?.deliveryOption || '');
@@ -326,6 +334,10 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
         needsTransport,
         hasTransportCapacity,
         ...(paymentMethod && { paymentMethod }),
+        ...(videoUrl && { videoUrl }),
+        ...(documents.length > 0 && { documents }),
+        ...(scheduledDate && { scheduledAt: new Date(scheduledDate).toISOString() }),
+        ...(autoRenew && { autoRenew: true }),
       } as any;
 
       if (type === 'pazar') {
@@ -487,6 +499,58 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                       {lang === 'tr' ? 'İlk görsel kapak fotoğrafı olarak kullanılır. En fazla 8 görsel yükleyebilirsiniz.' : 'First image will be used as cover. You can upload up to 8 images.'}
                     </p>
                   </div>
+                </div>
+
+                {/* Video URL */}
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-2">
+                    {lang === 'tr' ? 'Video Bağlantısı (Opsiyonel)' : 'Video URL (Optional)'}
+                  </label>
+                  <Input
+                    value={videoUrl}
+                    onChange={e => setVideoUrl(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=... veya video URL"
+                  />
+                  <p className="text-[10px] text-[var(--text-tertiary)] mt-1">YouTube veya doğrudan video bağlantısı ekleyebilirsiniz.</p>
+                </div>
+
+                {/* Document Upload */}
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-2">
+                    {lang === 'tr' ? 'Belgeler & Sertifikalar (Opsiyonel)' : 'Documents & Certificates (Optional)'}
+                  </label>
+                  {documents.map((doc, i) => (
+                    <div key={i} className="flex items-center gap-2 mb-2 p-2 rounded-xl bg-[var(--bg-input)]">
+                      <span className="text-xs flex-1 truncate">{doc.name}</span>
+                      <button type="button" onClick={() => setDocuments(prev => prev.filter((_, j) => j !== i))} className="p-1 text-[var(--text-secondary)] hover:text-red-500">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="flex items-center gap-2 px-3 py-2.5 border-2 border-dashed border-[var(--border-default)] rounded-xl cursor-pointer hover:border-[#0077B6] hover:bg-[#0077B6]/5 transition-all">
+                    <ImagePlus size={16} className="text-[var(--text-tertiary)]" />
+                    <span className="text-xs text-[var(--text-tertiary)]">{lang === 'tr' ? 'Belge Ekle (PDF, görsel)' : 'Add Document'}</span>
+                    <input
+                      type="file"
+                      accept=".pdf,image/*"
+                      multiple
+                      className="hidden"
+                      onChange={e => {
+                        const files = e.target.files;
+                        if (!files) return;
+                        Array.from(files).forEach(file => {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            if (reader.result) {
+                              setDocuments(prev => [...prev, { name: file.name, url: reader.result as string }]);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                      }}
+                    />
+                  </label>
+                  <p className="text-[10px] text-[var(--text-tertiary)] mt-1">Organik sertifika, analiz raporu vb. belgeler ekleyebilirsiniz.</p>
                 </div>
               </div>
             )}
@@ -819,6 +883,35 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                   onSelect={(lat, lng) => { setCoordLat(lat); setCoordLng(lng); }}
                 />
 
+                {/* Scheduled Publish */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)]">
+                    {lang === 'tr' ? 'Zamanlı Yayın (Opsiyonel)' : 'Scheduled Publish (Optional)'}
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={scheduledDate}
+                    onChange={e => setScheduledDate(e.target.value)}
+                    min={new Date().toISOString().slice(0, 16)}
+                    className="w-full px-4 py-3 bg-[var(--bg-input)] text-[var(--text-primary)] rounded-2xl text-sm focus:outline-none focus:ring-1 focus:ring-[#2D6A4F]"
+                  />
+                  <p className="text-[10px] text-[var(--text-tertiary)]">
+                    {lang === 'tr' ? 'Boş bırakırsanız hemen yayınlanır. Tarih seçerseniz o zaman yayınlanır.' : 'Leave empty to publish now.'}
+                  </p>
+                </div>
+
+                {/* Auto Renewal */}
+                <div className="flex items-center gap-3 py-3 px-4 bg-[#2D6A4F]/5 rounded-2xl border border-[#2D6A4F]/10">
+                  <ToggleSwitch
+                    label={lang === 'tr' ? 'Otomatik Yenile' : 'Auto Renew'}
+                    checked={autoRenew}
+                    onChange={setAutoRenew}
+                  />
+                  <span className="text-[10px] text-[#2D6A4F]">
+                    {lang === 'tr' ? '30 gün sonunda ilan otomatik yenilenir' : 'Listing auto-renews after 30 days'}
+                  </span>
+                </div>
+
                 {/* +10 Hasat Puan Motivation */}
                 <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-[#2D6A4F]/10 via-[#40916C]/5 to-[#E76F00]/10 border border-[#2D6A4F]/20">
                   <div className="w-10 h-10 rounded-xl bg-[#2D6A4F]/10 flex items-center justify-center">
@@ -829,6 +922,47 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
                     <p className="text-[10px] text-[var(--text-secondary)]">{lang === 'tr' ? 'Bu ilanı yayınlayarak sadakat puanı kazan' : 'Earn loyalty points by publishing this listing'}</p>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Template Save/Load */}
+            {step === 2 && (
+              <div className="flex items-center gap-2 pt-4 border-t border-[var(--border-default)]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tpl = { type, listingMode, subCategory, unit, qualityGrade, storageType, isOrganic, location, phone, videoUrl };
+                    localStorage.setItem(`hl-template-${type}`, JSON.stringify(tpl));
+                    toast.success(lang === 'tr' ? 'Şablon kaydedildi!' : 'Template saved!');
+                  }}
+                  className="px-3 py-1.5 text-[10px] font-medium bg-[var(--bg-input)] hover:bg-[var(--bg-surface-hover)] rounded-lg transition-colors"
+                >
+                  {lang === 'tr' ? '💾 Şablon Kaydet' : '💾 Save Template'}
+                </button>
+                {localStorage.getItem(`hl-template-${type}`) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const raw = localStorage.getItem(`hl-template-${type}`);
+                      if (!raw) return;
+                      try {
+                        const tpl = JSON.parse(raw);
+                        if (tpl.subCategory) setSubCategory(tpl.subCategory);
+                        if (tpl.unit) setUnit(tpl.unit);
+                        if (tpl.qualityGrade) setQualityGrade(tpl.qualityGrade);
+                        if (tpl.storageType) setStorageType(tpl.storageType);
+                        if (tpl.isOrganic !== undefined) setIsOrganic(tpl.isOrganic);
+                        if (tpl.location) setLocation(tpl.location);
+                        if (tpl.phone) setPhone(tpl.phone);
+                        if (tpl.videoUrl) setVideoUrl(tpl.videoUrl);
+                        toast.success(lang === 'tr' ? 'Şablon yüklendi!' : 'Template loaded!');
+                      } catch {}
+                    }}
+                    className="px-3 py-1.5 text-[10px] font-medium bg-[#0077B6]/10 text-[#0077B6] hover:bg-[#0077B6]/20 rounded-lg transition-colors"
+                  >
+                    {lang === 'tr' ? '📋 Şablonu Yükle' : '📋 Load Template'}
+                  </button>
+                )}
               </div>
             )}
 
