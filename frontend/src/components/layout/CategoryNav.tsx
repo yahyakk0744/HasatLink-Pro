@@ -32,28 +32,30 @@ export default function CategoryNav() {
   }, []);
 
   return (
-    <nav className="bg-[var(--bg-surface)] border-b border-[var(--border-subtle)] overflow-x-auto scrollbar-hide">
-      <div className="flex items-center gap-1 px-4 py-2 w-max min-w-full mx-auto" style={{ maxWidth: '80rem' }}>
-        {categories.map(([key, cat]) => {
-          const Icon = CATEGORY_ICONS[key];
-          return (
-            <NavLink
-              key={key}
-              to={`/${key}`}
-              onMouseEnter={() => handleHover(key)}
-              className={({ isActive }) =>
-                `flex items-center gap-1.5 px-3.5 py-2 rounded-full whitespace-nowrap transition-all shrink-0 text-[11px] font-semibold uppercase tracking-wider ${
-                  isActive
-                    ? 'bg-[var(--bg-invert)] text-[var(--text-on-invert)]'
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'
-                }`
-              }
-            >
-              {Icon ? <Icon size={15} className="shrink-0" /> : <span className="text-sm leading-none shrink-0">{cat.icon}</span>}
-              <span className="leading-none">{t(`categories.${key}`)}</span>
-            </NavLink>
-          );
-        })}
+    <nav className="bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-center gap-1.5 overflow-x-auto py-2 scrollbar-hide">
+          {categories.map(([key, cat]) => {
+            const Icon = CATEGORY_ICONS[key];
+            return (
+              <NavLink
+                key={key}
+                to={`/${key}`}
+                onMouseEnter={() => handleHover(key)}
+                className={({ isActive }) =>
+                  `flex items-center gap-1.5 px-3.5 py-2 rounded-full whitespace-nowrap transition-all shrink-0 text-[11px] font-semibold uppercase tracking-wider ${
+                    isActive
+                      ? 'bg-[var(--bg-invert)] text-[var(--text-on-invert)]'
+                      : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]'
+                  }`
+                }
+              >
+                {Icon ? <Icon size={15} className="shrink-0" /> : <span className="text-sm leading-none shrink-0">{cat.icon}</span>}
+                <span className="leading-none">{t(`categories.${key}`)}</span>
+              </NavLink>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
