@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight, MapPin, TrendingUp, TrendingDown, Droplets, Wind, Cloud,
   BarChart3, ShoppingBag, PackageOpen, Search, Wheat, Truck, HardHat,
-  Tractor, Mountain, Warehouse, Users, Building2, Layers,
+  Tractor, Mountain, Warehouse, Users, Building2, Layers, Beef,
   UserPlus, MessageCircle, AlertTriangle, Plus, Sparkles,
   Package, Wrench,
 } from 'lucide-react';
@@ -83,7 +83,7 @@ const CATEGORY_ICONS: Record<string, ReactNode> = {
   ekipman: <Tractor size={28} strokeWidth={1.5} />,
   arazi: <Mountain size={28} strokeWidth={1.5} />,
   depolama: <Warehouse size={28} strokeWidth={1.5} />,
-  hayvancilik: <span className="text-[26px] leading-none">🐄</span>,
+  hayvancilik: <Beef size={28} strokeWidth={1.5} />,
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
