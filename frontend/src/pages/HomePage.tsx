@@ -21,7 +21,7 @@ import ListingMap from '../components/map/ListingMap';
 import BannerCarousel from '../components/ads/BannerCarousel';
 import ListingForm from '../components/listings/ListingForm';
 import FAB from '../components/ui/FAB';
-import { CATEGORY_LABELS, ALL_SUBCATEGORIES } from '../utils/constants';
+import { CATEGORY_LABELS } from '../utils/constants';
 import SEO from '../components/ui/SEO';
 import JsonLd from '../components/ui/JsonLd';
 import api from '../config/api';
