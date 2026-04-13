@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight, MapPin, TrendingUp, TrendingDown, Droplets, Wind, Cloud,
   BarChart3, ShoppingBag, PackageOpen, Search, Wheat, Truck, HardHat,
-  Tractor, Mountain, Warehouse, Users, Building2, Layers, PawPrint,
+  Tractor, Mountain, Warehouse, Users, Building2, Layers,
   UserPlus, MessageCircle, AlertTriangle, Plus, Sparkles,
   Package, Wrench,
 } from 'lucide-react';
@@ -21,6 +21,7 @@ import ListingMap from '../components/map/ListingMap';
 import BannerCarousel from '../components/ads/BannerCarousel';
 import ListingForm from '../components/listings/ListingForm';
 import FAB from '../components/ui/FAB';
+import CowIcon from '../components/icons/CowIcon';
 import { CATEGORY_LABELS } from '../utils/constants';
 import SEO from '../components/ui/SEO';
 import JsonLd from '../components/ui/JsonLd';
@@ -83,7 +84,7 @@ const CATEGORY_ICONS: Record<string, ReactNode> = {
   ekipman: <Tractor size={28} strokeWidth={1.5} />,
   arazi: <Mountain size={28} strokeWidth={1.5} />,
   depolama: <Warehouse size={28} strokeWidth={1.5} />,
-  hayvancilik: <PawPrint size={28} strokeWidth={1.5} />,
+  hayvancilik: <CowIcon size={28} strokeWidth={1.5} />,
 };
 
 const CATEGORY_COLORS: Record<string, string> = {

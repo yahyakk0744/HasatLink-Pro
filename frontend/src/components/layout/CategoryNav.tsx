@@ -1,18 +1,22 @@
 import { useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Wheat, Truck, HardHat, Wrench, Mountain, Warehouse, Beef } from 'lucide-react';
+import { Wheat, Truck, HardHat, Wrench, Mountain, Warehouse } from 'lucide-react';
+import type { ComponentType } from 'react';
 import { CATEGORY_LABELS } from '../../utils/constants';
 import api from '../../config/api';
+import CowIcon from '../icons/CowIcon';
 
-const CATEGORY_ICONS: Record<string, typeof Wheat> = {
+interface IconProps { size?: number; className?: string }
+
+const CATEGORY_ICONS: Record<string, ComponentType<IconProps>> = {
   pazar: Wheat,
   lojistik: Truck,
   isgucu: HardHat,
   ekipman: Wrench,
   arazi: Mountain,
   depolama: Warehouse,
-  hayvancilik: Beef,
+  hayvancilik: CowIcon,
 };
 
 // Prefetch on hover — warm up the backend + browser cache
