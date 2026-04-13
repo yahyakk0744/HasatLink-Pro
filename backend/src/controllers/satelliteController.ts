@@ -263,11 +263,14 @@ async function processInBatches<T, R>(
   return results;
 }
 
-/** Render false color composite from 3 Sentinel-2 bands (NIR=R, Red=G, Green=B) */
-async function getFalseColorImage(
-  nirUrl: string,   // B08 → Red channel
-  redUrl: string,   // B04 → Green channel
-  greenUrl: string, // B03 → Blue channel
+/** Generic RGB composite from 3 Sentinel-2 COG bands.
+ *  - True color: rUrl=B04, gUrl=B03, bUrl=B02
+ *  - False color (NIR): rUrl=B08, gUrl=B04, bUrl=B03
+ */
+async function renderRGBComposite(
+  rUrl: string,
+  gUrl: string,
+  bUrl: string,
   geoBbox: [number, number, number, number],
   sceneBbox: number[],
   projBbox: number[],
@@ -283,42 +286,43 @@ async function getFalseColorImage(
     const projBottom = pMinY + (gMinY - sMinY) / (sMaxY - sMinY) * (pMaxY - pMinY);
     const projTop    = pMinY + (gMaxY - sMinY) / (sMaxY - sMinY) * (pMaxY - pMinY);
 
-    const tiffNir = await fromUrl(nirUrl);
-    const imageNir = await tiffNir.getImage();
-    const [oX, oY] = imageNir.getOrigin();
-    const [rX, rY] = imageNir.getResolution();
-    const w = imageNir.getWidth();
-    const h = imageNir.getHeight();
+    const tiffR = await fromUrl(rUrl);
+    const imageR = await tiffR.getImage();
+    const [oX, oY] = imageR.getOrigin();
+    const [rX, rY] = imageR.getResolution();
+    const w = imageR.getWidth();
+    const h = imageR.getHeight();
 
     let left   = Math.max(0, Math.min(w - 1, Math.floor((projLeft   - oX) / rX)));
     let top    = Math.max(0, Math.min(h - 1, Math.floor((projTop    - oY) / rY)));
     let right  = Math.max(left + 1, Math.min(w, Math.ceil((projRight  - oX) / rX)));
     let bottom = Math.max(top  + 1, Math.min(h, Math.ceil((projBottom - oY) / rY)));
 
-    const outW = Math.min(64, right - left);
-    const outH = Math.min(64, bottom - top);
+    // Okuma cozunurlugu — daha net goruntu icin 128
+    const outW = Math.min(128, right - left);
+    const outH = Math.min(128, bottom - top);
 
-    const tiffRed   = await fromUrl(redUrl);
-    const imageRed  = await tiffRed.getImage();
-    const tiffGreen = await fromUrl(greenUrl);
-    const imageGreen = await tiffGreen.getImage();
+    const tiffG = await fromUrl(gUrl);
+    const imageG = await tiffG.getImage();
+    const tiffB = await fromUrl(bUrl);
+    const imageB = await tiffB.getImage();
 
     const window = { window: [left, top, right, bottom] as [number,number,number,number], width: outW, height: outH };
-    const [nirData, redData, greenData] = await Promise.all([
-      imageNir.readRasters(window),
-      imageRed.readRasters(window),
-      imageGreen.readRasters(window),
+    const [rData, gData, bData] = await Promise.all([
+      imageR.readRasters(window),
+      imageG.readRasters(window),
+      imageB.readRasters(window),
     ]);
 
-    const nir   = nirData[0]   as any;
-    const red   = redData[0]   as any;
-    const green = greenData[0] as any;
+    const rArr = rData[0] as any;
+    const gArr = gData[0] as any;
+    const bArr = bData[0] as any;
 
     // Scale up to scaleTo×scaleTo (nearest neighbour)
     const scaleX = scaleTo / outW;
     const scaleY = scaleTo / outH;
     const rgb = new Uint8Array(scaleTo * scaleTo * 3);
-    const STRETCH = 4000; // Sentinel-2 L2A typical max reflectance * 10000
+    const STRETCH = 3000; // Sentinel-2 L2A typical max reflectance * 10000 (daha parlak)
 
     for (let oy = 0; oy < scaleTo; oy++) {
       for (let ox = 0; ox < scaleTo; ox++) {
@@ -326,16 +330,16 @@ async function getFalseColorImage(
         const sy = Math.min(outH - 1, Math.floor(oy / scaleY));
         const src = sy * outW + sx;
         const dst = (oy * scaleTo + ox) * 3;
-        rgb[dst]     = Math.min(255, Math.round((nir[src]   || 0) / STRETCH * 255)); // R = NIR
-        rgb[dst + 1] = Math.min(255, Math.round((red[src]   || 0) / STRETCH * 255)); // G = Red
-        rgb[dst + 2] = Math.min(255, Math.round((green[src] || 0) / STRETCH * 255)); // B = Green
+        rgb[dst]     = Math.min(255, Math.round((rArr[src] || 0) / STRETCH * 255));
+        rgb[dst + 1] = Math.min(255, Math.round((gArr[src] || 0) / STRETCH * 255));
+        rgb[dst + 2] = Math.min(255, Math.round((bArr[src] || 0) / STRETCH * 255));
       }
     }
 
     const png = encodePNG(scaleTo, scaleTo, rgb);
     return `data:image/png;base64,${png.toString('base64')}`;
   } catch (err) {
-    console.error('FalseColor render error:', err);
+    console.error('RGB composite render error:', err);
     return null;
   }
 }
@@ -431,17 +435,21 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
     const redUrl   = bestScene.assets?.red?.href   || bestScene.assets?.B04?.href || '';
     const nirUrl   = bestScene.assets?.nir?.href   || bestScene.assets?.B08?.href || '';
     const greenUrl = bestScene.assets?.green?.href || bestScene.assets?.B03?.href || '';
+    const blueUrl  = bestScene.assets?.blue?.href  || bestScene.assets?.B02?.href || '';
     const sceneBbox = bestScene.bbox || [];
     const projBbox = bestScene.properties?.['proj:bbox'] || sceneBbox;
 
-    // Run trueColor + NDVI + falseColor in parallel
-    const [trueColorBase64, latestNDVI, falseColorBase64] = await Promise.all([
+    // Run Esri trueColor (fallback) + NDVI + falseColor + bestScene trueColor in parallel
+    const [esriTrueColor, latestNDVI, falseColorBase64, bestTrueColor] = await Promise.all([
       getFieldImage(geoBbox, 512),
       (redUrl && nirUrl && sceneBbox.length === 4)
         ? computeNDVI(redUrl, nirUrl, geoBbox, sceneBbox, projBbox, true)
         : Promise.resolve(null),
       (nirUrl && redUrl && greenUrl && sceneBbox.length === 4)
-        ? getFalseColorImage(nirUrl, redUrl, greenUrl, geoBbox, sceneBbox, projBbox, 256)
+        ? renderRGBComposite(nirUrl, redUrl, greenUrl, geoBbox, sceneBbox, projBbox, 256)
+        : Promise.resolve(null),
+      (redUrl && greenUrl && blueUrl && sceneBbox.length === 4)
+        ? renderRGBComposite(redUrl, greenUrl, blueUrl, geoBbox, sceneBbox, projBbox, 256)
         : Promise.resolve(null),
     ]);
 
@@ -463,6 +471,31 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
     const ndviHistory = historyResults.filter(Boolean) as any[];
     ndviHistory.sort((a, b) => a.dt - b.dt);
 
+    // 4b. Render trueColor for up to 6 clearest scenes (timeline)
+    const timelineSceneCandidates = scenes
+      .filter((s: any) => (s.properties?.['eo:cloud_cover'] ?? 100) < 60)
+      .slice(0, 6);
+
+    const timelineResults = await processInBatches(timelineSceneCandidates, 3, async (scene: any) => {
+      const b04 = scene.assets?.red?.href   || scene.assets?.B04?.href || '';
+      const b03 = scene.assets?.green?.href || scene.assets?.B03?.href || '';
+      const b02 = scene.assets?.blue?.href  || scene.assets?.B02?.href || '';
+      const sBbox = scene.bbox || [];
+      const sProjBbox = scene.properties?.['proj:bbox'] || sBbox;
+      if (!b04 || !b03 || !b02 || sBbox.length !== 4) return null;
+      const image = await renderRGBComposite(b04, b03, b02, geoBbox, sBbox, sProjBbox, 256);
+      if (!image) return null;
+      const dt = Math.floor(new Date(scene.properties?.datetime || '').getTime() / 1000);
+      return {
+        dt,
+        date: (scene.properties?.datetime || '').split('T')[0],
+        cloudCoverage: scene.properties?.['eo:cloud_cover'] ?? 100,
+        image,
+      };
+    });
+
+    const timelineImages = (timelineResults.filter(Boolean) as any[]).sort((a, b) => b.dt - a.dt);
+
     // 5. Determine health status
     const ndviLatest = latestNDVI || (ndviHistory.length > 0 ? ndviHistory[ndviHistory.length - 1] : null);
     let healthStatus = 'unknown';
@@ -483,9 +516,10 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       platform: s.properties?.platform || 'sentinel-2',
     }));
 
-    // 7. Build rendered images
+    // 7. Build rendered images — Sentinel-2 trueColor tercih, Esri fallback
     const renderedImages: Record<string, string> = {};
-    if (trueColorBase64) renderedImages.trueColor = trueColorBase64;
+    const trueColorFinal = bestTrueColor || esriTrueColor;
+    if (trueColorFinal) renderedImages.trueColor = trueColorFinal;
 
     // NDVI color map — rendered from actual Sentinel-2 pixel data
     if (latestNDVI?.grid) {
@@ -509,6 +543,7 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
       ndviHistory,
       images: imageList,
       renderedImages,
+      timelineImages,
       clearImageCount: imageList.filter((i: any) => i.cloudCoverage < 50).length,
       totalImageCount: imageList.length,
     });

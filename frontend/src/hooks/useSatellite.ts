@@ -17,6 +17,13 @@ export interface SatelliteScene {
   platform: string;
 }
 
+export interface TimelineImage {
+  dt: number;
+  date: string;
+  cloudCoverage: number;
+  image: string; // base64 data URI
+}
+
 export interface SatelliteAnalysis {
   center: { lat: number; lng: number };
   area: number;
@@ -30,6 +37,7 @@ export interface SatelliteAnalysis {
     ndvi?: string;
     falseColor?: string;
   };
+  timelineImages?: TimelineImage[];
   clearImageCount: number;
   totalImageCount: number;
 }

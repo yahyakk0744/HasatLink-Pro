@@ -284,16 +284,25 @@ const LAYER_LABELS: Record<ImageLayer, { tr: string; en: string }> = {
   falseColor: { tr: 'Yakın Kızılötesi', en: 'Near Infrared' },
 };
 
-function SatelliteImageGallery({ renderedImages, scenes, clearCount, totalCount, lang }: {
+function SatelliteImageGallery({ renderedImages, scenes, timelineImages, clearCount, totalCount, lang }: {
   renderedImages: { trueColor?: string; ndvi?: string; falseColor?: string };
   scenes: { dt: number; date: string; cloudCoverage: number; platform: string }[];
+  timelineImages: { dt: number; date: string; cloudCoverage: number; image: string }[];
   clearCount: number; totalCount: number; lang: 'tr' | 'en';
 }) {
   const [activeLayer, setActiveLayer] = useState<ImageLayer>('trueColor');
   const [fullscreen, setFullscreen] = useState(false);
+  const [selectedTimelineIdx, setSelectedTimelineIdx] = useState<number>(-1);
 
   const availableLayers = (['trueColor', 'ndvi', 'falseColor'] as ImageLayer[]).filter(l => renderedImages[l]);
-  const currentUrl = renderedImages[activeLayer] || renderedImages.trueColor || '';
+  // Ana goruntu: timeline secimi trueColor tab'ini ezecek sekilde
+  const currentUrl = (activeLayer === 'trueColor' && selectedTimelineIdx >= 0 && timelineImages[selectedTimelineIdx])
+    ? timelineImages[selectedTimelineIdx].image
+    : (renderedImages[activeLayer] || renderedImages.trueColor || '');
+
+  const selectedDate = (activeLayer === 'trueColor' && selectedTimelineIdx >= 0 && timelineImages[selectedTimelineIdx])
+    ? timelineImages[selectedTimelineIdx].date
+    : null;
 
   if (!currentUrl) return null;
 
@@ -355,8 +364,18 @@ function SatelliteImageGallery({ renderedImages, scenes, clearCount, totalCount,
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-white text-[13px] font-semibold">{LAYER_LABELS[activeLayer][lang]}</p>
-                <p className="text-white/70 text-[11px]">Sentinel-2 L2A — {lang === 'tr' ? 'son 30 gün' : 'last 30 days'}</p>
+                <p className="text-white text-[13px] font-semibold">
+                  {LAYER_LABELS[activeLayer][lang]}
+                  {selectedDate && (
+                    <span className="ml-2 text-[11px] font-normal text-emerald-300">· {selectedDate}</span>
+                  )}
+                </p>
+                <p className="text-white/70 text-[11px]">
+                  {selectedDate
+                    ? `Sentinel-2 L2A — ${lang === 'tr' ? 'bu tarihteki görüntü' : 'image on this date'}`
+                    : `Sentinel-2 L2A — ${lang === 'tr' ? 'en net birleşik görüntü (son 30 gün)' : 'clearest composite (last 30 days)'}`
+                  }
+                </p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Eye size={14} className="text-white" />
@@ -366,8 +385,58 @@ function SatelliteImageGallery({ renderedImages, scenes, clearCount, totalCount,
         </div>
       </div>
 
-      {/* Scene list */}
-      {scenes.length > 0 && (
+      {/* Timeline thumbnail grid — gercek uydu goruntuleri */}
+      {timelineImages.length > 0 && activeLayer === 'trueColor' && (
+        <div className="px-4 pb-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+              {lang === 'tr' ? `Uydu Zaman Çizelgesi (${timelineImages.length} görüntü)` : `Satellite Timeline (${timelineImages.length} images)`}
+            </p>
+            {selectedTimelineIdx >= 0 && (
+              <button
+                onClick={() => setSelectedTimelineIdx(-1)}
+                className="text-[10px] font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+              >
+                <RotateCcw size={10} /> {lang === 'tr' ? 'Birleşik' : 'Composite'}
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-4 gap-1.5">
+            {timelineImages.map((img, i) => {
+              const isActive = selectedTimelineIdx === i;
+              const cloudColor = img.cloudCoverage < 20 ? 'text-emerald-300' : img.cloudCoverage < 50 ? 'text-amber-300' : 'text-red-300';
+              return (
+                <button
+                  key={i}
+                  onClick={() => setSelectedTimelineIdx(isActive ? -1 : i)}
+                  className={`relative aspect-square rounded-lg overflow-hidden transition-all group ${
+                    isActive
+                      ? 'ring-2 ring-emerald-500 ring-offset-1 ring-offset-[var(--bg-surface)] scale-[0.97]'
+                      : 'ring-1 ring-[var(--border-default)] hover:ring-emerald-400 hover:scale-[0.98]'
+                  }`}
+                  title={`${img.date} · %${Math.round(img.cloudCoverage)} bulut`}
+                >
+                  <img src={img.image} alt={img.date} className="w-full h-full object-cover bg-gray-900" />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                    <p className="text-white text-[9px] font-semibold leading-tight">{img.date.slice(5)}</p>
+                    <p className={`text-[8px] font-medium leading-tight ${cloudColor}`}>
+                      ☁ %{Math.round(img.cloudCoverage)}
+                    </p>
+                  </div>
+                  {isActive && (
+                    <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center">
+                      <CheckCircle size={10} className="text-white" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Scene list — fallback icin sadece timeline image yoksa */}
+      {timelineImages.length === 0 && scenes.length > 0 && (
         <div className="px-4 pb-3">
           <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-2">
             {lang === 'tr' ? 'Mevcut Gecisler' : 'Available Passes'} ({scenes.length})
@@ -396,7 +465,10 @@ function SatelliteImageGallery({ renderedImages, scenes, clearCount, totalCount,
             <XCircle size={24} />
           </button>
           <div className="absolute top-4 left-4 text-white z-10">
-            <p className="text-[15px] font-semibold">{LAYER_LABELS[activeLayer][lang]}</p>
+            <p className="text-[15px] font-semibold">
+              {LAYER_LABELS[activeLayer][lang]}
+              {selectedDate && <span className="ml-2 text-[12px] font-normal text-emerald-300">· {selectedDate}</span>}
+            </p>
             <p className="text-[12px] text-white/60">Copernicus Sentinel-2 L2A</p>
           </div>
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1 p-1 bg-white/10 backdrop-blur-sm rounded-xl z-10">
@@ -413,7 +485,7 @@ function SatelliteImageGallery({ renderedImages, scenes, clearCount, totalCount,
             ))}
           </div>
           <img
-            src={renderedImages[activeLayer] || renderedImages.trueColor || ''}
+            src={currentUrl}
             alt=""
             className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
@@ -851,7 +923,14 @@ export default function SatelliteHealthPage() {
           </div>
 
           {analysis.renderedImages && Object.keys(analysis.renderedImages).length > 0 && (
-            <SatelliteImageGallery renderedImages={analysis.renderedImages} scenes={analysis.images} clearCount={analysis.clearImageCount} totalCount={analysis.totalImageCount} lang={lang} />
+            <SatelliteImageGallery
+              renderedImages={analysis.renderedImages}
+              scenes={analysis.images}
+              timelineImages={analysis.timelineImages || []}
+              clearCount={analysis.clearImageCount}
+              totalCount={analysis.totalImageCount}
+              lang={lang}
+            />
           )}
 
           <div className="grid grid-cols-3 gap-2.5">
