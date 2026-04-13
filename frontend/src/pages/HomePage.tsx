@@ -257,16 +257,14 @@ export default function HomePage() {
 
       {/* ─── 3. Hızlı Kategoriler ─── */}
       <AnimatedSection>
-        <section className="max-w-6xl mx-auto px-3 md:px-4 py-6 md:py-10">
-          <div className="flex items-end justify-between mb-4 md:mb-6">
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+        <section className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base md:text-lg font-bold tracking-tight text-[var(--text-primary)]">
               {lang === 'tr' ? 'Kategoriler' : 'Categories'}
             </h2>
-            <span className="text-[11px] text-[var(--text-secondary)]">
-              {lang === 'tr' ? 'Üzerine gel, ilan ver' : 'Hover to post'}
-            </span>
           </div>
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3">
+          {/* Mobil: yatay scroll · Desktop: 7 kolon grid */}
+          <div className="flex md:grid md:grid-cols-7 gap-2 overflow-x-auto md:overflow-visible scrollbar-hide -mx-3 px-3 md:mx-0 md:px-0 snap-x snap-mandatory">
             {Object.entries(CATEGORY_LABELS).map(([key, cat]) => {
               const count = platformStats.categoryCounts[key] || 0;
               const color = CATEGORY_COLORS[key] || '#2D6A4F';
@@ -274,7 +272,7 @@ export default function HomePage() {
                 <Link
                   key={key}
                   to={`/${key}`}
-                  className="group relative overflow-hidden rounded-2xl p-3 md:p-4 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] bg-[var(--bg-surface)] border border-[var(--border-default)] hover:shadow-lg flex flex-col items-center text-center"
+                  className="group relative overflow-hidden rounded-2xl p-2.5 md:p-3 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] bg-[var(--bg-surface)] border border-[var(--border-default)] hover:shadow-md flex flex-col items-center text-center shrink-0 w-[86px] md:w-auto snap-start"
                 >
                   {/* Gradient hover layer */}
                   <div
@@ -282,25 +280,21 @@ export default function HomePage() {
                     style={{ background: `linear-gradient(160deg, ${color}10 0%, transparent 70%)` }}
                   />
 
-                  {/* Content */}
                   <div className="relative flex flex-col items-center w-full">
-                    {/* Icon */}
                     <div
-                      className="w-11 h-11 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-2 transition-transform duration-300 group-hover:scale-110"
+                      className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center mb-1.5 transition-transform duration-300 group-hover:scale-110"
                       style={{
                         background: `${color}15`,
                         border: `1px solid ${color}25`,
                       }}
                     >
-                      <div style={{ color, transform: 'scale(0.8)' }}>{CATEGORY_ICONS[key]}</div>
+                      <div style={{ color, transform: 'scale(0.72)' }}>{CATEGORY_ICONS[key]}</div>
                     </div>
-
-                    {/* Title & count */}
-                    <h3 className="text-[11px] md:text-[12px] font-semibold tracking-tight mb-0.5 text-[var(--text-primary)] truncate w-full">
+                    <h3 className="text-[10px] md:text-[11px] font-semibold tracking-tight text-[var(--text-primary)] truncate w-full leading-tight">
                       {cat[lang]}
                     </h3>
-                    <p className="text-[10px] text-[var(--text-secondary)]">
-                      {count} {lang === 'tr' ? 'ilan' : 'listings'}
+                    <p className="text-[9px] text-[var(--text-secondary)] mt-0.5">
+                      {count} {lang === 'tr' ? 'ilan' : ''}
                     </p>
                   </div>
 
@@ -317,10 +311,10 @@ export default function HomePage() {
                       setFormInitialType(key as Listing['type']);
                       setShowForm(true);
                     }}
-                    className="hidden md:flex absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 px-2 py-1.5 items-center justify-center gap-1 text-white text-[10px] font-bold tracking-wide z-10"
+                    className="hidden md:flex absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 px-1 py-1 items-center justify-center gap-0.5 text-white text-[9px] font-bold tracking-wide z-10"
                     style={{ background: color }}
                   >
-                    <Plus size={11} strokeWidth={3} />
+                    <Plus size={10} strokeWidth={3} />
                     {lang === 'tr' ? 'İLAN VER' : 'POST'}
                   </button>
                 </Link>
