@@ -400,9 +400,9 @@ export const quickAnalyze = async (req: AuthRequest, res: Response): Promise<voi
     const geoBbox = bboxFromCoords(coordinates);
     const areaHa = calcPolygonAreaHa(coordinates);
 
-    // Time range: last 90 days
+    // Time range: last 30 days
     const now = new Date();
-    const from = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    const from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const to = now.toISOString();
 
     // 1. Search for clear Sentinel-2 scenes (FREE, no auth)

@@ -356,7 +356,7 @@ function SatelliteImageGallery({ renderedImages, scenes, clearCount, totalCount,
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white text-[13px] font-semibold">{LAYER_LABELS[activeLayer][lang]}</p>
-                <p className="text-white/70 text-[11px]">Sentinel-2 L2A — {lang === 'tr' ? 'son 90 gün' : 'last 90 days'}</p>
+                <p className="text-white/70 text-[11px]">Sentinel-2 L2A — {lang === 'tr' ? 'son 30 gün' : 'last 30 days'}</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Eye size={14} className="text-white" />
@@ -448,7 +448,7 @@ function AnalysisLoader() {
         </div>
         <div>
           <p className="text-[14px] font-bold text-indigo-900">Uydu Analizi Yapılıyor</p>
-          <p className="text-[11px] text-indigo-600">Copernicus Sentinel-2 · Son 90 gün</p>
+          <p className="text-[11px] text-indigo-600">Copernicus Sentinel-2 · Son 30 gün</p>
         </div>
       </div>
       <div className="space-y-2.5">
@@ -513,6 +513,14 @@ export default function SatelliteHealthPage() {
 
   // Auth not required — anyone can analyze fields
 
+  const runAnalysis = useCallback((points: [number, number][]) => {
+    if (points.length < 3) return;
+    const geoJsonCoords = points.map(p => [p[1], p[0]]);
+    const avgLat = points.reduce((s, p) => s + p[0], 0) / points.length;
+    const avgLng = points.reduce((s, p) => s + p[1], 0) / points.length;
+    analyze(avgLat, avgLng, 0.5, geoJsonCoords);
+  }, [analyze]);
+
   const handleMapClick = useCallback((lat: number, lng: number) => {
     if (!drawMode || isPolygonClosed) return;
 
@@ -523,12 +531,14 @@ export default function SatelliteHealthPage() {
       if (dist < 0.0005) { // ~50m threshold
         setIsPolygonClosed(true);
         setDrawMode(false);
+        // Auto-start analysis as soon as polygon closes
+        runAnalysis(polygonPoints);
         return;
       }
     }
 
     setPolygonPoints(prev => [...prev, [lat, lng]]);
-  }, [drawMode, isPolygonClosed, polygonPoints]);
+  }, [drawMode, isPolygonClosed, polygonPoints, runAnalysis]);
 
   const handleStartDraw = () => {
     setDrawMode(true);
@@ -548,6 +558,8 @@ export default function SatelliteHealthPage() {
     if (polygonPoints.length >= 3) {
       setIsPolygonClosed(true);
       setDrawMode(false);
+      // Auto-start analysis on manual close
+      runAnalysis(polygonPoints);
     }
   };
 
@@ -586,12 +598,7 @@ export default function SatelliteHealthPage() {
 
   const handleAnalyze = () => {
     if (!isPolygonClosed || polygonPoints.length < 3) return;
-    // Convert [lat, lng] to [lng, lat] for GeoJSON/Agromonitoring
-    const geoJsonCoords = polygonPoints.map(p => [p[1], p[0]]);
-    // Center point
-    const avgLat = polygonPoints.reduce((s, p) => s + p[0], 0) / polygonPoints.length;
-    const avgLng = polygonPoints.reduce((s, p) => s + p[1], 0) / polygonPoints.length;
-    analyze(avgLat, avgLng, 0.5, geoJsonCoords);
+    runAnalysis(polygonPoints);
   };
 
   // Calculate polygon area in hectares (Shoelace formula)
