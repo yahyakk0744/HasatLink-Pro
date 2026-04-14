@@ -34,6 +34,8 @@ const CATEGORIES = [
   { value: 'meyve', label: 'Meyve', emoji: '🍎' },
   { value: 'tahil', label: 'Tahıl', emoji: '🌾' },
   { value: 'baklagil', label: 'Baklagil', emoji: '🫘' },
+  { value: 'yagli-tohum', label: 'Yağlı Tohum', emoji: '🌻' },
+  { value: 'endustri', label: 'Endüstri', emoji: '🏭' },
   { value: 'yem-bitkileri', label: 'Yem Bitkileri', emoji: '🌿' },
   { value: 'hayvancilik', label: 'Hayvancılık', emoji: '🐄' },
 ];
