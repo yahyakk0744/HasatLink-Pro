@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "seed": "ts-node src/seed.ts",
+    "seed:features": "ts-node src/seed-features.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
