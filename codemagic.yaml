@@ -21,7 +21,7 @@ workflows:
           # Persistent key from Codemagic env (if set); otherwise generate fresh.
           # NOTE: Without persistent CERTIFICATE_PRIVATE_KEY, each build creates a new
           # Distribution cert on Apple. To prevent cert-limit 409, we auto-revoke
-          # stale certs before creating a new one.
+          # ALL existing Distribution certs for this team, then retry --create.
           if [ -z "$CERTIFICATE_PRIVATE_KEY" ]; then
             echo "[signing] No persistent CERTIFICATE_PRIVATE_KEY — generating fresh key."
             openssl genrsa -out /tmp/cert_key.pem 2048 2>/dev/null
@@ -29,14 +29,57 @@ workflows:
           else
             echo "[signing] Using persistent CERTIFICATE_PRIVATE_KEY from env."
           fi
-          # Try fetch + create. If Apple cert limit (409), revoke ALL old
-          # Distribution certs for this team and retry once.
-          if ! app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create; then
-            echo "[signing] fetch-signing-files failed — revoking stale certs and retrying."
-            for cert_id in $(app-store-connect list-certificates --type IOS_DISTRIBUTION --json 2>/dev/null | python3 -c "import sys,json; [print(c['id']) for c in json.load(sys.stdin)]"); do
+
+          revoke_all_distribution_certs() {
+            echo "[signing] Listing existing Distribution certs…"
+            # Dump raw JSON to a file so we can inspect if parsing fails.
+            if app-store-connect list-certificates \
+                 --certificate-type IOS_DISTRIBUTION \
+                 --json > /tmp/certs.json 2>/tmp/certs.err; then
+              echo "[signing] list-certificates stdout:"; cat /tmp/certs.json
+            else
+              echo "[signing] list-certificates FAILED:"; cat /tmp/certs.err
+            fi
+
+            # Extract IDs via python with error tolerance. Apple cert IDs are 10 chars [A-Z0-9].
+            CERT_IDS=$(python3 - <<'PY' 2>/dev/null || true
+          import json, re, sys
+          try:
+              with open('/tmp/certs.json') as fh:
+                  data = json.load(fh)
+              if isinstance(data, list):
+                  for c in data:
+                      cid = c.get('id') or c.get('Id')
+                      if cid: print(cid)
+          except Exception:
+              # Fallback: regex scan the file for 10-char uppercase IDs.
+              try:
+                  with open('/tmp/certs.json') as fh:
+                      for cid in set(re.findall(r'\b[A-Z0-9]{10}\b', fh.read())):
+                          print(cid)
+              except Exception:
+                  pass
+          PY
+            )
+
+            if [ -z "$CERT_IDS" ]; then
+              echo "[signing] No cert IDs parsed — nothing to revoke."
+              return 1
+            fi
+
+            for cert_id in $CERT_IDS; do
               echo "[signing] Revoking cert $cert_id"
               app-store-connect revoke-certificate "$cert_id" || true
             done
+          }
+
+          # Primary attempt.
+          if app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create; then
+            echo "[signing] Primary fetch-signing-files succeeded."
+          else
+            echo "[signing] Primary fetch-signing-files failed — attempting recovery."
+            revoke_all_distribution_certs || true
+            echo "[signing] Retrying fetch-signing-files after revocation."
             app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           fi
       - name: Add certificates to keychain
