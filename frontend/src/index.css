@@ -549,3 +549,11 @@ html.dark select option {
 .spring-tap:active {
   animation: spring-press 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* Satellite tile enhancement — parlaklik + doygunluk + kontrast
+   Google lyrs=s tile'larinin bazi bolgelerde karanlik/donuk gorunmesini duzeltir.
+   Tile img'lerine uygulanir, overlay/polygon etkilenmez. */
+.hl-satellite-tiles img {
+  filter: brightness(1.12) saturate(1.25) contrast(1.08);
+  -webkit-filter: brightness(1.12) saturate(1.25) contrast(1.08);
+}

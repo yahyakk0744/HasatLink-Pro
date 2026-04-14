@@ -287,7 +287,7 @@ function FitToPolygonBounds({ polygon }: { polygon: [number, number][] }) {
   useEffect(() => {
     if (!polygon || polygon.length < 3) return;
     const bounds = L.latLngBounds(polygon);
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 18 });
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 19 });
   }, [map, polygon]);
   return null;
 }
@@ -317,12 +317,14 @@ function FieldSatelliteView({ polygon, area, lang }: {
         zoomControl={false}
         attributionControl={false}
       >
-        {/* Google Hybrid (satellite + street labels) — lyrs=y gunduz uydu goruntusu */}
+        {/* Google Satellite (lyrs=s) — saf uydu, etiketsiz, parlak gunduz */}
         <TileLayer
           attribution='&copy; Google'
-          url="https://mt1.google.com/vt/lyrs=y&hl=tr&x={x}&y={y}&z={z}"
+          url="https://mt1.google.com/vt/lyrs=s&hl=tr&x={x}&y={y}&z={z}"
           maxZoom={20}
           maxNativeZoom={20}
+          detectRetina={true}
+          className="hl-satellite-tiles"
         />
 
         {/* Polygon + vertices */}
