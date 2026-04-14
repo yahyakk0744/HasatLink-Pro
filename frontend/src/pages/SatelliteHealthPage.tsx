@@ -4,7 +4,9 @@ import {
   Satellite, MapPin, Scan, Loader2, Leaf, TrendingUp,
   AlertTriangle, CheckCircle, XCircle, Droplets, Cloud, CloudOff, Eye,
   Search, LocateFixed, Minus, Plus, Pencil, Trash2, RotateCcw, Database,
+  Maximize2, Ruler,
 } from 'lucide-react';
+import L from 'leaflet';
 import { MapContainer, TileLayer, Polygon as LeafletPolygon, Polyline, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import { useLocation } from '../contexts/LocationContext';
 import { useSatellite, getHealthLabel } from '../hooks/useSatellite';
@@ -313,9 +315,9 @@ function SatelliteImageGallery({ renderedImages, scenes, timelineImages, clearCo
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Satellite size={16} className="text-violet-500" />
-            <h3 className="text-[13px] font-semibold">{lang === 'tr' ? 'Uydu Görüntüleri' : 'Satellite Images'}</h3>
+            <h3 className="text-[13px] font-semibold">{lang === 'tr' ? 'NDVI & Bitki Analizi' : 'NDVI & Vegetation Analysis'}</h3>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-medium">
-              Sentinel-2
+              Sentinel-2 · 10m
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-[10px]">
@@ -493,6 +495,186 @@ function SatelliteImageGallery({ renderedImages, scenes, timelineImages, clearCo
         </div>
       )}
     </div>
+  );
+}
+
+/* ─── Field Satellite View (High-Res Esri imagery) ─── */
+
+// Helper: polygon bounds'una otomatik fit et
+function FitToPolygonBounds({ polygon }: { polygon: [number, number][] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!polygon || polygon.length < 3) return;
+    const bounds = L.latLngBounds(polygon);
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 18 });
+  }, [map, polygon]);
+  return null;
+}
+
+function FieldSatelliteView({ polygon, area, lang }: {
+  polygon: [number, number][];
+  area: number; // hectares
+  lang: 'tr' | 'en';
+}) {
+  const [fullscreen, setFullscreen] = useState(false);
+  const [mapType, setMapType] = useState<'esri' | 'google'>('esri');
+
+  if (!polygon || polygon.length < 3) return null;
+
+  const center: [number, number] = [
+    polygon.reduce((s, p) => s + p[0], 0) / polygon.length,
+    polygon.reduce((s, p) => s + p[1], 0) / polygon.length,
+  ];
+
+  // Renderer — hem inline hem fullscreen icin ortak
+  const renderMap = (height: string) => (
+    <div className={`relative ${height}`}>
+      <MapContainer
+        center={center}
+        zoom={17}
+        className="w-full h-full z-0"
+        scrollWheelZoom={true}
+        zoomControl={false}
+        attributionControl={false}
+      >
+        {mapType === 'esri' ? (
+          <>
+            <TileLayer
+              attribution='&copy; Esri World Imagery'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              maxZoom={19}
+              maxNativeZoom={19}
+            />
+            {/* Yol etiketleri (semi-transparent) */}
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+              opacity={0.6}
+            />
+          </>
+        ) : (
+          <TileLayer
+            attribution='&copy; Google'
+            url="https://mt1.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}"
+            maxZoom={20}
+            maxNativeZoom={20}
+          />
+        )}
+
+        {/* Polygon + vertices */}
+        <LeafletPolygon
+          positions={polygon}
+          pathOptions={{
+            color: '#f59e0b',
+            fillColor: '#f59e0b',
+            fillOpacity: 0.15,
+            weight: 3,
+            dashArray: '8,4',
+          }}
+        />
+        {polygon.map((p, i) => (
+          <CircleMarker
+            key={i}
+            center={p}
+            radius={5}
+            pathOptions={{
+              color: '#fff',
+              fillColor: i === 0 ? '#ef4444' : '#f59e0b',
+              fillOpacity: 1,
+              weight: 2,
+            }}
+          />
+        ))}
+        <FitToPolygonBounds polygon={polygon} />
+        <MapZoomControls />
+      </MapContainer>
+
+      {/* Map source toggle */}
+      <div className="absolute top-3 left-3 z-[1000]">
+        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 flex overflow-hidden text-[11px] font-semibold">
+          <button
+            onClick={() => setMapType('esri')}
+            className={`px-3 py-1.5 transition-colors ${mapType === 'esri' ? 'bg-emerald-500 text-white' : 'text-gray-700 hover:bg-gray-50'}`}
+          >
+            Esri
+          </button>
+          <button
+            onClick={() => setMapType('google')}
+            className={`px-3 py-1.5 transition-colors ${mapType === 'google' ? 'bg-emerald-500 text-white' : 'text-gray-700 hover:bg-gray-50'}`}
+          >
+            Google
+          </button>
+        </div>
+      </div>
+
+      {/* Area badge */}
+      <div className="absolute bottom-3 left-3 z-[1000]">
+        <div className="bg-black/70 backdrop-blur-sm rounded-xl px-3 py-2 text-white">
+          <div className="flex items-center gap-1.5">
+            <Ruler size={12} className="text-amber-400" />
+            <span className="text-[12px] font-bold">{area.toFixed(2)} ha</span>
+          </div>
+          <p className="text-[9px] text-white/70">{polygon.length} {lang === 'tr' ? 'köşe' : 'vertices'}</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden">
+        <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Satellite size={16} className="text-emerald-500" />
+            <h3 className="text-[13px] font-semibold">
+              {lang === 'tr' ? 'Uydu Görünümü' : 'Satellite View'}
+            </h3>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+              {lang === 'tr' ? 'Yüksek Çözünürlük' : 'High-Res'}
+            </span>
+          </div>
+          <button
+            onClick={() => setFullscreen(true)}
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--bg-input)] hover:text-[var(--text-primary)] transition-colors"
+            title={lang === 'tr' ? 'Tam ekran' : 'Fullscreen'}
+          >
+            <Maximize2 size={14} />
+          </button>
+        </div>
+
+        {/* Inline map */}
+        {renderMap('h-[340px] sm:h-[420px]')}
+
+        <p className="px-4 py-3 text-[10px] text-[var(--text-tertiary)] border-t border-[var(--border-default)]">
+          {lang === 'tr'
+            ? 'Tarlanızı yüksek çözünürlüklü uydu tile\'ları üzerinde inceleyebilirsiniz. Zoom yaparak ağaç, yol ve bina detaylarını görün.'
+            : 'Explore your field on high-resolution satellite tiles. Zoom in to see trees, roads and buildings.'}
+        </p>
+      </div>
+
+      {/* Fullscreen modal */}
+      {fullscreen && (
+        <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 bg-black/80 border-b border-white/10">
+            <div className="flex items-center gap-2 text-white">
+              <Satellite size={16} className="text-emerald-400" />
+              <span className="text-[13px] font-semibold">
+                {lang === 'tr' ? 'Uydu Görünümü' : 'Satellite View'}
+              </span>
+              <span className="text-[11px] text-white/60">· {area.toFixed(2)} ha</span>
+            </div>
+            <button
+              onClick={() => setFullscreen(false)}
+              className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+            >
+              <XCircle size={20} />
+            </button>
+          </div>
+          <div className="flex-1">
+            {renderMap('h-full')}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -911,6 +1093,15 @@ export default function SatelliteHealthPage() {
             );
           })()}
           <NDVIChart history={analysis.ndviHistory} />
+
+          {/* Yuksek cozunurluklu uydu gorunumu - kullanicinin cizdigi tarla */}
+          {polygonPoints.length >= 3 && (
+            <FieldSatelliteView
+              polygon={polygonPoints}
+              area={calcArea()}
+              lang={lang}
+            />
+          )}
 
           <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] p-4">
             <p className="text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">NDVI Renk Skalası</p>
