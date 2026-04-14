@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { signInWithRedirect, getRedirectResult, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, deleteUser, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { signInWithRedirect, getRedirectResult, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, deleteUser, GoogleAuthProvider, OAuthProvider, FacebookAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth as firebaseAuth, googleProvider } from '../config/firebase';
 import { isNative } from '../utils/native';
 import api from '../config/api';
@@ -14,8 +14,30 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   register: (name: string, email: string, password: string, location?: string) => Promise<{ success: boolean; message?: string }>;
   loginWithGoogle: () => Promise<{ success: boolean; message?: string }>;
+  loginWithApple: () => Promise<{ success: boolean; message?: string }>;
+  loginWithFacebook: () => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   updateUserData: (updates: Partial<User>) => void;
+}
+
+// --- Nonce helpers for Sign in with Apple ---
+// Apple requires a SHA-256 hashed nonce in the authorize call,
+// while Firebase needs the raw (unhashed) nonce when exchanging the Apple token.
+function generateRawNonce(length = 32): string {
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._';
+  const random = new Uint8Array(length);
+  crypto.getRandomValues(random);
+  let result = '';
+  for (let i = 0; i < length; i++) result += charset[random[i] % charset.length];
+  return result;
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -216,6 +238,144 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const loginWithApple = useCallback(async () => {
+    try {
+      let firebaseIdToken: string;
+      let fbUid: string;
+      let fallbackName: string | undefined;
+      let fallbackEmail: string | undefined;
+
+      if (isNative) {
+        // Native iOS: use Sign in with Apple plugin
+        const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
+
+        const rawNonce = generateRawNonce();
+        const hashedNonce = await sha256Hex(rawNonce);
+
+        const result = await SignInWithApple.authorize({
+          clientId: 'com.hasatlink.app',
+          redirectURI: 'https://hasatlink.com',
+          scopes: 'email name',
+          nonce: hashedNonce,
+        });
+
+        const appleIdToken = result.response.identityToken;
+        if (!appleIdToken) throw new Error('Apple kimlik tokeni alınamadı');
+
+        // Apple only returns name/email on FIRST sign-in — capture them for backend fallback
+        if (result.response.givenName || result.response.familyName) {
+          fallbackName = [result.response.givenName, result.response.familyName].filter(Boolean).join(' ').trim();
+        }
+        if (result.response.email) fallbackEmail = result.response.email;
+
+        const provider = new OAuthProvider('apple.com');
+        const credential = provider.credential({ idToken: appleIdToken, rawNonce });
+        const fbResult = await signInWithCredential(firebaseAuth, credential);
+        firebaseIdToken = await fbResult.user.getIdToken();
+        fbUid = fbResult.user.uid;
+      } else {
+        // Web: use Firebase popup
+        const provider = new OAuthProvider('apple.com');
+        provider.addScope('email');
+        provider.addScope('name');
+        try {
+          const result = await signInWithPopup(firebaseAuth, provider);
+          firebaseIdToken = await result.user.getIdToken();
+          fbUid = result.user.uid;
+        } catch (popupErr: any) {
+          if (popupErr.code === 'auth/popup-closed-by-user') {
+            return { success: false, message: 'Giriş iptal edildi' };
+          }
+          if (
+            popupErr.code === 'auth/popup-blocked' ||
+            popupErr.code === 'auth/cancelled-popup-request' ||
+            popupErr.code === 'auth/web-storage-unsupported'
+          ) {
+            await signInWithRedirect(firebaseAuth, provider);
+            return { success: true };
+          }
+          throw popupErr;
+        }
+      }
+
+      const { data } = await api.post('/auth/apple', {
+        idToken: firebaseIdToken,
+        appleFallbackName: fallbackName,
+        appleFallbackEmail: fallbackEmail,
+      });
+      localStorage.setItem('hasatlink_token', data.token);
+      setToken(data.token);
+      setUser(data.user);
+      setFirebaseUid(fbUid);
+      return { success: true };
+    } catch (err: any) {
+      console.error('Apple login error:', err.code || err.message, err);
+      const msg = err.message || '';
+      if (err.code === 'auth/popup-closed-by-user' || msg.includes('canceled') || msg.includes('1001') /* Apple user cancel */) {
+        return { success: false, message: 'Giriş iptal edildi' };
+      }
+      return { success: false, message: err.response?.data?.message || 'Apple giriş hatası' };
+    }
+  }, []);
+
+  const loginWithFacebook = useCallback(async () => {
+    try {
+      let firebaseIdToken: string;
+      let fbUid: string;
+
+      if (isNative) {
+        // Native: use Capacitor Facebook plugin
+        const { FacebookLogin } = await import('@capacitor-community/facebook-login');
+
+        const result = await FacebookLogin.login({
+          permissions: ['email', 'public_profile'],
+        });
+        const fbAccessToken = result.accessToken?.token;
+        if (!fbAccessToken) return { success: false, message: 'Giriş iptal edildi' };
+
+        const credential = FacebookAuthProvider.credential(fbAccessToken);
+        const fbResult = await signInWithCredential(firebaseAuth, credential);
+        firebaseIdToken = await fbResult.user.getIdToken();
+        fbUid = fbResult.user.uid;
+      } else {
+        // Web: use Firebase popup
+        const provider = new FacebookAuthProvider();
+        provider.addScope('email');
+        try {
+          const result = await signInWithPopup(firebaseAuth, provider);
+          firebaseIdToken = await result.user.getIdToken();
+          fbUid = result.user.uid;
+        } catch (popupErr: any) {
+          if (popupErr.code === 'auth/popup-closed-by-user') {
+            return { success: false, message: 'Giriş iptal edildi' };
+          }
+          if (
+            popupErr.code === 'auth/popup-blocked' ||
+            popupErr.code === 'auth/cancelled-popup-request' ||
+            popupErr.code === 'auth/web-storage-unsupported'
+          ) {
+            await signInWithRedirect(firebaseAuth, provider);
+            return { success: true };
+          }
+          throw popupErr;
+        }
+      }
+
+      const { data } = await api.post('/auth/facebook', { idToken: firebaseIdToken });
+      localStorage.setItem('hasatlink_token', data.token);
+      setToken(data.token);
+      setUser(data.user);
+      setFirebaseUid(fbUid);
+      return { success: true };
+    } catch (err: any) {
+      console.error('Facebook login error:', err.code || err.message, err);
+      if (err.code === 'auth/popup-closed-by-user' || err.message?.includes('canceled')) {
+        return { success: false, message: 'Giriş iptal edildi' };
+      }
+      return { success: false, message: err.response?.data?.message || 'Facebook giriş hatası' };
+    }
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('hasatlink_token');
     setToken(null);
@@ -229,7 +389,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, firebaseUid, login, register, loginWithGoogle, logout, updateUserData }}>
+    <AuthContext.Provider value={{ user, token, loading, firebaseUid, login, register, loginWithGoogle, loginWithApple, loginWithFacebook, logout, updateUserData }}>
       {children}
     </AuthContext.Provider>
   );

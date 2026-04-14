@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, googleLogin, getMe, getUser, updateUser, getUserStats, updateAccount, toggleFavorite, getFavorites, requestAccountDeletion, cancelAccountDeletion } from '../controllers/userController';
+import { register, login, googleLogin, appleLogin, facebookLogin, getMe, getUser, updateUser, getUserStats, updateAccount, toggleFavorite, getFavorites, requestAccountDeletion, cancelAccountDeletion } from '../controllers/userController';
 import auth from '../middleware/auth';
 import { authRateLimit } from '../middleware/rateLimit';
 
@@ -9,6 +9,8 @@ const router = Router();
 router.post('/auth/register', authRateLimit, register);
 router.post('/auth/login', authRateLimit, login);
 router.post('/auth/google', authRateLimit, googleLogin);
+router.post('/auth/apple', authRateLimit, appleLogin);
+router.post('/auth/facebook', authRateLimit, facebookLogin);
 router.get('/auth/me', auth, getMe);
 router.put('/auth/account', auth, updateAccount);
 router.delete('/auth/account', auth, requestAccountDeletion);

@@ -52,5 +52,33 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<!--
+	  Facebook Login configuration.
+	  Replace the REPLACE_WITH_FACEBOOK_APP_ID placeholders with a real App ID
+	  from https://developers.facebook.com/apps/ before enabling VITE_ENABLE_FACEBOOK_LOGIN.
+	  The URL scheme must be literally "fb<APP_ID>".
+	-->
+	<key>FacebookAppID</key>
+	<string>REPLACE_WITH_FACEBOOK_APP_ID</string>
+	<key>FacebookClientToken</key>
+	<string>REPLACE_WITH_FACEBOOK_CLIENT_TOKEN</string>
+	<key>FacebookDisplayName</key>
+	<string>HasatLink</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fbREPLACE_WITH_FACEBOOK_APP_ID</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fbapi</string>
+		<string>fb-messenger-share-api</string>
+	</array>
 </dict>
 </plist>

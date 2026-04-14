@@ -131,19 +131,39 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-export const googleLogin = async (req: Request, res: Response): Promise<void> => {
+// Provider-agnostic Firebase login handler.
+// Verifies a Firebase ID token (obtained via any OAuth provider: google, apple, facebook, ...)
+// and upserts the user, issuing our own JWT.
+export const firebaseLogin = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { idToken } = req.body;
+    const { idToken, appleFallbackName, appleFallbackEmail } = req.body;
     if (!idToken) {
       res.status(400).json({ message: 'Firebase token gerekli' });
       return;
     }
 
     const decoded = await admin.auth().verifyIdToken(idToken);
-    const { uid, email, name, picture } = decoded;
+    const { uid, picture } = decoded;
+    // Firebase surfaces Apple private-relay or verified emails the same way.
+    let { email, name } = decoded as { email?: string; name?: string };
+
+    // Apple only returns the user's name on the FIRST Sign in with Apple.
+    // The client forwards it as `appleFallbackName` so we can store it.
+    if (!name && appleFallbackName) name = appleFallbackName;
+    if (!email && appleFallbackEmail) email = appleFallbackEmail;
+
+    // Map Firebase sign_in_provider -> our authProvider enum
+    const signInProvider: string = (decoded as any).firebase?.sign_in_provider || 'password';
+    const providerMap: Record<string, string> = {
+      'google.com': 'google',
+      'apple.com': 'apple',
+      'facebook.com': 'facebook',
+      'password': 'email',
+    };
+    const authProvider = providerMap[signInProvider] || 'email';
 
     if (!email) {
-      res.status(400).json({ message: 'Google hesabında email bulunamadı' });
+      res.status(400).json({ message: 'Hesapta email bulunamadı' });
       return;
     }
 
@@ -156,17 +176,22 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
         name: name || email.split('@')[0],
         email,
         profileImage: picture || '',
-        authProvider: 'google',
+        authProvider,
         firebaseUid: uid,
         isVerified: true,
       });
     } else {
+      let dirty = false;
       if (!user.firebaseUid) {
         user.firebaseUid = uid;
-        user.authProvider = 'google';
-        if (picture && !user.profileImage) user.profileImage = picture;
-        await user.save();
+        user.authProvider = authProvider;
+        dirty = true;
       }
+      if (picture && !user.profileImage) {
+        user.profileImage = picture;
+        dirty = true;
+      }
+      if (dirty) await user.save();
     }
 
     const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET!, { expiresIn: '30d' });
@@ -185,9 +210,14 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
       },
     });
   } catch (error) {
-    res.status(401).json({ message: 'Google giriş hatası', error });
+    res.status(401).json({ message: 'Giriş hatası', error });
   }
 };
+
+// Backward-compatible alias so existing /auth/google route and tests keep working.
+export const googleLogin = firebaseLogin;
+export const appleLogin = firebaseLogin;
+export const facebookLogin = firebaseLogin;
 
 export const getUserStats = async (req: Request, res: Response): Promise<void> => {
   try {
