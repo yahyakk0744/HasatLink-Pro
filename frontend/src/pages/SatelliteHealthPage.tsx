@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Satellite, MapPin, Scan, Loader2, Leaf, TrendingUp,
-  AlertTriangle, CheckCircle, XCircle, Droplets, Cloud, CloudOff, Eye,
+  AlertTriangle, CheckCircle, XCircle, Droplets, Cloud,
   Search, LocateFixed, Minus, Plus, Pencil, Trash2, RotateCcw, Database,
   Maximize2, Ruler,
 } from 'lucide-react';
@@ -277,226 +277,7 @@ function HealthCard({ status, color, ndvi, trend }: { status: string; color: str
   );
 }
 
-/* ─── Satellite Image Gallery (Copernicus/Sentinel-2) ─── */
-
-type ImageLayer = 'trueColor' | 'ndvi' | 'falseColor';
-const LAYER_LABELS: Record<ImageLayer, { tr: string; en: string }> = {
-  trueColor: { tr: 'Gerçek Renk', en: 'True Color' },
-  ndvi: { tr: 'Bitki Sağlığı (NDVI)', en: 'Vegetation (NDVI)' },
-  falseColor: { tr: 'Yakın Kızılötesi', en: 'Near Infrared' },
-};
-
-function SatelliteImageGallery({ renderedImages, scenes, timelineImages, clearCount, totalCount, lang }: {
-  renderedImages: { trueColor?: string; ndvi?: string; falseColor?: string };
-  scenes: { dt: number; date: string; cloudCoverage: number; platform: string }[];
-  timelineImages: { dt: number; date: string; cloudCoverage: number; image: string }[];
-  clearCount: number; totalCount: number; lang: 'tr' | 'en';
-}) {
-  const [activeLayer, setActiveLayer] = useState<ImageLayer>('trueColor');
-  const [fullscreen, setFullscreen] = useState(false);
-  const [selectedTimelineIdx, setSelectedTimelineIdx] = useState<number>(-1);
-
-  const availableLayers = (['trueColor', 'ndvi', 'falseColor'] as ImageLayer[]).filter(l => renderedImages[l]);
-  // Ana goruntu: timeline secimi trueColor tab'ini ezecek sekilde
-  const currentUrl = (activeLayer === 'trueColor' && selectedTimelineIdx >= 0 && timelineImages[selectedTimelineIdx])
-    ? timelineImages[selectedTimelineIdx].image
-    : (renderedImages[activeLayer] || renderedImages.trueColor || '');
-
-  const selectedDate = (activeLayer === 'trueColor' && selectedTimelineIdx >= 0 && timelineImages[selectedTimelineIdx])
-    ? timelineImages[selectedTimelineIdx].date
-    : null;
-
-  if (!currentUrl) return null;
-
-  return (
-    <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden">
-      {/* Header */}
-      <div className="px-4 pt-4 pb-3">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Satellite size={16} className="text-violet-500" />
-            <h3 className="text-[13px] font-semibold">{lang === 'tr' ? 'NDVI & Bitki Analizi' : 'NDVI & Vegetation Analysis'}</h3>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-medium">
-              Sentinel-2 · 10m
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px]">
-            {clearCount > 0 ? (
-              <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                <CloudOff size={12} /> {clearCount} {lang === 'tr' ? 'temiz' : 'clear'}
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 text-amber-600 font-medium">
-                <Cloud size={12} /> {lang === 'tr' ? 'Bulutlu dönem' : 'Cloudy period'}
-              </span>
-            )}
-            <span className="text-[var(--text-tertiary)]">/ {totalCount}</span>
-          </div>
-        </div>
-
-        {/* Layer tabs */}
-        <div className="flex gap-1 p-0.5 bg-[var(--bg-input)] rounded-xl">
-          {availableLayers.map(layer => (
-            <button
-              key={layer}
-              onClick={() => setActiveLayer(layer)}
-              className={`flex-1 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
-                activeLayer === layer
-                  ? 'bg-white text-[var(--text-primary)] shadow-sm'
-                  : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
-              }`}
-            >
-              {LAYER_LABELS[layer][lang]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Main rendered image */}
-      <div className="relative mx-4 mb-3">
-        <div
-          className="relative rounded-xl overflow-hidden border border-[var(--border-default)] cursor-pointer group"
-          onClick={() => setFullscreen(true)}
-        >
-          <img
-            src={currentUrl}
-            alt={LAYER_LABELS[activeLayer][lang]}
-            className="w-full aspect-square object-cover bg-gray-900"
-          />
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 pt-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-white text-[13px] font-semibold">
-                  {LAYER_LABELS[activeLayer][lang]}
-                  {selectedDate && (
-                    <span className="ml-2 text-[11px] font-normal text-emerald-300">· {selectedDate}</span>
-                  )}
-                </p>
-                <p className="text-white/70 text-[11px]">
-                  {selectedDate
-                    ? `Sentinel-2 L2A — ${lang === 'tr' ? 'bu tarihteki görüntü' : 'image on this date'}`
-                    : `Sentinel-2 L2A — ${lang === 'tr' ? 'en net birleşik görüntü (son 30 gün)' : 'clearest composite (last 30 days)'}`
-                  }
-                </p>
-              </div>
-              <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Eye size={14} className="text-white" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Timeline thumbnail grid — gercek uydu goruntuleri */}
-      {timelineImages.length > 0 && activeLayer === 'trueColor' && (
-        <div className="px-4 pb-3">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
-              {lang === 'tr' ? `Uydu Zaman Çizelgesi (${timelineImages.length} görüntü)` : `Satellite Timeline (${timelineImages.length} images)`}
-            </p>
-            {selectedTimelineIdx >= 0 && (
-              <button
-                onClick={() => setSelectedTimelineIdx(-1)}
-                className="text-[10px] font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
-              >
-                <RotateCcw size={10} /> {lang === 'tr' ? 'Birleşik' : 'Composite'}
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-4 gap-1.5">
-            {timelineImages.map((img, i) => {
-              const isActive = selectedTimelineIdx === i;
-              const cloudColor = img.cloudCoverage < 20 ? 'text-emerald-300' : img.cloudCoverage < 50 ? 'text-amber-300' : 'text-red-300';
-              return (
-                <button
-                  key={i}
-                  onClick={() => setSelectedTimelineIdx(isActive ? -1 : i)}
-                  className={`relative aspect-square rounded-lg overflow-hidden transition-all group ${
-                    isActive
-                      ? 'ring-2 ring-emerald-500 ring-offset-1 ring-offset-[var(--bg-surface)] scale-[0.97]'
-                      : 'ring-1 ring-[var(--border-default)] hover:ring-emerald-400 hover:scale-[0.98]'
-                  }`}
-                  title={`${img.date} · %${Math.round(img.cloudCoverage)} bulut`}
-                >
-                  <img src={img.image} alt={img.date} className="w-full h-full object-cover bg-gray-900" />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1">
-                    <p className="text-white text-[9px] font-semibold leading-tight">{img.date.slice(5)}</p>
-                    <p className={`text-[8px] font-medium leading-tight ${cloudColor}`}>
-                      ☁ %{Math.round(img.cloudCoverage)}
-                    </p>
-                  </div>
-                  {isActive && (
-                    <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center">
-                      <CheckCircle size={10} className="text-white" />
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Scene list — fallback icin sadece timeline image yoksa */}
-      {timelineImages.length === 0 && scenes.length > 0 && (
-        <div className="px-4 pb-3">
-          <p className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-2">
-            {lang === 'tr' ? 'Mevcut Gecisler' : 'Available Passes'} ({scenes.length})
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {scenes.map((scene, i) => (
-              <div key={i} className="shrink-0 px-2.5 py-1.5 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)]">
-                <p className="text-[11px] font-medium text-[var(--text-primary)]">{scene.date}</p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className={`flex items-center gap-0.5 text-[9px] font-medium ${
-                    scene.cloudCoverage < 20 ? 'text-emerald-600' : scene.cloudCoverage < 50 ? 'text-amber-600' : 'text-red-500'
-                  }`}>
-                    <Cloud size={8} /> %{Math.round(scene.cloudCoverage)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Fullscreen modal */}
-      {fullscreen && (
-        <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center" onClick={() => setFullscreen(false)}>
-          <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors z-10">
-            <XCircle size={24} />
-          </button>
-          <div className="absolute top-4 left-4 text-white z-10">
-            <p className="text-[15px] font-semibold">
-              {LAYER_LABELS[activeLayer][lang]}
-              {selectedDate && <span className="ml-2 text-[12px] font-normal text-emerald-300">· {selectedDate}</span>}
-            </p>
-            <p className="text-[12px] text-white/60">Copernicus Sentinel-2 L2A</p>
-          </div>
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1 p-1 bg-white/10 backdrop-blur-sm rounded-xl z-10">
-            {availableLayers.map(layer => (
-              <button
-                key={layer}
-                onClick={(e) => { e.stopPropagation(); setActiveLayer(layer); }}
-                className={`px-3 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
-                  activeLayer === layer ? 'bg-white text-black' : 'text-white/70 hover:text-white'
-                }`}
-              >
-                {LAYER_LABELS[layer][lang]}
-              </button>
-            ))}
-          </div>
-          <img
-            src={currentUrl}
-            alt=""
-            className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
+/* ─── NDVI & Bitki Analizi gallery kaldirildi — Google Uydu gorunumu kullaniyoruz ─── */
 
 /* ─── Field Satellite View (High-Res Esri imagery) ─── */
 
@@ -517,7 +298,6 @@ function FieldSatelliteView({ polygon, area, lang }: {
   lang: 'tr' | 'en';
 }) {
   const [fullscreen, setFullscreen] = useState(false);
-  const [mapType, setMapType] = useState<'esri' | 'google'>('esri');
 
   if (!polygon || polygon.length < 3) return null;
 
@@ -537,28 +317,13 @@ function FieldSatelliteView({ polygon, area, lang }: {
         zoomControl={false}
         attributionControl={false}
       >
-        {mapType === 'esri' ? (
-          <>
-            <TileLayer
-              attribution='&copy; Esri World Imagery'
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              maxZoom={19}
-              maxNativeZoom={19}
-            />
-            {/* Yol etiketleri (semi-transparent) */}
-            <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-              opacity={0.6}
-            />
-          </>
-        ) : (
-          <TileLayer
-            attribution='&copy; Google'
-            url="https://mt1.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}"
-            maxZoom={20}
-            maxNativeZoom={20}
-          />
-        )}
+        {/* Google Hybrid (satellite + street labels) — lyrs=y gunduz uydu goruntusu */}
+        <TileLayer
+          attribution='&copy; Google'
+          url="https://mt1.google.com/vt/lyrs=y&hl=tr&x={x}&y={y}&z={z}"
+          maxZoom={20}
+          maxNativeZoom={20}
+        />
 
         {/* Polygon + vertices */}
         <LeafletPolygon
@@ -588,21 +353,11 @@ function FieldSatelliteView({ polygon, area, lang }: {
         <MapZoomControls />
       </MapContainer>
 
-      {/* Map source toggle */}
+      {/* Kaynak badge */}
       <div className="absolute top-3 left-3 z-[1000]">
-        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 flex overflow-hidden text-[11px] font-semibold">
-          <button
-            onClick={() => setMapType('esri')}
-            className={`px-3 py-1.5 transition-colors ${mapType === 'esri' ? 'bg-emerald-500 text-white' : 'text-gray-700 hover:bg-gray-50'}`}
-          >
-            Esri
-          </button>
-          <button
-            onClick={() => setMapType('google')}
-            className={`px-3 py-1.5 transition-colors ${mapType === 'google' ? 'bg-emerald-500 text-white' : 'text-gray-700 hover:bg-gray-50'}`}
-          >
-            Google
-          </button>
+        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 px-3 py-1.5 text-[11px] font-semibold text-gray-700 flex items-center gap-1.5">
+          <Satellite size={11} className="text-emerald-500" />
+          Google Uydu
         </div>
       </div>
 
@@ -1113,16 +868,6 @@ export default function SatelliteHealthPage() {
             </div>
           </div>
 
-          {analysis.renderedImages && Object.keys(analysis.renderedImages).length > 0 && (
-            <SatelliteImageGallery
-              renderedImages={analysis.renderedImages}
-              scenes={analysis.images}
-              timelineImages={analysis.timelineImages || []}
-              clearCount={analysis.clearImageCount}
-              totalCount={analysis.totalImageCount}
-              lang={lang}
-            />
-          )}
 
           <div className="grid grid-cols-3 gap-2.5">
             <div className="rounded-xl bg-emerald-50 border border-emerald-200/50 p-3 text-center">
