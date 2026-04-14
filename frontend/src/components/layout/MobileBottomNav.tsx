@@ -22,7 +22,7 @@ export default function MobileBottomNav() {
           {({ isActive }) => (
             <>
               <Home size={20} />
-              <span className="text-[9px] font-medium uppercase">{t('welcome').split("'")[0] || 'Ana Sayfa'}</span>
+              <span className="text-[9px] font-medium uppercase">{t('home')}</span>
               {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[var(--accent-green)]" />}
             </>
           )}

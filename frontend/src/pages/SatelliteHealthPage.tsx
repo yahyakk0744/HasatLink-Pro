@@ -45,11 +45,11 @@ function MapZoomControls() {
   const map = useMap();
   return (
     <div className="absolute bottom-3 right-3 z-[1000] flex flex-col gap-1">
-      <button onClick={() => map.zoomIn()} className="w-9 h-9 bg-white rounded-xl shadow-md flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all">
-        <Plus size={16} className="text-gray-700" />
+      <button onClick={() => map.zoomIn()} className="w-9 h-9 bg-[var(--bg-surface)] rounded-xl shadow-md flex items-center justify-center hover:bg-[var(--bg-surface-hover)] active:scale-95 transition-all">
+        <Plus size={16} className="text-[var(--text-primary)]" />
       </button>
-      <button onClick={() => map.zoomOut()} className="w-9 h-9 bg-white rounded-xl shadow-md flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all">
-        <Minus size={16} className="text-gray-700" />
+      <button onClick={() => map.zoomOut()} className="w-9 h-9 bg-[var(--bg-surface)] rounded-xl shadow-md flex items-center justify-center hover:bg-[var(--bg-surface-hover)] active:scale-95 transition-all">
+        <Minus size={16} className="text-[var(--text-primary)]" />
       </button>
     </div>
   );
@@ -126,7 +126,7 @@ function NDVIChart({ history }: { history: NDVIDataPoint[] }) {
             </defs>
             {/* Grid lines */}
             {[0.2, 0.4, 0.6, 0.8].map(v => (
-              <line key={v} x1="0" x2="100" y1={toY(v)} y2={toY(v)} stroke="currentColor" className="text-gray-200" strokeWidth="0.3" strokeDasharray="2,2" />
+              <line key={v} x1="0" x2="100" y1={toY(v)} y2={toY(v)} stroke="currentColor" className="text-gray-200 dark:text-white/10" strokeWidth="0.3" strokeDasharray="2,2" />
             ))}
             {/* Min-Max band */}
             <path d={bandPath} fill="#d1fae5" opacity="0.7" />
@@ -357,7 +357,7 @@ function FieldSatelliteView({ polygon, area, lang }: {
 
       {/* Kaynak badge */}
       <div className="absolute top-3 left-3 z-[1000]">
-        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 px-3 py-1.5 text-[11px] font-semibold text-gray-700 flex items-center gap-1.5">
+        <div className="bg-[var(--bg-surface)]/95 backdrop-blur-sm rounded-xl shadow-lg border border-[var(--border-subtle)] px-3 py-1.5 text-[11px] font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
           <Satellite size={11} className="text-emerald-500" />
           Google Uydu
         </div>
@@ -471,20 +471,20 @@ function AnalysisLoader() {
             <div
               key={i}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-500 ${
-                active ? 'bg-indigo-100/80 scale-[1.01]' : done ? 'bg-white/40' : 'opacity-40'
+                active ? 'bg-indigo-100/80 dark:bg-indigo-500/20 scale-[1.01]' : done ? 'bg-white/40 dark:bg-white/5' : 'opacity-40'
               }`}
             >
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                done ? 'bg-emerald-100' : active ? 'bg-indigo-100' : 'bg-gray-100'
+                done ? 'bg-emerald-100 dark:bg-emerald-500/20' : active ? 'bg-indigo-100 dark:bg-indigo-500/30' : 'bg-gray-100 dark:bg-white/10'
               }`}>
                 {done
-                  ? <CheckCircle size={15} className="text-emerald-600" />
+                  ? <CheckCircle size={15} className="text-emerald-600 dark:text-emerald-400" />
                   : active
-                    ? <Loader2 size={15} className="text-indigo-600 animate-spin" />
-                    : <Icon size={15} className="text-gray-400" />
+                    ? <Loader2 size={15} className="text-indigo-600 dark:text-indigo-300 animate-spin" />
+                    : <Icon size={15} className="text-gray-400 dark:text-gray-500" />
                 }
               </div>
-              <span className={`text-[12px] font-medium ${active ? 'text-indigo-800' : done ? 'text-gray-500' : 'text-gray-400'}`}>
+              <span className={`text-[12px] font-medium ${active ? 'text-indigo-800 dark:text-indigo-200' : done ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-500'}`}>
                 {step.label}
               </span>
               {done && <CheckCircle size={13} className="text-emerald-500 ml-auto" />}
@@ -730,7 +730,7 @@ export default function SatelliteHealthPage() {
           {/* Map Type Toggle */}
           <div className="absolute top-3 right-3 z-[1000]">
             <button onClick={() => setMapType(t => t === 'satellite' ? 'street' : 'satellite')}
-              className="bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg border border-gray-200/50 text-[11px] font-semibold text-gray-700 hover:bg-white transition-colors flex items-center gap-1.5">
+              className="bg-[var(--bg-surface)]/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg border border-[var(--border-subtle)] text-[11px] font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors flex items-center gap-1.5">
               {mapType === 'satellite' ? <><MapPin size={12} /> Harita</> : <><Satellite size={12} /> Uydu</>}
             </button>
           </div>
@@ -782,7 +782,7 @@ export default function SatelliteHealthPage() {
                   {lang === 'tr' ? 'Çizimi Tamamla' : 'Finish Drawing'}
                 </button>
                 <button onClick={handleUndoPoint} disabled={polygonPoints.length === 0}
-                  className="px-4 py-2.5 rounded-xl bg-gray-200 text-gray-700 font-medium text-[13px] flex items-center gap-1.5 hover:bg-gray-300 transition-colors disabled:opacity-50">
+                  className="px-4 py-2.5 rounded-xl bg-[var(--bg-input)] text-[var(--text-primary)] font-medium text-[13px] flex items-center gap-1.5 hover:bg-[var(--bg-surface-hover)] transition-colors disabled:opacity-50">
                   <RotateCcw size={14} />
                 </button>
                 <button onClick={handleClearDraw}
@@ -802,7 +802,7 @@ export default function SatelliteHealthPage() {
                   )}
                 </button>
                 <button onClick={handleClearDraw}
-                  className="px-4 py-2.5 rounded-xl bg-gray-200 text-gray-700 font-medium text-[13px] flex items-center gap-1.5 hover:bg-gray-300 transition-colors">
+                  className="px-4 py-2.5 rounded-xl bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400 font-medium text-[13px] flex items-center gap-1.5 hover:bg-red-200 dark:hover:bg-red-500/25 transition-colors">
                   <Trash2 size={14} />
                   <span className="hidden sm:inline">{lang === 'tr' ? 'Sil' : 'Clear'}</span>
                 </button>
