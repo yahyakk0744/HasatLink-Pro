@@ -47,9 +47,27 @@ workflows:
         script: |
           cd frontend
           xcode-project use-profiles --project ios/App/App.xcodeproj
-      - name: Build IPA
+      - name: Build IPA (with diagnostics)
         script: |
+          set -ex
           cd frontend
+          echo "=== PWD ==="
+          pwd
+          echo "=== ios/App contents ==="
+          ls -la ios/App/
+          echo "=== App.entitlements check ==="
+          cat ios/App/App/App.entitlements
+          echo "=== Package.swift (after cap sync) ==="
+          cat ios/App/CapApp-SPM/Package.swift
+          echo "=== node_modules capacitor-community ==="
+          ls -la node_modules/@capacitor-community/ || echo "MISSING"
+          echo "=== apple-sign-in ios dir ==="
+          ls -la node_modules/@capacitor-community/apple-sign-in/ios/ || echo "MISSING"
+          echo "=== facebook-login ios dir ==="
+          ls -la node_modules/@capacitor-community/facebook-login/ios/ || echo "MISSING"
+          echo "=== xcodebuild showBuildSettings (full stderr) ==="
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -showBuildSettings 2>&1 | tail -80 || echo "showBuildSettings FAILED with exit $?"
+          echo "=== Running xcode-project build-ipa ==="
           xcode-project build-ipa \
             --project ios/App/App.xcodeproj \
             --scheme App \
