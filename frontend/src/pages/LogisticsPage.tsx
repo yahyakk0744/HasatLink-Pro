@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import {
   Truck, MapPin, Calculator, Search, Clock, Tag,
-  Navigation, MousePointerClick,
+  Navigation, MousePointerClick, Route as RouteIcon, Fuel, AlertCircle, Gauge, TrendingUp,
 } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline as LeafletPolyline, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import api from '../config/api';
 import SEO from '../components/ui/SEO';
@@ -237,13 +237,107 @@ function MapClickHandler({ selecting, onSelect }: {
   return null;
 }
 
+/* ── Real routing via OSRM (Open Source Routing Machine) ── */
+
+type VehicleClass = 1 | 2 | 3;
+// HGS tahmini (TL/km) — Turkiye otoyol ortalama tarife (2026 civari)
+const TOLL_RATES: Record<VehicleClass, number> = {
+  1: 0.55, // Binek otomobil
+  2: 0.95, // Kamyonet / pikap
+  3: 1.45, // Kamyon / tarim araci (2 dingil ustu)
+};
+const VEHICLE_LABELS: Record<VehicleClass, string> = {
+  1: 'Otomobil',
+  2: 'Kamyonet',
+  3: 'Kamyon',
+};
+
+// Yakıt tüketimi tahmini (litre/100km)
+const FUEL_CONSUMPTION: Record<VehicleClass, number> = {
+  1: 7,
+  2: 12,
+  3: 28,
+};
+const DEFAULT_DIESEL_PRICE = 42; // TL/litre (kullanici degistirebilir)
+
+// Turkiye otoyol referanslari (OSRM step.ref alaninda gelir: "O-1", "O 21", "TEM" vb.)
+const TR_TOLL_REF_RE = /^\s*(O[-\s]?\d+|TEM|AOYM)\b/i;
+
+interface RouteOption {
+  idx: number;
+  distanceKm: number;      // Gerçek yol km
+  durationMin: number;     // Dakika
+  tollKm: number;          // Otoyol üzerinde geçilen km
+  estimatedToll: number;   // TL
+  geometry: [number, number][]; // Leaflet [lat,lng] polyline
+  label: string;           // "En hızlı", "Alternatif 1" vb.
+}
+
+async function fetchRoutes(from: [number, number], to: [number, number]): Promise<RouteOption[]> {
+  // OSRM public API — ucretsiz, auth yok
+  const url = `https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?alternatives=3&overview=full&steps=true&geometries=geojson&annotations=false`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Rota servisi yanit vermedi');
+  const data = await res.json();
+  if (data.code !== 'Ok' || !Array.isArray(data.routes) || data.routes.length === 0) {
+    throw new Error(data.message || 'Bu noktalar arasinda rota bulunamadi');
+  }
+  return data.routes.map((route: any, idx: number): RouteOption => {
+    // Otoban km'sini adim adim hesapla
+    let tollMeters = 0;
+    for (const leg of route.legs || []) {
+      for (const step of leg.steps || []) {
+        const ref = step.ref || '';
+        if (TR_TOLL_REF_RE.test(ref)) {
+          tollMeters += step.distance || 0;
+        }
+      }
+    }
+    const geometry: [number, number][] = (route.geometry?.coordinates || []).map(
+      (c: [number, number]) => [c[1], c[0]]
+    );
+    return {
+      idx,
+      distanceKm: route.distance / 1000,
+      durationMin: route.duration / 60,
+      tollKm: tollMeters / 1000,
+      estimatedToll: 0, // aşağıda hesaplanir
+      geometry,
+      label: idx === 0 ? 'En Hizli' : `Alternatif ${idx}`,
+    };
+  });
+}
+
+function formatDuration(totalMin: number): string {
+  const h = Math.floor(totalMin / 60);
+  const m = Math.round(totalMin % 60);
+  if (h === 0) return `${m} dk`;
+  return `${h} sa ${m} dk`;
+}
+
+/* ── Rota cizimi: harita bounds'i otomatik ayarla ── */
+function FitBoundsToRoute({ geometry }: { geometry: [number, number][] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!geometry || geometry.length < 2) return;
+    const bounds = L.latLngBounds(geometry.map(([lat, lng]) => [lat, lng] as [number, number]));
+    map.fitBounds(bounds, { padding: [30, 30] });
+  }, [map, geometry]);
+  return null;
+}
+
 /* ── Distance Calculator Modal ── */
 function DistanceCalcModal({ onClose }: { onClose: () => void }) {
   const [coords, setCoords] = useState({ fromLat: 0, fromLng: 0, toLat: 0, toLng: 0 });
   const [fromLabel, setFromLabel] = useState('');
   const [toLabel, setToLabel] = useState('');
   const [pricePerKm, setPricePerKm] = useState('25');
-  const [result, setResult] = useState<{ distanceKm: number; estimatedPrice: number } | null>(null);
+  const [dieselPrice, setDieselPrice] = useState(String(DEFAULT_DIESEL_PRICE));
+  const [vehicleClass, setVehicleClass] = useState<VehicleClass>(3); // Varsayılan: kamyon (tarım)
+  const [routes, setRoutes] = useState<RouteOption[]>([]);
+  const [selectedRouteIdx, setSelectedRouteIdx] = useState<number>(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'search' | 'map'>('search');
   const [selecting, setSelecting] = useState<'from' | 'to' | null>(null);
   const [geocoding, setGeocoding] = useState(false);
@@ -258,6 +352,21 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
     () => (coords.toLat ? [coords.toLat, coords.toLng] as [number, number] : null),
     [coords.toLat, coords.toLng]
   );
+
+  // Secili rota + HGS + yakit hesaplari (vehicleClass / dieselPrice / pricePerKm'ye reaktif)
+  const routesWithCosts = useMemo(() => {
+    const tollRate = TOLL_RATES[vehicleClass];
+    const fuelPerKm = (FUEL_CONSUMPTION[vehicleClass] / 100) * (parseFloat(dieselPrice) || DEFAULT_DIESEL_PRICE);
+    const laborPerKm = parseFloat(pricePerKm) || 0;
+    return routes.map(r => {
+      const toll = Math.round(r.tollKm * tollRate);
+      const fuel = Math.round(r.distanceKm * fuelPerKm);
+      const labor = Math.round(r.distanceKm * laborPerKm);
+      return { ...r, estimatedToll: toll, fuelCost: fuel, laborCost: labor, totalCost: toll + fuel + labor };
+    });
+  }, [routes, vehicleClass, dieselPrice, pricePerKm]);
+
+  const selectedRoute = routesWithCosts[selectedRouteIdx] || null;
 
   // Reverse geocode a latlng to address name
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
@@ -288,32 +397,41 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
     setGeocoding(false);
   };
 
-  const calculate = () => {
+  // Koordinatlar değişince rotaları temizle (tekrar hesaplama gerek)
+  useEffect(() => { setRoutes([]); setError(null); setSelectedRouteIdx(0); }, [coords]);
+
+  const calculate = async () => {
     if (!canCalc) return;
-    // Haversine formula — client-side, no backend needed
-    const toRad = (deg: number) => (deg * Math.PI) / 180;
-    const R = 6371; // Earth radius in km
-    const dLat = toRad(coords.toLat - coords.fromLat);
-    const dLng = toRad(coords.toLng - coords.fromLng);
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(coords.fromLat)) * Math.cos(toRad(coords.toLat)) * Math.sin(dLng / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distanceKm = Math.round(R * c);
-    const price = parseFloat(pricePerKm) || 25;
-    setResult({ distanceKm, estimatedPrice: distanceKm * price });
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchRoutes(
+        [coords.fromLat, coords.fromLng],
+        [coords.toLat, coords.toLng]
+      );
+      setRoutes(result);
+      setSelectedRouteIdx(0);
+    } catch (e: any) {
+      setError(e.message || 'Rota alinamadi');
+      setRoutes([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-lg bg-[var(--bg-surface)] rounded-2xl p-6 max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-2xl bg-[var(--bg-surface)] rounded-2xl p-6 max-h-[92vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-bold mb-1 flex items-center gap-2">
           <Calculator size={20} className="text-amber-500" />
           Mesafe ve Maliyet Hesaplayıcı
         </h2>
+        <p className="text-[11px] text-[var(--text-secondary)] mb-4 flex items-center gap-1">
+          <RouteIcon size={11} /> Gerçek yol rotası · HGS tahmini · Çoklu alternatif
+        </p>
 
         {/* Mode toggle */}
         <div className="flex gap-2 mb-4">
@@ -391,6 +509,21 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
                 <MapClickHandler selecting={selecting} onSelect={handleMapClick} />
                 {fromPos && <Marker position={fromPos} icon={greenIcon} />}
                 {toPos && <Marker position={toPos} icon={redIcon} />}
+                {/* Tüm alternatif rotalari cizgi olarak ciz — seçilmis rota vurgulu */}
+                {routesWithCosts.map((r, i) => (
+                  <LeafletPolyline
+                    key={r.idx}
+                    positions={r.geometry}
+                    pathOptions={{
+                      color: i === selectedRouteIdx ? '#2D6A4F' : '#9CA3AF',
+                      weight: i === selectedRouteIdx ? 5 : 3,
+                      opacity: i === selectedRouteIdx ? 0.95 : 0.5,
+                      dashArray: i === selectedRouteIdx ? undefined : '6,6',
+                    }}
+                    eventHandlers={{ click: () => setSelectedRouteIdx(i) }}
+                  />
+                ))}
+                {selectedRoute && <FitBoundsToRoute geometry={selectedRoute.geometry} />}
               </MapContainer>
             </div>
 
@@ -418,29 +551,174 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        {/* Price per km */}
-        <div className="mb-4">
-          <p className="text-xs text-[var(--text-secondary)] mb-1">Fiyat (₺/km)</p>
-          <input
-            type="number"
-            placeholder="25"
-            value={pricePerKm}
-            onChange={e => setPricePerKm(e.target.value)}
-            className="w-full px-4 py-3 bg-[var(--bg-input)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/30"
-          />
+        {/* Vehicle Class + Diesel Price + Labor Price */}
+        <div className="mb-4 p-3 bg-[var(--bg-input)]/50 rounded-2xl border border-[var(--border-default)]">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-1">
+            <Gauge size={12} /> Araç ve Maliyet Girdileri
+          </p>
+
+          {/* Vehicle class chips */}
+          <div className="flex gap-1.5 mb-3">
+            {([1, 2, 3] as VehicleClass[]).map(cls => (
+              <button
+                key={cls}
+                onClick={() => setVehicleClass(cls)}
+                className={`flex-1 px-2 py-2 rounded-xl text-[11px] font-semibold transition-all ${
+                  vehicleClass === cls
+                    ? 'bg-[#2D6A4F] text-white shadow-sm'
+                    : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-default)]'
+                }`}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <Truck size={11} />
+                  Sınıf {cls}
+                </div>
+                <div className="text-[9px] opacity-80 mt-0.5">{VEHICLE_LABELS[cls]}</div>
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">
+                Motorin (₺/L)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={dieselPrice}
+                onChange={e => setDieselPrice(e.target.value)}
+                className="w-full mt-1 px-3 py-2 bg-[var(--bg-surface)] rounded-xl text-sm border border-[var(--border-default)] focus:outline-none focus:border-[#2D6A4F]"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">
+                Nakliye (₺/km)
+              </label>
+              <input
+                type="number"
+                value={pricePerKm}
+                onChange={e => setPricePerKm(e.target.value)}
+                className="w-full mt-1 px-3 py-2 bg-[var(--bg-surface)] rounded-xl text-sm border border-[var(--border-default)] focus:outline-none focus:border-[#2D6A4F]"
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Result */}
-        {result && (
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="p-4 bg-green-500/10 rounded-xl text-center">
-              <p className="text-2xl font-bold text-green-600">{result.distanceKm} km</p>
-              <p className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] mt-1">Mesafe</p>
+        {/* Error */}
+        {error && (
+          <div className="mb-3 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-600 flex items-start gap-2">
+            <AlertCircle size={14} className="shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Route alternatives */}
+        {routesWithCosts.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-1">
+              <RouteIcon size={12} /> Rota Seçenekleri ({routesWithCosts.length})
+            </p>
+            <div className="space-y-2">
+              {routesWithCosts.map((r, i) => {
+                const isSelected = i === selectedRouteIdx;
+                return (
+                  <button
+                    key={r.idx}
+                    onClick={() => setSelectedRouteIdx(i)}
+                    className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? 'border-[#2D6A4F] bg-[#2D6A4F]/5'
+                        : 'border-[var(--border-default)] hover:border-[#2D6A4F]/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className={`text-[12px] font-bold ${isSelected ? 'text-[#2D6A4F]' : 'text-[var(--text-primary)]'}`}>
+                        {i === 0 && <TrendingUp size={11} className="inline mr-1" />}
+                        {r.label}
+                      </span>
+                      <span className="text-[11px] font-bold text-amber-600">
+                        {r.totalCost.toLocaleString('tr-TR')} ₺
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] text-[var(--text-secondary)] flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <RouteIcon size={10} />
+                        <b>{Math.round(r.distanceKm)}</b> km
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={10} />
+                        {formatDuration(r.durationMin)}
+                      </span>
+                      {r.tollKm > 1 && (
+                        <span className="flex items-center gap-1 text-purple-600">
+                          <Navigation size={10} />
+                          <b>{Math.round(r.tollKm)}</b> km otoyol
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-            <div className="p-4 bg-amber-500/10 rounded-xl text-center">
-              <p className="text-2xl font-bold text-amber-600">{result.estimatedPrice.toLocaleString('tr-TR')} ₺</p>
-              <p className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] mt-1">Tahmini Maliyet</p>
+          </div>
+        )}
+
+        {/* Selected route breakdown */}
+        {selectedRoute && (
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2">
+              Maliyet Dökümü ({selectedRoute.label})
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-3 bg-green-500/10 rounded-xl">
+                <div className="flex items-center gap-1 text-[10px] uppercase text-green-700 font-semibold tracking-wider">
+                  <RouteIcon size={10} /> Mesafe
+                </div>
+                <p className="text-xl font-bold text-green-600 mt-0.5">
+                  {Math.round(selectedRoute.distanceKm)} km
+                </p>
+                <p className="text-[9px] text-[var(--text-tertiary)]">
+                  {formatDuration(selectedRoute.durationMin)} · gerçek yol
+                </p>
+              </div>
+              <div className="p-3 bg-purple-500/10 rounded-xl">
+                <div className="flex items-center gap-1 text-[10px] uppercase text-purple-700 font-semibold tracking-wider">
+                  <Navigation size={10} /> HGS Otoyol
+                </div>
+                <p className="text-xl font-bold text-purple-600 mt-0.5">
+                  {selectedRoute.estimatedToll.toLocaleString('tr-TR')} ₺
+                </p>
+                <p className="text-[9px] text-[var(--text-tertiary)]">
+                  {Math.round(selectedRoute.tollKm)} km × {TOLL_RATES[vehicleClass]} ₺/km
+                </p>
+              </div>
+              <div className="p-3 bg-orange-500/10 rounded-xl">
+                <div className="flex items-center gap-1 text-[10px] uppercase text-orange-700 font-semibold tracking-wider">
+                  <Fuel size={10} /> Yakıt
+                </div>
+                <p className="text-xl font-bold text-orange-600 mt-0.5">
+                  {selectedRoute.fuelCost.toLocaleString('tr-TR')} ₺
+                </p>
+                <p className="text-[9px] text-[var(--text-tertiary)]">
+                  {FUEL_CONSUMPTION[vehicleClass]} L/100km × {dieselPrice} ₺
+                </p>
+              </div>
+              <div className="p-3 bg-amber-500/10 rounded-xl">
+                <div className="flex items-center gap-1 text-[10px] uppercase text-amber-700 font-semibold tracking-wider">
+                  <Calculator size={10} /> Toplam
+                </div>
+                <p className="text-xl font-bold text-amber-600 mt-0.5">
+                  {selectedRoute.totalCost.toLocaleString('tr-TR')} ₺
+                </p>
+                <p className="text-[9px] text-[var(--text-tertiary)]">
+                  HGS + yakıt + nakliye
+                </p>
+              </div>
             </div>
+            <p className="text-[9px] text-[var(--text-tertiary)] mt-2 italic">
+              * HGS ve yakıt tahminidir. Gerçek maliyet araç, yük ve güncel tarifeye göre değişebilir.
+            </p>
           </div>
         )}
 
@@ -454,10 +732,20 @@ function DistanceCalcModal({ onClose }: { onClose: () => void }) {
           </button>
           <button
             onClick={calculate}
-            disabled={!canCalc}
-            className="flex-1 px-4 py-3 bg-[#2D6A4F] text-white rounded-2xl text-sm font-semibold hover:bg-[#1B4332] transition-colors disabled:opacity-50"
+            disabled={!canCalc || loading}
+            className="flex-1 px-4 py-3 bg-[#2D6A4F] text-white rounded-2xl text-sm font-semibold hover:bg-[#1B4332] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            Hesapla
+            {loading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Rota aranıyor...
+              </>
+            ) : (
+              <>
+                <RouteIcon size={14} />
+                Gerçek Rotayı Hesapla
+              </>
+            )}
           </button>
         </div>
       </div>
