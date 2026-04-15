@@ -31,19 +31,35 @@ workflows:
           fi
 
           revoke_all_distribution_certs() {
-            echo "[signing] Listing existing Distribution certs…"
-            # Correct CLI is `app-store-connect certificates list --type=IOS_DISTRIBUTION`.
-            # (We had previously tried the non-existent `list-certificates --certificate-type`.)
-            # Dump raw JSON to a file so we can inspect if parsing fails.
-            if app-store-connect certificates list \
-                 --type=IOS_DISTRIBUTION \
-                 --json > /tmp/certs.json 2>/tmp/certs.err; then
-              echo "[signing] certificates list stdout:"; cat /tmp/certs.json
-            else
-              echo "[signing] certificates list FAILED:"; cat /tmp/certs.err
-              # Even on failure, stdout may still contain partial data worth scanning.
-              cat /tmp/certs.json 2>/dev/null || true
-            fi
+            echo "[signing] Listing existing Distribution certs (both IOS_DISTRIBUTION and DISTRIBUTION types)…"
+            # Apple uses two cert types for App Store distribution:
+            # - IOS_DISTRIBUTION (legacy, iOS-specific)
+            # - DISTRIBUTION (universal, newer default)
+            # fetch-signing-files queries both; our revoke must too.
+            echo '[]' > /tmp/certs.json
+            for cert_type in IOS_DISTRIBUTION DISTRIBUTION; do
+              if app-store-connect certificates list \
+                   --type=$cert_type \
+                   --json > /tmp/certs_$cert_type.json 2>/tmp/certs_$cert_type.err; then
+                echo "[signing] certs ($cert_type):"; cat /tmp/certs_$cert_type.json
+              else
+                echo "[signing] certs list ($cert_type) FAILED:"; cat /tmp/certs_$cert_type.err
+              fi
+            done
+            # Merge both JSON arrays into /tmp/certs.json via python
+            python3 - <<'PY' 2>/dev/null || true
+          import json
+          merged = []
+          for f in ('/tmp/certs_IOS_DISTRIBUTION.json', '/tmp/certs_DISTRIBUTION.json'):
+              try:
+                  with open(f) as fh:
+                      data = json.load(fh)
+                  if isinstance(data, list): merged.extend(data)
+              except Exception: pass
+          with open('/tmp/certs.json', 'w') as fh:
+              json.dump(merged, fh)
+          PY
+            echo "[signing] merged certs.json:"; cat /tmp/certs.json
 
             # Extract IDs via python with error tolerance. Apple cert IDs are 10 chars [A-Z0-9].
             CERT_IDS=$(python3 - <<'PY' 2>/dev/null || true
