@@ -94,6 +94,35 @@ workflows:
             done
           }
 
+          # Delete existing App Store profiles for this bundle ID so fetch-signing-files
+          # creates a fresh profile that includes current Bundle ID capabilities.
+          # Prior build failed with: "Provisioning profile doesn't include aps-environment
+          # entitlement" because push was enabled on the Bundle ID AFTER the profile
+          # was created. A stale profile won't auto-update; it must be regenerated.
+          echo "[signing] Deleting existing IOS_APP_STORE profiles so a fresh one is created with current capabilities…"
+          app-store-connect profiles list \
+            --bundle-id-identifier "$BUNDLE_ID" \
+            --profile-type IOS_APP_STORE \
+            --json > /tmp/profiles.json 2>/tmp/profiles.err || echo "[signing] profiles list failed: $(cat /tmp/profiles.err)"
+          cat /tmp/profiles.json 2>/dev/null || echo "[signing] no profiles.json"
+          PROFILE_IDS=$(python3 - <<'PY' 2>/dev/null || true
+          import json
+          try:
+              with open('/tmp/profiles.json') as fh:
+                  data = json.load(fh)
+              if isinstance(data, list):
+                  for p in data:
+                      pid = p.get('id') or p.get('Id')
+                      if pid: print(pid)
+          except Exception:
+              pass
+          PY
+          )
+          for pid in $PROFILE_IDS; do
+            echo "[signing] Deleting profile $pid"
+            app-store-connect profiles delete --ignore-not-found "$pid" || true
+          done
+
           # Primary attempt.
           if app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create; then
             echo "[signing] Primary fetch-signing-files succeeded."
