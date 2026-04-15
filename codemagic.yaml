@@ -84,6 +84,11 @@ workflows:
           else
             echo "[signing] Primary fetch-signing-files failed — attempting recovery."
             revoke_all_distribution_certs || true
+            # Apple API propagation delay after cert deletion: without this,
+            # POST /certificates returns 409 "You already have a current Distribution
+            # certificate or a pending certificate request." Wait ~90s.
+            echo "[signing] Waiting 90s for Apple API propagation…"
+            sleep 90
             echo "[signing] Retrying fetch-signing-files after revocation."
             app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           fi
