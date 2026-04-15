@@ -154,6 +154,37 @@ workflows:
           echo "=== xcodebuild showBuildSettings (full stderr) ==="
           xcodebuild -project ios/App/App.xcodeproj -scheme App -showBuildSettings 2>&1 | tail -80 || echo "showBuildSettings FAILED with exit $?"
           echo "=== Running xcode-project build-ipa ==="
+          # On failure, Codemagic's wrapper hides xcodebuild stderr; run archive
+          # directly first, piping output to a visible log, so Swift compile errors
+          # surface in Build IPA step output (not just the hidden xcodebuild_logs).
+          ARCHIVE_PATH="/tmp/HasatLink-$(date +%s).xcarchive"
+          set +e
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$ARCHIVE_PATH" \
+            archive \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            DEVELOPMENT_TEAM=PV6SSGBWY9 \
+            "CODE_SIGN_IDENTITY=Apple Distribution" \
+            CODE_SIGN_STYLE=Manual 2>&1 | tee /tmp/archive_full.log
+          ARCHIVE_EXIT=${PIPESTATUS[0]}
+          set -e
+          echo "=== Archive exit code: $ARCHIVE_EXIT ==="
+          if [ $ARCHIVE_EXIT -ne 0 ]; then
+            echo "=== ARCHIVE FAILED — dumping last 200 lines ==="
+            tail -200 /tmp/archive_full.log
+            echo "=== xcodebuild_logs contents ==="
+            ls -la /tmp/xcodebuild_logs/ 2>/dev/null || echo "no xcodebuild_logs dir"
+            for log in /tmp/xcodebuild_logs/*.log; do
+              [ -f "$log" ] || continue
+              echo "=== $log (last 100 lines) ==="
+              tail -100 "$log"
+            done
+            exit $ARCHIVE_EXIT
+          fi
+          echo "=== Archive succeeded — running build-ipa for IPA export ==="
           xcode-project build-ipa \
             --project ios/App/App.xcodeproj \
             --scheme App \
