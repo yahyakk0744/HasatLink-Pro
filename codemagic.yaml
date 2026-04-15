@@ -32,13 +32,17 @@ workflows:
 
           revoke_all_distribution_certs() {
             echo "[signing] Listing existing Distribution certs…"
+            # Correct CLI is `app-store-connect certificates list --type=IOS_DISTRIBUTION`.
+            # (We had previously tried the non-existent `list-certificates --certificate-type`.)
             # Dump raw JSON to a file so we can inspect if parsing fails.
-            if app-store-connect list-certificates \
-                 --certificate-type IOS_DISTRIBUTION \
+            if app-store-connect certificates list \
+                 --type=IOS_DISTRIBUTION \
                  --json > /tmp/certs.json 2>/tmp/certs.err; then
-              echo "[signing] list-certificates stdout:"; cat /tmp/certs.json
+              echo "[signing] certificates list stdout:"; cat /tmp/certs.json
             else
-              echo "[signing] list-certificates FAILED:"; cat /tmp/certs.err
+              echo "[signing] certificates list FAILED:"; cat /tmp/certs.err
+              # Even on failure, stdout may still contain partial data worth scanning.
+              cat /tmp/certs.json 2>/dev/null || true
             fi
 
             # Extract IDs via python with error tolerance. Apple cert IDs are 10 chars [A-Z0-9].
@@ -69,7 +73,8 @@ workflows:
 
             for cert_id in $CERT_IDS; do
               echo "[signing] Revoking cert $cert_id"
-              app-store-connect revoke-certificate "$cert_id" || true
+              # Correct CLI is `certificates delete` (not `revoke-certificate`).
+              app-store-connect certificates delete --ignore-not-found "$cert_id" || true
             done
           }
 
