@@ -18,35 +18,65 @@ import { checkFieldsForProfanity } from '../utils/profanityFilter';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, email, password, location, firebaseUid } = req.body;
+    const { name, email, password, location, firebaseUid } = req.body || {};
+    if (typeof name !== 'string' || !name.trim()) {
+      res.status(400).json({ message: 'İsim gereklidir' });
+      return;
+    }
+    if (typeof email !== 'string' || !email.trim() || !email.includes('@')) {
+      res.status(400).json({ message: 'Geçerli bir email adresi giriniz' });
+      return;
+    }
+    if (typeof password !== 'string' || password.length < 6) {
+      res.status(400).json({ message: 'Şifre en az 6 karakter olmalıdır' });
+      return;
+    }
+    const normalizedEmail = email.trim().toLowerCase();
     const profaneField = checkFieldsForProfanity({ name });
     if (profaneField) {
       ProfanityLog.create({ userId: '', field: profaneField, content: name?.substring(0, 200) || '', endpoint: 'register' }).catch(() => {});
       res.status(400).json({ message: 'Uygunsuz içerik tespit edildi, lütfen düzenleyin' });
       return;
     }
-    const existing = await User.findOne({ email });
+    // Case-insensitive duplicate check so we don't register the same address twice with different casing
+    const escapedEmail = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const existing = await User.findOne({ email: { $regex: `^${escapedEmail}$`, $options: 'i' } });
     if (existing) {
       res.status(400).json({ message: 'Bu email zaten kayıtlı' });
       return;
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const userId = 'user_' + Date.now();
-    const user = await User.create({ userId, name, email, password: hashedPassword, location: location || '', firebaseUid: firebaseUid || '' });
+    const user = await User.create({ userId, name: name.trim(), email: normalizedEmail, password: hashedPassword, location: location || '', firebaseUid: firebaseUid || '' });
     const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET!, { expiresIn: '30d' });
     res.status(201).json({ token, user: { userId: user.userId, username: user.username, name: user.name, email: user.email, location: user.location, profileImage: user.profileImage, averageRating: user.averageRating, firebaseUid: user.firebaseUid, role: user.role } });
   } catch (error) {
-    res.status(500).json({ message: 'Kayıt hatası', error });
+    console.error('[auth/register] error:', error);
+    res.status(500).json({ message: 'Kayıt sırasında sunucu hatası. Lütfen tekrar deneyin.' });
   }
 };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
-    // Allow login with email or username
-    const user = await User.findOne(
-      email.includes('@') ? { email } : { username: email }
-    );
+    const { email, password } = req.body || {};
+    if (typeof email !== 'string' || !email.trim()) {
+      res.status(400).json({ message: 'Email veya kullanıcı adı gereklidir' });
+      return;
+    }
+    if (typeof password !== 'string' || !password) {
+      res.status(400).json({ message: 'Şifre gereklidir' });
+      return;
+    }
+    const identifier = email.trim();
+    // Allow login with email (case-insensitive) or username
+    let user;
+    if (identifier.includes('@')) {
+      // Case-insensitive email lookup: old rows were stored with the casing the user typed.
+      const escaped = identifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      user = await User.findOne({ email: { $regex: `^${escaped}$`, $options: 'i' } });
+    } else {
+      user = await User.findOne({ username: identifier });
+    }
     if (!user) {
       res.status(400).json({ message: 'Email veya şifre hatalı' });
       return;
@@ -67,7 +97,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET!, { expiresIn: '30d' });
     res.json({ token, deletionWarning, user: { userId: user.userId, username: user.username, name: user.name, email: user.email, location: user.location, profileImage: user.profileImage, averageRating: user.averageRating, firebaseUid: user.firebaseUid, role: user.role, deletionScheduledAt: user.deletionScheduledAt } });
   } catch (error) {
-    res.status(500).json({ message: 'Giriş hatası', error });
+    console.error('[auth/login] error:', error);
+    res.status(500).json({ message: 'Giriş sırasında sunucu hatası. Lütfen tekrar deneyin.' });
   }
 };
 

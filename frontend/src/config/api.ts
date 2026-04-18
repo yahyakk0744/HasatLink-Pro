@@ -3,7 +3,15 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://hasatlink-api.onrender.com/api' : 'http://localhost:5000/api'),
   headers: { 'Content-Type': 'application/json' },
+  // Render free tier cold-start can take up to ~60s. Give the first request room.
+  timeout: 75000,
 });
+
+// Fire a fire-and-forget ping once on module load to warm up Render before the user hits login.
+if (typeof window !== 'undefined' && import.meta.env.PROD) {
+  const base = import.meta.env.VITE_API_URL || 'https://hasatlink-api.onrender.com/api';
+  fetch(`${base}/ping`, { method: 'GET', cache: 'no-store' }).catch(() => {});
+}
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('hasatlink_token');

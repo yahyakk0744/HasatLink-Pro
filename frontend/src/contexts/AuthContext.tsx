@@ -143,8 +143,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = useCallback(async (emailOrUsername: string, password: string) => {
     try {
-      // 1. Backend login first (validates credentials)
-      const { data } = await api.post('/auth/login', { email: emailOrUsername, password });
+      // 1. Backend login first (validates credentials).
+      //    Render free tier cold-start can take ~30-60s; if the first attempt times
+      //    out or returns a 5xx/network error, wait briefly and retry once so the
+      //    reviewer / user does not see a generic "Giriş hatası" during wake-up.
+      let data: any;
+      try {
+        ({ data } = await api.post('/auth/login', { email: emailOrUsername, password }));
+      } catch (firstErr: any) {
+        const status = firstErr?.response?.status;
+        const isNetworkOrColdStart = !firstErr?.response || (status >= 500 && status < 600) || firstErr?.code === 'ECONNABORTED';
+        if (!isNetworkOrColdStart) throw firstErr;
+        await new Promise((r) => setTimeout(r, 1500));
+        ({ data } = await api.post('/auth/login', { email: emailOrUsername, password }));
+      }
       localStorage.setItem('hasatlink_token', data.token);
       setToken(data.token);
       setUser(data.user);
@@ -180,7 +192,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setFirebaseUid(fbUid || null);
       return { success: true };
     } catch (err: any) {
-      return { success: false, message: err.response?.data?.message || 'Giriş hatası' };
+      const backendMsg = err?.response?.data?.message;
+      if (backendMsg) return { success: false, message: backendMsg };
+      if (err?.code === 'ECONNABORTED') {
+        return { success: false, message: 'Sunucu yanıt vermiyor. Lütfen birkaç saniye sonra tekrar deneyin.' };
+      }
+      if (!err?.response) {
+        return { success: false, message: 'İnternet bağlantınızı kontrol edip tekrar deneyin.' };
+      }
+      return { success: false, message: 'Giriş sırasında bir sorun oluştu. Lütfen tekrar deneyin.' };
     }
   }, []);
 
