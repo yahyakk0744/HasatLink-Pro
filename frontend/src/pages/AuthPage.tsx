@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import SEO from '../components/ui/SEO';
+import { API_ORIGIN } from '../config/api';
 
 export default function AuthPage() {
   const { t, i18n } = useTranslation();
@@ -21,17 +22,47 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [location, setLocation] = useState('');
+  const [progressMsg, setProgressMsg] = useState<string | null>(null);
+  const progressTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Facebook App ID must be configured in Meta Developer Console + capacitor.config
   // before the button can work. Env flag lets us hide it until credentials are wired up.
   const facebookEnabled = import.meta.env.VITE_ENABLE_FACEBOOK_LOGIN === 'true';
 
+  // Pre-warm the backend when the auth screen mounts. Render free-tier can
+  // take 30-60s to wake from sleep and Apple reviewers consistently saw the
+  // login fail because they tapped before the first real request landed.
+  useEffect(() => {
+    const base = API_ORIGIN.endsWith('/api') ? API_ORIGIN : `${API_ORIGIN}/api`;
+    fetch(`${base}/ping`, { method: 'GET', cache: 'no-store' }).catch(() => {});
+  }, []);
+
+  const clearProgressTimers = () => {
+    progressTimers.current.forEach(clearTimeout);
+    progressTimers.current = [];
+    setProgressMsg(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // Progressive feedback so reviewers/users never see a silent spinner
+    // while Render wakes up. Clears on finish.
+    progressTimers.current.push(setTimeout(() => {
+      setProgressMsg(isTr ? 'Sunucuya bağlanılıyor…' : 'Connecting to server…');
+    }, 2500));
+    progressTimers.current.push(setTimeout(() => {
+      setProgressMsg(isTr ? 'Sunucu uyandırılıyor, lütfen bekleyin…' : 'Waking up server, please wait…');
+    }, 8000));
+    progressTimers.current.push(setTimeout(() => {
+      setProgressMsg(isTr ? 'Neredeyse tamam, biraz daha…' : 'Almost there, one moment…');
+    }, 20000));
+
     const result = isLogin
       ? await login(email, password)
       : await register(name, email, password, location);
+    clearProgressTimers();
     setLoading(false);
 
     if (result.success) {
@@ -177,6 +208,11 @@ export default function AuthPage() {
             <Button type="submit" loading={loading} className="w-full" size="lg">
               {isLogin ? t('loginTitle') : t('registerTitle')}
             </Button>
+            {loading && progressMsg && (
+              <p className="text-center text-xs text-[var(--text-secondary)] mt-2 animate-pulse" role="status" aria-live="polite">
+                {progressMsg}
+              </p>
+            )}
           </form>
 
           <p className="text-center text-xs text-[var(--text-secondary)] mt-4">

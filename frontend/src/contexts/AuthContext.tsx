@@ -144,19 +144,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = useCallback(async (emailOrUsername: string, password: string) => {
     try {
       // 1. Backend login first (validates credentials).
-      //    Render free tier cold-start can take ~30-60s; if the first attempt times
-      //    out or returns a 5xx/network error, wait briefly and retry once so the
-      //    reviewer / user does not see a generic "Giriş hatası" during wake-up.
+      //    Render free-tier cold-start can take ~30-60s. Apple reviewers on
+      //    iPadOS 26 repeatedly rejected the app for "login returns an error"
+      //    because WKWebView kills long-running XHRs. We now retry up to 3
+      //    times with escalating backoff and fire a DB-free wake-up ping
+      //    between attempts so the instance is warm by attempt 2/3.
+      const tryLogin = () => api.post('/auth/login', { email: emailOrUsername, password });
+      const isRetryable = (e: any) => {
+        const status = e?.response?.status;
+        return !e?.response || (status >= 500 && status < 600) || e?.code === 'ECONNABORTED' || e?.code === 'ERR_NETWORK';
+      };
+
       let data: any;
-      try {
-        ({ data } = await api.post('/auth/login', { email: emailOrUsername, password }));
-      } catch (firstErr: any) {
-        const status = firstErr?.response?.status;
-        const isNetworkOrColdStart = !firstErr?.response || (status >= 500 && status < 600) || firstErr?.code === 'ECONNABORTED';
-        if (!isNetworkOrColdStart) throw firstErr;
-        await new Promise((r) => setTimeout(r, 1500));
-        ({ data } = await api.post('/auth/login', { email: emailOrUsername, password }));
+      let lastErr: any;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          ({ data } = await tryLogin());
+          lastErr = null;
+          break;
+        } catch (err: any) {
+          lastErr = err;
+          if (!isRetryable(err)) throw err;
+          // Fire-and-forget wake-up ping, then back off
+          const base = (import.meta.env.VITE_API_URL as string | undefined) || 'https://hasatlink-api.onrender.com/api';
+          fetch(`${base}/ping`, { method: 'GET', cache: 'no-store' }).catch(() => {});
+          await new Promise((r) => setTimeout(r, 2000 + attempt * 3000));
+        }
       }
+      if (lastErr) throw lastErr;
       localStorage.setItem('hasatlink_token', data.token);
       setToken(data.token);
       setUser(data.user);

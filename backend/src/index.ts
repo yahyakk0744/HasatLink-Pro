@@ -50,14 +50,34 @@ const httpServer = createServer(app);
 initSocket(httpServer);
 
 // Middleware
+// NOTE: Capacitor native shells send requests from origins other than the
+// web domain (iOS: https://localhost or capacitor://localhost, Android:
+// https://localhost or http://localhost). Apple reviewers saw "login error"
+// partly because those origins were absent from the allowlist. We now ship
+// a permissive default that still rejects random third-party browsers.
+const DEFAULT_CORS_ORIGINS = [
+  'https://hasatlink.com',
+  'https://www.hasatlink.com',
+  'http://localhost',
+  'https://localhost',
+  'capacitor://localhost',
+  'ionic://localhost',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:3000',
+];
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()).filter(Boolean) || DEFAULT_CORS_ORIGINS;
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || [
-    'https://hasatlink.com',
-    'https://www.hasatlink.com',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:5175',
-  ],
+  origin: (origin, callback) => {
+    // Allow requests without Origin header (native fetch, curl, health checks)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow any localhost:* and *.hasatlink.com to avoid breaking dev/native shells
+    if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
+    if (/^https?:\/\/([a-z0-9-]+\.)*hasatlink\.com$/.test(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked: ${origin}`));
+  },
   credentials: true,
 }));
 app.use(compression());
