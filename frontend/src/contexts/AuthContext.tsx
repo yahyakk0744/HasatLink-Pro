@@ -175,36 +175,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('hasatlink_token', data.token);
       setToken(data.token);
       setUser(data.user);
+      setFirebaseUid(data.user.firebaseUid || null);
 
-      // 2. Firebase Auth sign-in — always try with user's email
+      // Firebase sync runs in the background so it can NEVER break login.
+      // Apple reviewers on iOS 26.4.1 repeatedly rejected the app with
+      // "login returns an error" — the Firebase Web SDK misbehaves inside
+      // WKWebView on iOS 26, and its sign-in promise was blocking our
+      // success path. Login success is now 100% backend-driven; Firebase
+      // is a best-effort enhancement for cross-device sync only.
       const userEmail = data.user.email;
-      let fbUid = data.user.firebaseUid || '';
-
       if (userEmail) {
-        try {
-          const fbResult = await signInWithEmailAndPassword(firebaseAuth, userEmail, password);
-          fbUid = fbResult.user.uid;
-        } catch {
-          // Sign-in failed — try creating Firebase account
+        (async () => {
+          let fbUid: string | undefined;
           try {
-            const fbResult = await createUserWithEmailAndPassword(firebaseAuth, userEmail, password);
+            const fbResult = await signInWithEmailAndPassword(firebaseAuth, userEmail, password);
             fbUid = fbResult.user.uid;
           } catch {
-            // Firebase auth mismatch — user can still use the app with backend auth
+            try {
+              const fbResult = await createUserWithEmailAndPassword(firebaseAuth, userEmail, password);
+              fbUid = fbResult.user.uid;
+            } catch {
+              // Firebase unavailable — app keeps working on backend auth alone.
+            }
           }
-        }
+          if (fbUid && fbUid !== data.user.firebaseUid) {
+            try {
+              await api.put(`/users/${data.user.userId}`, { firebaseUid: fbUid });
+              setFirebaseUid(fbUid);
+            } catch {
+              // Non-critical
+            }
+          }
+        })().catch(() => {});
       }
 
-      // 3. If we got a firebaseUid and backend doesn't have it, save it
-      if (fbUid && fbUid !== data.user.firebaseUid) {
-        try {
-          await api.put(`/users/${data.user.userId}`, { firebaseUid: fbUid });
-        } catch {
-          // Non-critical: firebaseUid sync failed
-        }
-      }
-
-      setFirebaseUid(fbUid || null);
       return { success: true };
     } catch (err: any) {
       const backendMsg = err?.response?.data?.message;

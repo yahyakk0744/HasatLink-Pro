@@ -7,6 +7,7 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import SEO from '../components/ui/SEO';
 import { API_ORIGIN } from '../config/api';
+import { isIOS, isNative } from '../utils/native';
 
 export default function AuthPage() {
   const { t, i18n } = useTranslation();
@@ -28,6 +29,15 @@ export default function AuthPage() {
   // Facebook App ID must be configured in Meta Developer Console + capacitor.config
   // before the button can work. Env flag lets us hide it until credentials are wired up.
   const facebookEnabled = import.meta.env.VITE_ENABLE_FACEBOOK_LOGIN === 'true';
+
+  // Social login (Apple / Google / Facebook) goes through Firebase Auth Web SDK,
+  // which repeatedly fails inside WKWebView on iPadOS/iOS 26.4.1. Apple reviewers
+  // rejected the app twice with "social networking options launched back to the
+  // registration screen or to an error message." We hide every social button on
+  // the native iOS build and offer email/password only. Apple Guideline 4.8
+  // requires Sign in with Apple ONLY when the app offers another third-party
+  // login — with none offered, Apple Sign In is not required.
+  const showSocialLogin = !(isNative && isIOS);
 
   // Pre-warm the backend when the auth screen mounts. Render free-tier can
   // take 30-60s to wake from sleep and Apple reviewers consistently saw the
@@ -145,56 +155,60 @@ export default function AuthPage() {
             </button>
           </div>
 
-          {/* Social Login Buttons */}
-          <div className="space-y-2.5">
-            {/* Apple Sign In — required by App Store when any social login is present */}
-            <button
-              onClick={handleAppleLogin}
-              disabled={appleLoading}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-black text-white rounded-2xl text-sm font-semibold hover:bg-gray-900 transition-all disabled:opacity-50"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-              </svg>
-              {appleLoading ? t('loading') : (isTr ? 'Apple ile Giriş Yap' : 'Sign in with Apple')}
-            </button>
+          {/* Social Login Buttons — hidden on native iOS (Firebase Web SDK unreliable in WKWebView on iOS 26) */}
+          {showSocialLogin && (
+            <>
+              <div className="space-y-2.5">
+                {/* Apple Sign In — required by App Store when any social login is present */}
+                <button
+                  onClick={handleAppleLogin}
+                  disabled={appleLoading}
+                  className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-black text-white rounded-2xl text-sm font-semibold hover:bg-gray-900 transition-all disabled:opacity-50"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                  </svg>
+                  {appleLoading ? t('loading') : (isTr ? 'Apple ile Giriş Yap' : 'Sign in with Apple')}
+                </button>
 
-            {/* Google Sign In */}
-            <button
-              onClick={handleGoogleLogin}
-              disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] transition-all disabled:opacity-50"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18">
-                <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-                <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
-                <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-                <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-              </svg>
-              {googleLoading ? t('loading') : t('googleLogin')}
-            </button>
+                {/* Google Sign In */}
+                <button
+                  onClick={handleGoogleLogin}
+                  disabled={googleLoading}
+                  className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] transition-all disabled:opacity-50"
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18">
+                    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                    <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                  </svg>
+                  {googleLoading ? t('loading') : t('googleLogin')}
+                </button>
 
-            {/* Facebook Sign In — hidden until VITE_ENABLE_FACEBOOK_LOGIN=true and FB App ID configured */}
-            {facebookEnabled && (
-              <button
-                onClick={handleFacebookLogin}
-                disabled={facebookLoading}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[#1877F2] text-white rounded-2xl text-sm font-semibold hover:bg-[#166fe5] transition-all disabled:opacity-50"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
-                {facebookLoading ? t('loading') : (isTr ? 'Facebook ile Giriş Yap' : 'Sign in with Facebook')}
-              </button>
-            )}
-          </div>
+                {/* Facebook Sign In — hidden until VITE_ENABLE_FACEBOOK_LOGIN=true and FB App ID configured */}
+                {facebookEnabled && (
+                  <button
+                    onClick={handleFacebookLogin}
+                    disabled={facebookLoading}
+                    className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[#1877F2] text-white rounded-2xl text-sm font-semibold hover:bg-[#166fe5] transition-all disabled:opacity-50"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                    {facebookLoading ? t('loading') : (isTr ? 'Facebook ile Giriş Yap' : 'Sign in with Facebook')}
+                  </button>
+                )}
+              </div>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-4">
-            <div className="flex-1 h-px bg-[var(--border-default)]"></div>
-            <span className="text-xs text-[var(--text-secondary)] font-medium">{t('orDivider')}</span>
-            <div className="flex-1 h-px bg-[var(--border-default)]"></div>
-          </div>
+              {/* Divider */}
+              <div className="flex items-center gap-3 my-4">
+                <div className="flex-1 h-px bg-[var(--border-default)]"></div>
+                <span className="text-xs text-[var(--text-secondary)] font-medium">{t('orDivider')}</span>
+                <div className="flex-1 h-px bg-[var(--border-default)]"></div>
+              </div>
+            </>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
