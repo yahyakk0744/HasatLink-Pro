@@ -14,7 +14,17 @@ import ProfanityLog from '../models/ProfanityLog';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import admin from '../config/firebase';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { checkFieldsForProfanity } from '../utils/profanityFilter';
+
+// Apple's public JWKS for Sign in with Apple identity tokens.
+// We verify raw Apple identityToken here (bypassing Firebase) because the
+// Firebase Web SDK is unreliable inside WKWebView on iOS 26 and was blocking
+// social login on iPad reviewers' devices. Native iOS clients now ship the
+// identityToken straight to us and we validate it server-side.
+const APPLE_JWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
+const APPLE_ISSUER = 'https://appleid.apple.com';
+const APPLE_AUDIENCE = process.env.APPLE_BUNDLE_ID || 'com.hasatlink.app';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -245,9 +255,109 @@ export const firebaseLogin = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-// Backward-compatible alias so existing /auth/google route and tests keep working.
+// POST /api/auth/apple
+//
+// Two accepted payload shapes:
+//
+// 1) Native iOS client (Capacitor Sign in with Apple plugin):
+//    { appleIdentityToken, appleFallbackName?, appleFallbackEmail? }
+//    We validate the token against Apple's JWKS directly — NO Firebase.
+//    This is what ships with the App Store build because the Firebase Web
+//    SDK misbehaves inside WKWebView on iOS 26 and blocked the login flow.
+//
+// 2) Web client (Firebase OAuth popup/redirect):
+//    { idToken, appleFallbackName?, appleFallbackEmail? }
+//    We hand the Firebase ID token to firebaseLogin() so web keeps working.
+export const appleLogin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { appleIdentityToken, idToken, appleFallbackName, appleFallbackEmail } = req.body || {};
+
+    // Native path — verify against Apple JWKS, issue our JWT, skip Firebase entirely
+    if (appleIdentityToken) {
+      try {
+        const { payload } = await jwtVerify(appleIdentityToken, APPLE_JWKS, {
+          issuer: APPLE_ISSUER,
+          audience: APPLE_AUDIENCE,
+        });
+
+        const sub = typeof payload.sub === 'string' ? payload.sub : undefined;
+        let email = typeof payload.email === 'string' ? payload.email : undefined;
+        if (!email && appleFallbackEmail) email = appleFallbackEmail;
+
+        if (!sub) {
+          res.status(400).json({ message: 'Apple hesabı doğrulanamadı' });
+          return;
+        }
+
+        // Apple may not expose email on repeat sign-ins → fall back to a
+        // stable synthetic address keyed on the Apple user identifier so we
+        // can still upsert the user deterministically.
+        if (!email) email = `${sub}@privaterelay.appleid.hasatlink`;
+
+        const displayName = appleFallbackName || email.split('@')[0];
+
+        // Look up by appleSub first (most reliable), then fall back to email
+        let user = await User.findOne({ $or: [{ appleSub: sub }, { email }] });
+
+        if (!user) {
+          const userId = 'user_' + Date.now();
+          user = await User.create({
+            userId,
+            name: displayName,
+            email,
+            appleSub: sub,
+            authProvider: 'apple',
+            isVerified: true,
+          });
+        } else {
+          let dirty = false;
+          if (!user.appleSub) { user.appleSub = sub; dirty = true; }
+          if (!user.authProvider || user.authProvider === 'email') { user.authProvider = 'apple'; dirty = true; }
+          if (dirty) await user.save();
+        }
+
+        const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET!, { expiresIn: '30d' });
+        res.json({
+          token,
+          user: {
+            userId: user.userId,
+            username: user.username,
+            name: user.name,
+            email: user.email,
+            location: user.location,
+            profileImage: user.profileImage,
+            averageRating: user.averageRating,
+            firebaseUid: user.firebaseUid,
+            role: user.role,
+          },
+        });
+        return;
+      } catch (err) {
+        console.error('[auth/apple] identityToken verify failed:', err);
+        res.status(401).json({ message: 'Apple kimlik doğrulaması başarısız' });
+        return;
+      }
+    }
+
+    // Web path — Firebase ID token
+    if (idToken) {
+      return firebaseLogin(req, res);
+    }
+
+    res.status(400).json({ message: 'Apple kimlik tokeni gerekli' });
+  } catch (error) {
+    console.error('[auth/apple] error:', error);
+    res.status(500).json({ message: 'Apple giriş hatası' });
+  }
+};
+
+// Google and Facebook still go through Firebase on web.
+// Native iOS flows are disabled for these providers in Build 9 because
+// the required OAuth client IDs (Google serverClientId, Facebook App ID)
+// are not provisioned for this build. Apple Guideline 4.8 is satisfied
+// because Sign in with Apple is offered alongside email/password; no
+// other third-party logins are present on iOS.
 export const googleLogin = firebaseLogin;
-export const appleLogin = firebaseLogin;
 export const facebookLogin = firebaseLogin;
 
 export const getUserStats = async (req: Request, res: Response): Promise<void> => {

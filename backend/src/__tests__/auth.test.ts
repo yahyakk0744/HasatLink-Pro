@@ -13,6 +13,13 @@ vi.mock('../config/firebase', () => ({
   },
 }));
 
+// Mock jose so /api/auth/apple native path can be exercised without real Apple keys
+const joseVerifyMock = vi.fn();
+vi.mock('jose', () => ({
+  createRemoteJWKSet: vi.fn(() => ({})),
+  jwtVerify: (...args: unknown[]) => joseVerifyMock(...args),
+}));
+
 // Mock socket to avoid initialization errors
 vi.mock('../socket', () => ({
   getIO: () => ({
@@ -165,6 +172,64 @@ describe('Auth Endpoints', () => {
         .set('Authorization', `Bearer ${fakeToken}`);
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe('POST /api/auth/apple (native identityToken path)', () => {
+    it('creates a new user from a valid Apple identityToken', async () => {
+      joseVerifyMock.mockResolvedValueOnce({
+        payload: { sub: 'apple_sub_111', email: 'apple-new@example.com' },
+      });
+
+      const res = await request(app)
+        .post('/api/auth/apple')
+        .send({ appleIdentityToken: 'fake.apple.token', appleFallbackName: 'Apple User' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('token');
+      expect(res.body.user.email).toBe('apple-new@example.com');
+      expect(res.body.user.name).toBe('Apple User');
+
+      const inDb = await User.findOne({ email: 'apple-new@example.com' });
+      expect(inDb).toBeTruthy();
+      expect(inDb?.appleSub).toBe('apple_sub_111');
+      expect(inDb?.authProvider).toBe('apple');
+    });
+
+    it('re-uses an existing user when appleSub matches', async () => {
+      joseVerifyMock.mockResolvedValueOnce({
+        payload: { sub: 'apple_sub_222', email: 'apple-existing@example.com' },
+      });
+      const first = await request(app)
+        .post('/api/auth/apple')
+        .send({ appleIdentityToken: 'fake.apple.token.1' });
+      expect(first.status).toBe(200);
+
+      // Second sign-in: Apple omits email after the first login; we should still find the user by sub
+      joseVerifyMock.mockResolvedValueOnce({
+        payload: { sub: 'apple_sub_222' },
+      });
+      const second = await request(app)
+        .post('/api/auth/apple')
+        .send({ appleIdentityToken: 'fake.apple.token.2' });
+      expect(second.status).toBe(200);
+      expect(second.body.user.userId).toBe(first.body.user.userId);
+    });
+
+    it('returns 401 when identityToken fails Apple JWKS verification', async () => {
+      joseVerifyMock.mockRejectedValueOnce(new Error('signature invalid'));
+
+      const res = await request(app)
+        .post('/api/auth/apple')
+        .send({ appleIdentityToken: 'bad.token' });
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('Apple kimlik doğrulaması başarısız');
+    });
+
+    it('returns 400 when neither appleIdentityToken nor idToken is provided', async () => {
+      const res = await request(app).post('/api/auth/apple').send({});
+      expect(res.status).toBe(400);
     });
   });
 });

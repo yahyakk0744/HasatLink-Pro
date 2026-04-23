@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import type { ReactNode } from 'react';
 import { signInWithRedirect, getRedirectResult, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, deleteUser, GoogleAuthProvider, OAuthProvider, FacebookAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth as firebaseAuth, googleProvider } from '../config/firebase';
-import { isNative } from '../utils/native';
+import { isNative, isIOS } from '../utils/native';
 import api from '../config/api';
 import type { User } from '../types';
 
@@ -279,13 +279,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const loginWithApple = useCallback(async () => {
     try {
-      let firebaseIdToken: string;
-      let fbUid: string;
-      let fallbackName: string | undefined;
-      let fallbackEmail: string | undefined;
-
-      if (isNative) {
-        // Native iOS: use Sign in with Apple plugin
+      // Native iOS: skip Firebase entirely. The Firebase Web SDK is unreliable
+      // inside WKWebView on iOS 26 and blocked social sign-in for Apple
+      // reviewers across multiple build attempts. We now send the Apple
+      // identityToken straight to our backend, which verifies it against
+      // Apple's JWKS (appleid.apple.com/auth/keys) and issues a HasatLink JWT.
+      if (isNative && isIOS) {
         const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
 
         const rawNonce = generateRawNonce();
@@ -301,47 +300,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const appleIdToken = result.response.identityToken;
         if (!appleIdToken) throw new Error('Apple kimlik tokeni alınamadı');
 
-        // Apple only returns name/email on FIRST sign-in — capture them for backend fallback
+        let fallbackName: string | undefined;
         if (result.response.givenName || result.response.familyName) {
           fallbackName = [result.response.givenName, result.response.familyName].filter(Boolean).join(' ').trim();
         }
-        if (result.response.email) fallbackEmail = result.response.email;
+        const fallbackEmail = result.response.email || undefined;
 
-        const provider = new OAuthProvider('apple.com');
-        const credential = provider.credential({ idToken: appleIdToken, rawNonce });
-        const fbResult = await signInWithCredential(firebaseAuth, credential);
-        firebaseIdToken = await fbResult.user.getIdToken();
-        fbUid = fbResult.user.uid;
-      } else {
-        // Web: use Firebase popup
-        const provider = new OAuthProvider('apple.com');
-        provider.addScope('email');
-        provider.addScope('name');
-        try {
-          const result = await signInWithPopup(firebaseAuth, provider);
-          firebaseIdToken = await result.user.getIdToken();
-          fbUid = result.user.uid;
-        } catch (popupErr: any) {
-          if (popupErr.code === 'auth/popup-closed-by-user') {
-            return { success: false, message: 'Giriş iptal edildi' };
-          }
-          if (
-            popupErr.code === 'auth/popup-blocked' ||
-            popupErr.code === 'auth/cancelled-popup-request' ||
-            popupErr.code === 'auth/web-storage-unsupported'
-          ) {
-            await signInWithRedirect(firebaseAuth, provider);
-            return { success: true };
-          }
-          throw popupErr;
-        }
+        const { data } = await api.post('/auth/apple', {
+          appleIdentityToken: appleIdToken,
+          appleFallbackName: fallbackName,
+          appleFallbackEmail: fallbackEmail,
+        });
+        localStorage.setItem('hasatlink_token', data.token);
+        setToken(data.token);
+        setUser(data.user);
+        setFirebaseUid(data.user.firebaseUid || null);
+        return { success: true };
       }
 
-      const { data } = await api.post('/auth/apple', {
-        idToken: firebaseIdToken,
-        appleFallbackName: fallbackName,
-        appleFallbackEmail: fallbackEmail,
-      });
+      // Web: Firebase popup/redirect flow
+      const provider = new OAuthProvider('apple.com');
+      provider.addScope('email');
+      provider.addScope('name');
+      let firebaseIdToken: string;
+      let fbUid: string;
+      try {
+        const result = await signInWithPopup(firebaseAuth, provider);
+        firebaseIdToken = await result.user.getIdToken();
+        fbUid = result.user.uid;
+      } catch (popupErr: any) {
+        if (popupErr.code === 'auth/popup-closed-by-user') {
+          return { success: false, message: 'Giriş iptal edildi' };
+        }
+        if (
+          popupErr.code === 'auth/popup-blocked' ||
+          popupErr.code === 'auth/cancelled-popup-request' ||
+          popupErr.code === 'auth/web-storage-unsupported'
+        ) {
+          await signInWithRedirect(firebaseAuth, provider);
+          return { success: true };
+        }
+        throw popupErr;
+      }
+
+      const { data } = await api.post('/auth/apple', { idToken: firebaseIdToken });
       localStorage.setItem('hasatlink_token', data.token);
       setToken(data.token);
       setUser(data.user);

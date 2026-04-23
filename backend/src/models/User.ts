@@ -19,6 +19,7 @@ export interface IUser extends Document {
   isSuspended: boolean;
   authProvider: string;
   firebaseUid: string;
+  appleSub: string;
   trust_score: number;
   points: number;
   favorites: string[];
@@ -48,8 +49,9 @@ const UserSchema = new Schema<IUser>({
   bio: { type: String, default: '' },
   isBanned: { type: Boolean, default: false },
   isSuspended: { type: Boolean, default: false },
-  authProvider: { type: String, default: 'email', enum: ['email', 'google'] },
+  authProvider: { type: String, default: 'email', enum: ['email', 'google', 'apple', 'facebook'] },
   firebaseUid: { type: String, default: '', sparse: true },
+  appleSub: { type: String, default: '', sparse: true, index: true },
   trust_score: { type: Number, default: 0 },
   points: { type: Number, default: 0 },
   favorites: [{ type: String }],
