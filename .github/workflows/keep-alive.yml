@@ -6,8 +6,18 @@ name: Keep Render backend awake
 # every 10 min keeps the instance warm so the first real request is fast.
 
 on:
+  # GitHub Actions cron on free tier can be delayed up to ~15 min, which is
+  # identical to Render's free-tier sleep interval (15 min). To eliminate the
+  # risk of the backend sleeping when an App Store reviewer opens the app, we
+  # run THREE staggered workflows so even with scheduling delay at least one
+  # ping lands before Render's 15-min sleep timer:
+  #   - keep-alive.yml        → */3 * * * *   (every 3 min)
+  #   - keep-alive-b.yml      → 1-59/3 * * * * (offset +1)
+  #   - keep-alive-c.yml      → 2-59/3 * * * * (offset +2)
+  # Combined with cron-job.org external ping every 1 min, the backend stays
+  # warm 24/7 without paying for Render's Starter plan.
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/3 * * * *'
   workflow_dispatch:
 
 jobs:

@@ -1,0 +1,27 @@
+name: Keep Render backend awake (offset +2)
+
+# Second staggered companion to keep-alive.yml. Three cron workflows combined
+# give effective sub-minute coverage even under GitHub Actions scheduling delay.
+
+on:
+  schedule:
+    - cron: '2-59/3 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping /api/ping
+        run: |
+          for i in 1 2 3; do
+            if curl -fsS --max-time 60 https://hasatlink-api.onrender.com/api/ping -o /dev/null; then
+              echo "ping ok on attempt $i"
+              exit 0
+            fi
+            echo "attempt $i failed, retrying..."
+            sleep 5
+          done
+          echo "ping failed after 3 attempts"
+          exit 1

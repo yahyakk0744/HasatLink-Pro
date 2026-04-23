@@ -30,15 +30,13 @@ export default function AuthPage() {
   // before the button can work. Env flag lets us hide it until credentials are wired up.
   const facebookEnabled = import.meta.env.VITE_ENABLE_FACEBOOK_LOGIN === 'true';
 
-  // Build 9 strategy for the iOS App Store build:
-  // - Apple Sign In is shown and works fully native (skips the broken Firebase
-  //   WKWebView path that caused Build 7 to be rejected).
-  // - Google and Facebook are hidden on native iOS because their OAuth client
-  //   IDs are not provisioned for this build, so presenting the buttons would
-  //   just surface another "login error" to reviewers.
-  // Guideline 4.8 is satisfied: Sign in with Apple is offered alongside
-  // email/password, and no other third-party login is offered on iOS.
-  const showAppleButton = !(isNative && isIOS) || true; // always show when social block is shown
+  // Build 10 strategy: pure email/password on iOS to eliminate all third-party
+  // login failure modes. Previous Build 9 was rejected for Guideline 2.1(a)
+  // because Apple reviewers saw an error on both Apple Sign In and credentials
+  // login (Render cold-start timing). With no social buttons on iOS, Guideline
+  // 4.8 does not apply (it only requires Apple Sign In when other third-party
+  // logins are offered).
+  const showAppleButton = !(isNative && isIOS);
   const showGoogleButton = !(isNative && isIOS);
   const showFacebookButton = facebookEnabled && !(isNative && isIOS);
   const showSocialLogin = showAppleButton || showGoogleButton || showFacebookButton;
