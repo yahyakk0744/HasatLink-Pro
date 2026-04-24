@@ -244,20 +244,32 @@ for (const type of Object.keys(SS)) {
   log(`    created ${type} → ${created.data.id}`);
 }
 
-// ---------- STEP 4: cancel any pending submission ----------
-log('cancelling pending submissions —');
+// ---------- STEP 4: clean up ALL non-final submissions ----------
+// A prior failed attempt may have left a draft submission (created but never
+// submitted). Apple blocks new submissions while ANY non-final submission
+// exists. Try DELETE first, fall back to PATCH canceled=true.
+log('cleaning up existing submissions —');
 try {
-  const subs = await api(
-    'GET',
-    `/reviewSubmissions?filter[app]=${APP_ID}&filter[state]=READY_FOR_REVIEW,WAITING_FOR_REVIEW,IN_REVIEW,UNRESOLVED_ISSUES&limit=20`
-  );
+  const subs = await api('GET', `/reviewSubmissions?filter[app]=${APP_ID}&limit=20`);
+  log(`  found ${subs.data?.length || 0} submissions total`);
+  const FINAL_STATES = new Set(['COMPLETE', 'ACCEPTED', 'REJECTED']);
   for (const s of (subs.data || [])) {
+    const state = s.attributes.state;
+    log(`    ${s.id} state=${state}`);
+    if (FINAL_STATES.has(state)) continue;
+    // Try DELETE first (works for drafts and unresolved)
+    try {
+      await api('DELETE', `/reviewSubmissions/${s.id}`);
+      log(`    ✓ deleted ${s.id} (was ${state})`);
+      continue;
+    } catch (e) { warn(`    delete ${s.id} failed: ${e.message.slice(0, 100)}`); }
+    // Fall back to PATCH canceled=true
     try {
       await api('PATCH', `/reviewSubmissions/${s.id}`, {
         data: { type: 'reviewSubmissions', id: s.id, attributes: { canceled: true } },
       });
-      log(`  canceled ${s.id} (was ${s.attributes.state})`);
-    } catch (e) { warn(`  cancel ${s.id} failed: ${e.message}`); }
+      log(`    ✓ canceled ${s.id} (was ${state})`);
+    } catch (e) { warn(`    cancel ${s.id} failed: ${e.message.slice(0, 100)}`); }
   }
 } catch (e) { warn('  submission discovery failed:', e.message); }
 
