@@ -26,7 +26,23 @@ import path from 'node:path';
 const APP_ID   = process.env.APP_STORE_APPLE_ID || '6761334964';
 const KEY_ID   = process.env.APP_STORE_CONNECT_KEY_IDENTIFIER;
 const ISSUER   = process.env.APP_STORE_CONNECT_ISSUER_ID;
-const PRIV_KEY = process.env.APP_STORE_CONNECT_PRIVATE_KEY;
+let   PRIV_KEY = process.env.APP_STORE_CONNECT_PRIVATE_KEY;
+
+// Codemagic's `app_store_connect` integration exposes the private key via a
+// file indirection: APP_STORE_CONNECT_PRIVATE_KEY="@file:/Users/builder/.appstore_connect_private_keys/AuthKey_XXXX.p8"
+// Detect and dereference. Also tolerate "file://" / plain filesystem paths.
+function dereferenceKey(val) {
+  if (!val) return val;
+  let v = val.trim();
+  if (v.startsWith('@file:')) v = v.slice('@file:'.length);
+  else if (v.startsWith('file://')) v = v.slice('file://'.length);
+  if (v.startsWith('/') && !v.includes('\n') && v.length < 4096 && fs.existsSync(v)) {
+    console.log('[asc:key] dereferencing file:', v);
+    return fs.readFileSync(v, 'utf8');
+  }
+  return val;
+}
+PRIV_KEY = dereferenceKey(PRIV_KEY);
 
 if (!KEY_ID || !ISSUER || !PRIV_KEY) {
   console.error('Missing ASC creds — KEY_IDENTIFIER=%s ISSUER=%s KEY=%s',
