@@ -179,7 +179,7 @@ async function api(method, p, body) {
   let data = null;
   try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
   if (!res.ok) {
-    const e = new Error(`${res.status} ${method} ${p} — ${text.slice(0, 500)}`);
+    const e = new Error(`${res.status} ${method} ${p} — ${text.slice(0, 2000)}`);
     e.status = res.status;
     e.data = data;
     throw e;
@@ -367,13 +367,26 @@ if (failed > 0) throw new Error(`${failed} screenshots failed to upload`);
 
 // ---------- STEP 8: create & submit review ----------
 log('creating new review submission —');
-const newSub = await api('POST', '/reviewSubmissions', {
-  data: {
-    type: 'reviewSubmissions',
-    attributes: { platform: 'IOS' },
-    relationships: { app: { data: { type: 'apps', id: APP_ID } } },
-  },
-});
+let newSub;
+try {
+  newSub = await api('POST', '/reviewSubmissions', {
+    data: {
+      type: 'reviewSubmissions',
+      attributes: { platform: 'IOS' },
+      relationships: { app: { data: { type: 'apps', id: APP_ID } } },
+    },
+  });
+} catch (e) {
+  err('--- POST /reviewSubmissions failed ---');
+  err('status:', e.status);
+  err('full data:', JSON.stringify(e.data, null, 2));
+  // Also fetch app validation diagnostics
+  try {
+    const ver = await api('GET', `/appStoreVersions/${APP_VERSION_ID}?include=appStoreVersionSubmission,build`);
+    err('version diag:', JSON.stringify(ver, null, 2).slice(0, 3000));
+  } catch (e2) { err('version diag fetch failed:', e2.message); }
+  throw e;
+}
 const subId = newSub.data.id;
 log(`  submission id: ${subId}`);
 
