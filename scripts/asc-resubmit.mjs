@@ -64,13 +64,32 @@ const log  = (...a) => console.log('[asc]', ...a);
 const warn = (...a) => console.warn('[asc:warn]', ...a);
 const err  = (...a) => console.error('[asc:err]', ...a);
 
+function normalizePrivateKey(raw) {
+  // Codemagic sometimes stores the p8 with different formatting. Handle:
+  //   1. PEM with -----BEGIN PRIVATE KEY----- markers (standard)
+  //   2. Raw base64 body (no markers)
+  //   3. Escaped \n sequences (single-line env form)
+  //   4. Extra surrounding whitespace
+  let s = raw.trim();
+  // Replace literal \n escape sequences with actual newlines
+  if (s.includes('\\n') && !s.includes('\n')) s = s.replace(/\\n/g, '\n');
+  // If already has PEM markers, use as-is
+  if (s.includes('BEGIN PRIVATE KEY') || s.includes('BEGIN EC PRIVATE KEY')) return s;
+  // Otherwise wrap raw base64 in PKCS#8 markers
+  const body = s.replace(/\s+/g, '');
+  const wrapped = body.match(/.{1,64}/g)?.join('\n') || body;
+  return `-----BEGIN PRIVATE KEY-----\n${wrapped}\n-----END PRIVATE KEY-----\n`;
+}
+
+const PRIV_KEY_PEM = normalizePrivateKey(PRIV_KEY);
+
 function signJwt() {
   const header = { alg: 'ES256', kid: KEY_ID, typ: 'JWT' };
   const now = Math.floor(Date.now() / 1000);
   const payload = { iss: ISSUER, iat: now, exp: now + 1200, aud: 'appstoreconnect-v1' };
   const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
   const signingInput = `${b64(header)}.${b64(payload)}`;
-  const key = crypto.createPrivateKey({ key: PRIV_KEY, format: 'pem' });
+  const key = crypto.createPrivateKey({ key: PRIV_KEY_PEM, format: 'pem' });
   const sig = crypto.sign('sha256', Buffer.from(signingInput), { key, dsaEncoding: 'ieee-p1363' });
   return `${signingInput}.${sig.toString('base64url')}`;
 }
