@@ -64,24 +64,65 @@ const log  = (...a) => console.log('[asc]', ...a);
 const warn = (...a) => console.warn('[asc:warn]', ...a);
 const err  = (...a) => console.error('[asc:err]', ...a);
 
-function normalizePrivateKey(raw) {
-  // Codemagic sometimes stores the p8 with different formatting. Handle:
-  //   1. PEM with -----BEGIN PRIVATE KEY----- markers (standard)
-  //   2. Raw base64 body (no markers)
-  //   3. Escaped \n sequences (single-line env form)
-  //   4. Extra surrounding whitespace
-  let s = raw.trim();
-  // Replace literal \n escape sequences with actual newlines
-  if (s.includes('\\n') && !s.includes('\n')) s = s.replace(/\\n/g, '\n');
-  // If already has PEM markers, use as-is
-  if (s.includes('BEGIN PRIVATE KEY') || s.includes('BEGIN EC PRIVATE KEY')) return s;
-  // Otherwise wrap raw base64 in PKCS#8 markers
-  const body = s.replace(/\s+/g, '');
-  const wrapped = body.match(/.{1,64}/g)?.join('\n') || body;
-  return `-----BEGIN PRIVATE KEY-----\n${wrapped}\n-----END PRIVATE KEY-----\n`;
+// Diagnostic: log what shape the env var actually has (without leaking the key body)
+function inspectKey(raw) {
+  const len = raw.length;
+  const head = raw.slice(0, 30).replace(/[^\x20-\x7e]/g, c => '\\x' + c.charCodeAt(0).toString(16).padStart(2,'0'));
+  const tail = raw.slice(-30).replace(/[^\x20-\x7e]/g, c => '\\x' + c.charCodeAt(0).toString(16).padStart(2,'0'));
+  const hasNL  = raw.includes('\n');
+  const hasCR  = raw.includes('\r');
+  const hasEsc = raw.includes('\\n');
+  const hasBegin = raw.includes('BEGIN');
+  const hasEC = raw.includes('BEGIN EC PRIVATE');
+  console.log('[asc:key] len=%d head=%s tail=%s nl=%s cr=%s escNL=%s BEGIN=%s EC=%s',
+    len, JSON.stringify(head), JSON.stringify(tail), hasNL, hasCR, hasEsc, hasBegin, hasEC);
+}
+inspectKey(PRIV_KEY);
+
+// Build candidate forms in order of likelihood, try each one until one parses.
+function buildCandidates(raw) {
+  const cands = [];
+  const noBom = raw.replace(/^\uFEFF/, '');
+  // 1) raw as-is
+  cands.push({ name: 'raw',                key: noBom });
+  // 2) trimmed
+  cands.push({ name: 'trimmed',            key: noBom.trim() });
+  // 3) escaped \n -> real \n
+  cands.push({ name: 'unescaped-nl',       key: noBom.replace(/\\n/g, '\n').trim() });
+  // 4) CR stripped
+  cands.push({ name: 'no-cr',              key: noBom.replace(/\r/g, '').trim() });
+  // 5) Wrap raw base64 (strip whitespace) in PKCS#8 markers
+  const body = noBom.replace(/-----BEGIN [A-Z ]+-----/g, '').replace(/-----END [A-Z ]+-----/g, '').replace(/\s+/g, '');
+  if (body && /^[A-Za-z0-9+/=]+$/.test(body)) {
+    const wrapped = body.match(/.{1,64}/g).join('\n');
+    cands.push({ name: 'rewrapped-pkcs8',  key: `-----BEGIN PRIVATE KEY-----\n${wrapped}\n-----END PRIVATE KEY-----\n` });
+    // 6) base64-decoded DER (binary), pass as Buffer with der format
+    try {
+      cands.push({ name: 'der-buffer',     keyObj: { key: Buffer.from(body, 'base64'), format: 'der', type: 'pkcs8' } });
+    } catch {}
+  }
+  return cands;
 }
 
-const PRIV_KEY_PEM = normalizePrivateKey(PRIV_KEY);
+function loadPrivateKey() {
+  const cands = buildCandidates(PRIV_KEY);
+  let lastErr;
+  for (const c of cands) {
+    try {
+      const key = c.keyObj
+        ? crypto.createPrivateKey(c.keyObj)
+        : crypto.createPrivateKey({ key: c.key, format: 'pem' });
+      console.log('[asc:key] loaded via candidate:', c.name);
+      return key;
+    } catch (e) {
+      console.log('[asc:key] candidate failed: %s -> %s', c.name, e.message);
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('no candidate succeeded');
+}
+
+const PRIV_KEY_OBJ = loadPrivateKey();
 
 function signJwt() {
   const header = { alg: 'ES256', kid: KEY_ID, typ: 'JWT' };
@@ -89,8 +130,7 @@ function signJwt() {
   const payload = { iss: ISSUER, iat: now, exp: now + 1200, aud: 'appstoreconnect-v1' };
   const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
   const signingInput = `${b64(header)}.${b64(payload)}`;
-  const key = crypto.createPrivateKey({ key: PRIV_KEY_PEM, format: 'pem' });
-  const sig = crypto.sign('sha256', Buffer.from(signingInput), { key, dsaEncoding: 'ieee-p1363' });
+  const sig = crypto.sign('sha256', Buffer.from(signingInput), { key: PRIV_KEY_OBJ, dsaEncoding: 'ieee-p1363' });
   return `${signingInput}.${sig.toString('base64url')}`;
 }
 
