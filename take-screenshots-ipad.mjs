@@ -8,7 +8,7 @@ const variants = [
   {
     label: '13',
     outDir: resolve('store-assets/screenshots-ipad-13'),
-    viewport: { width: 1032, height: 1376 }, // @2x = 2064×2752
+    viewport: { width: 1024, height: 1366 }, // @2x = 2048×2732 (APP_IPAD_PRO_129)
     deviceScaleFactor: 2,
   },
   {
@@ -19,14 +19,16 @@ const variants = [
   },
 ];
 
+// Apple Guideline 2.3.3 — login/splash screens do not count as "app in use",
+// so the login page has been dropped. Every slot now shows a feature.
 const pages = [
-  { name: '01-giris', url: '/giris', wait: 2000 },
-  { name: '02-anasayfa', url: '/', wait: 2000 },
-  { name: '03-pazar', url: '/pazar', wait: 2000 },
-  { name: '04-uydu-analiz', url: '/uydu-analiz', wait: 3000 },
-  { name: '05-hasatlink-pazari', url: '/hasatlink-pazari', wait: 2000 },
-  { name: '06-hal-fiyatlari', url: '/hal-fiyatlari', wait: 2000 },
-  { name: '07-harita', url: '/harita', wait: 3000 },
+  { name: '01-anasayfa', url: '/', wait: 2000 },
+  { name: '02-pazar', url: '/pazar', wait: 2000 },
+  { name: '03-uydu-analiz', url: '/uydu-analiz', wait: 3000 },
+  { name: '04-hasatlink-pazari', url: '/hasatlink-pazari', wait: 2000 },
+  { name: '05-hal-fiyatlari', url: '/hal-fiyatlari', wait: 2000 },
+  { name: '06-harita', url: '/harita', wait: 3000 },
+  { name: '07-ai-teshis', url: '/ai-teshis', wait: 3000 },
 ];
 
 (async () => {

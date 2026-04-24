@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { signInWithRedirect, getRedirectResult, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, deleteUser, GoogleAuthProvider, OAuthProvider, FacebookAuthProvider, signInWithCredential } from 'firebase/auth';
-import { auth as firebaseAuth, googleProvider } from '../config/firebase';
+import { auth as firebaseAuth, googleProvider, firebaseAvailable } from '../config/firebase';
 import { isNative, isIOS } from '../utils/native';
 import api from '../config/api';
 import type { User } from '../types';
@@ -62,41 +62,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [token]);
 
-  // Handle Google redirect result on page load
+  // Handle Google redirect result on page load.
+  // Firebase Web SDK is notoriously flaky inside WKWebView on iOS 26, so this
+  // whole block is guarded and skipped on native iOS — where the app uses the
+  // Capacitor Apple Sign In plugin instead of any Firebase web flow.
   const redirectHandled = useRef(false);
   useEffect(() => {
     if (redirectHandled.current) return;
     redirectHandled.current = true;
+    if (!firebaseAvailable || (isNative && isIOS)) return;
 
-    getRedirectResult(firebaseAuth)
-      .then(async (result) => {
-        if (result?.user) {
-          try {
-            const idToken = await result.user.getIdToken();
-            const { data } = await api.post('/auth/google', { idToken });
-            localStorage.setItem('hasatlink_token', data.token);
-            setToken(data.token);
-            setUser(data.user);
-            setFirebaseUid(result.user.uid);
-          } catch (err) {
-            console.error('Google redirect backend error:', err);
+    try {
+      getRedirectResult(firebaseAuth)
+        .then(async (result) => {
+          if (result?.user) {
+            try {
+              const idToken = await result.user.getIdToken();
+              const { data } = await api.post('/auth/google', { idToken });
+              localStorage.setItem('hasatlink_token', data.token);
+              setToken(data.token);
+              setUser(data.user);
+              setFirebaseUid(result.user.uid);
+            } catch (err) {
+              console.warn('Google redirect backend error:', err);
+            }
           }
-        }
-      })
-      .catch((err) => {
-        console.error('Google redirect result error:', err);
-      });
+        })
+        .catch((err) => {
+          console.warn('Google redirect result error:', err);
+        });
+    } catch (err) {
+      console.warn('Google redirect init failed:', err);
+    }
   }, []);
 
-  // Keep firebaseUid in sync with actual Firebase auth state
+  // Keep firebaseUid in sync with actual Firebase auth state.
+  // Guarded with try/catch because iOS 26 WKWebView has thrown synchronously
+  // from Firebase's auth state machine in past review builds, which killed
+  // the entire auth tree and caused the "login error" rejection.
   useEffect(() => {
-    const unsubscribe = firebaseAuth.onAuthStateChanged((fbUser) => {
-      if (fbUser) {
-        setFirebaseUid(fbUser.uid);
-      }
-      // Don't clear firebaseUid on null — we keep the backend-stored UID as fallback
-    });
-    return unsubscribe;
+    if (!firebaseAvailable || (isNative && isIOS)) return;
+    let unsubscribe: (() => void) | undefined;
+    try {
+      unsubscribe = firebaseAuth.onAuthStateChanged((fbUser: { uid: string } | null) => {
+        if (fbUser) setFirebaseUid(fbUser.uid);
+      });
+    } catch (err) {
+      console.warn('[auth] onAuthStateChanged unavailable:', err);
+    }
+    return () => { try { unsubscribe?.(); } catch { /* noop */ } };
   }, []);
 
   const register = useCallback(async (name: string, email: string, password: string, location?: string) => {
@@ -143,30 +157,66 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = useCallback(async (emailOrUsername: string, password: string) => {
     try {
-      // 1. Backend login first (validates credentials).
-      //    Render free-tier cold-start can take ~30-60s. Apple reviewers on
-      //    iPadOS 26 repeatedly rejected the app for "login returns an error"
-      //    because WKWebView kills long-running XHRs. We now retry up to 3
-      //    times with escalating backoff and fire a DB-free wake-up ping
-      //    between attempts so the instance is warm by attempt 2/3.
-      const tryLogin = () => api.post('/auth/login', { email: emailOrUsername, password });
+      // Backend login with a fetch()-based primary path and an axios fallback.
+      // Apple reviewers on iOS 26.4.1 (iPhone 17 Pro Max) reported "login
+      // error" despite the endpoint returning 200 in ~0.8s. The most likely
+      // cause is an axios/interceptor edge case or a CORS preflight quirk
+      // inside Capacitor WKWebView on iOS 26. Using raw fetch() first
+      // removes every moving part from the reviewer path; axios is only a
+      // last-ditch backup.
+      const base = (import.meta.env.VITE_API_URL as string | undefined) || 'https://hasatlink-api.onrender.com/api';
+
+      const tryFetchLogin = async (): Promise<{ data: any }> => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 75000);
+        try {
+          const res = await fetch(`${base}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ email: emailOrUsername, password }),
+            signal: controller.signal,
+            cache: 'no-store',
+            credentials: 'omit',
+          });
+          clearTimeout(timer);
+          const text = await res.text();
+          let parsed: any = {};
+          try { parsed = text ? JSON.parse(text) : {}; } catch { parsed = { message: text }; }
+          if (!res.ok) {
+            const httpErr: any = new Error(parsed?.message || `HTTP ${res.status}`);
+            httpErr.response = { status: res.status, data: parsed };
+            throw httpErr;
+          }
+          return { data: parsed };
+        } finally {
+          clearTimeout(timer);
+        }
+      };
+
+      const tryAxiosLogin = () => api.post('/auth/login', { email: emailOrUsername, password });
       const isRetryable = (e: any) => {
         const status = e?.response?.status;
-        return !e?.response || (status >= 500 && status < 600) || e?.code === 'ECONNABORTED' || e?.code === 'ERR_NETWORK';
+        return !e?.response || (status >= 500 && status < 600) || e?.code === 'ECONNABORTED' || e?.code === 'ERR_NETWORK' || e?.name === 'AbortError';
       };
 
       let data: any;
       let lastErr: any;
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
-          ({ data } = await tryLogin());
+          // fetch primary, axios fallback on the same attempt
+          try {
+            ({ data } = await tryFetchLogin());
+          } catch (fetchErr: any) {
+            // If server rejected credentials (4xx), don't waste the axios call
+            if (fetchErr?.response?.status && fetchErr.response.status < 500) throw fetchErr;
+            ({ data } = await tryAxiosLogin());
+          }
           lastErr = null;
           break;
         } catch (err: any) {
           lastErr = err;
           if (!isRetryable(err)) throw err;
           // Fire-and-forget wake-up ping, then back off
-          const base = (import.meta.env.VITE_API_URL as string | undefined) || 'https://hasatlink-api.onrender.com/api';
           fetch(`${base}/ping`, { method: 'GET', cache: 'no-store' }).catch(() => {});
           await new Promise((r) => setTimeout(r, 2000 + attempt * 3000));
         }
@@ -178,13 +228,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setFirebaseUid(data.user.firebaseUid || null);
 
       // Firebase sync runs in the background so it can NEVER break login.
-      // Apple reviewers on iOS 26.4.1 repeatedly rejected the app with
-      // "login returns an error" — the Firebase Web SDK misbehaves inside
-      // WKWebView on iOS 26, and its sign-in promise was blocking our
-      // success path. Login success is now 100% backend-driven; Firebase
-      // is a best-effort enhancement for cross-device sync only.
+      // On iOS native we skip Firebase entirely — the Web SDK has repeatedly
+      // misbehaved inside WKWebView on iOS 26.4.1, and Apple reviewers kept
+      // seeing "login returns an error". Login success is now 100% backend-
+      // driven on iOS; Firebase stays as a best-effort cross-device enhancer
+      // on web only.
       const userEmail = data.user.email;
-      if (userEmail) {
+      const shouldSyncFirebase = firebaseAvailable && !(isNative && isIOS);
+      if (userEmail && shouldSyncFirebase) {
         (async () => {
           let fbUid: string | undefined;
           try {
