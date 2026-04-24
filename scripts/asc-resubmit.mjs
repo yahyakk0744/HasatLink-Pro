@@ -366,6 +366,40 @@ for (const [type, meta] of Object.entries(SS)) {
 log(`uploaded ${uploaded}/${uploaded + failed} screenshots`);
 if (failed > 0) throw new Error(`${failed} screenshots failed to upload`);
 
+// ---------- STEP 7b: wait for Apple to process all screenshots ----------
+// After PATCH uploaded=true, Apple async-validates each screenshot. Submitting
+// before they all reach assetDeliveryState=COMPLETE causes 409
+// SCREENSHOT_UPLOADS_IN_PROGRESS. Poll every 10s up to 5 min.
+log('waiting for screenshot processing to complete —');
+async function pollScreenshotProcessing() {
+  const startWait = Date.now();
+  const timeoutMs = 5 * 60 * 1000;
+  while (Date.now() - startWait < timeoutMs) {
+    let pending = 0;
+    let total = 0;
+    let firstPendingState = null;
+    for (const [type, meta] of Object.entries(SS)) {
+      const setId = setByType[type];
+      const cur = await api('GET', `/appScreenshotSets/${setId}/appScreenshots?limit=50`);
+      for (const s of (cur.data || [])) {
+        total++;
+        const a = s.attributes || {};
+        const state = a.assetDeliveryState?.state;
+        // States: AWAITING_UPLOAD, UPLOAD_COMPLETE, COMPLETE, FAILED
+        if (state !== 'COMPLETE') {
+          pending++;
+          if (!firstPendingState) firstPendingState = `${s.id}=${state || 'unknown'}`;
+        }
+      }
+    }
+    log(`  processing: ${total - pending}/${total} ready${firstPendingState ? ' (sample pending: ' + firstPendingState + ')' : ''}`);
+    if (pending === 0 && total > 0) { log('  ✓ all screenshots processed'); return; }
+    await new Promise(r => setTimeout(r, 10_000));
+  }
+  warn('  timeout waiting for screenshot processing — submitting anyway');
+}
+await pollScreenshotProcessing();
+
 // ---------- STEP 8: create & submit review ----------
 // Recovery flow: prior failed runs may have left READY_FOR_REVIEW submissions
 // that count toward Apple's 5-submission concurrency limit. The integration's
