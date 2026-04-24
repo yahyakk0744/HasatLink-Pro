@@ -244,32 +244,33 @@ for (const type of Object.keys(SS)) {
   log(`    created ${type} → ${created.data.id}`);
 }
 
-// ---------- STEP 4: clean up ALL non-final submissions ----------
-// A prior failed attempt may have left a draft submission (created but never
-// submitted). Apple blocks new submissions while ANY non-final submission
-// exists. Try DELETE first, fall back to PATCH canceled=true.
+// ---------- STEP 4: clean up submissions ----------
+// Apple enforces a hard limit of 5 concurrent reviewSubmissions per app
+// (STATE_ERROR.CONCURRENT_REVIEW_SUBMISSION_LIMIT_EXCEEDED). Failed prior
+// attempts can leave drafts that auto-transition to COMPLETE but still count
+// toward the limit. We aggressively DELETE every submission we can — Apple
+// allows DELETE on draft/incomplete subs and on some COMPLETE ones.
 log('cleaning up existing submissions —');
 try {
   const subs = await api('GET', `/reviewSubmissions?filter[app]=${APP_ID}&limit=20`);
   log(`  found ${subs.data?.length || 0} submissions total`);
-  const FINAL_STATES = new Set(['COMPLETE', 'ACCEPTED', 'REJECTED']);
   for (const s of (subs.data || [])) {
     const state = s.attributes.state;
     log(`    ${s.id} state=${state}`);
-    if (FINAL_STATES.has(state)) continue;
-    // Try DELETE first (works for drafts and unresolved)
+    // Try DELETE on ALL submissions, regardless of state — Apple will refuse
+    // ones that truly can't be deleted, but COMPLETE drafts can be removed.
     try {
       await api('DELETE', `/reviewSubmissions/${s.id}`);
       log(`    ✓ deleted ${s.id} (was ${state})`);
       continue;
-    } catch (e) { warn(`    delete ${s.id} failed: ${e.message.slice(0, 100)}`); }
-    // Fall back to PATCH canceled=true
+    } catch (e) { warn(`    delete ${s.id} failed: ${e.message.slice(0, 200)}`); }
+    // Fall back to PATCH canceled=true if DELETE was refused
     try {
       await api('PATCH', `/reviewSubmissions/${s.id}`, {
         data: { type: 'reviewSubmissions', id: s.id, attributes: { canceled: true } },
       });
       log(`    ✓ canceled ${s.id} (was ${state})`);
-    } catch (e) { warn(`    cancel ${s.id} failed: ${e.message.slice(0, 100)}`); }
+    } catch (e) { warn(`    cancel ${s.id} failed: ${e.message.slice(0, 200)}`); }
   }
 } catch (e) { warn('  submission discovery failed:', e.message); }
 
