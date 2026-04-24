@@ -367,40 +367,82 @@ log(`uploaded ${uploaded}/${uploaded + failed} screenshots`);
 if (failed > 0) throw new Error(`${failed} screenshots failed to upload`);
 
 // ---------- STEP 8: create & submit review ----------
-log('creating new review submission —');
-let newSub;
-try {
-  newSub = await api('POST', '/reviewSubmissions', {
+// Recovery flow: prior failed runs may have left READY_FOR_REVIEW submissions
+// that count toward Apple's 5-submission concurrency limit. The integration's
+// API key role lacks DELETE permission on READY_FOR_REVIEW (returns 403
+// FORBIDDEN_ERROR) and PATCH cancel returns 409 STATE_ERROR. So instead of
+// trying to clear them, we look for one already linked to our version and
+// just push it to IN_REVIEW with PATCH submitted=true.
+async function findReusableSubmission() {
+  const subs = await api('GET', `/reviewSubmissions?filter[app]=${APP_ID}&filter[state]=READY_FOR_REVIEW&limit=20`);
+  log(`  found ${subs.data?.length || 0} READY_FOR_REVIEW submissions`);
+  for (const s of (subs.data || [])) {
+    try {
+      const items = await api('GET', `/reviewSubmissions/${s.id}/items?limit=20`);
+      const hasVer = (items.data || []).some(it => {
+        const rel = it.relationships?.appStoreVersion?.data;
+        return rel && rel.id === APP_VERSION_ID;
+      });
+      log(`    ${s.id} items=${items.data?.length || 0} matches=${hasVer}`);
+      if (hasVer) return { id: s.id, addItem: false };
+      // No items yet → we can add our version as the first item and submit.
+      if (!items.data || items.data.length === 0) return { id: s.id, addItem: true };
+    } catch (e) { warn(`    items lookup ${s.id} failed: ${e.message.slice(0, 150)}`); }
+  }
+  return null;
+}
+
+let subId;
+const reusable = await findReusableSubmission();
+if (reusable) {
+  subId = reusable.id;
+  log(`  reusing existing submission ${subId} (addItem=${reusable.addItem})`);
+  if (reusable.addItem) {
+    await api('POST', '/reviewSubmissionItems', {
+      data: {
+        type: 'reviewSubmissionItems',
+        relationships: {
+          reviewSubmission: { data: { type: 'reviewSubmissions', id: subId } },
+          appStoreVersion:  { data: { type: 'appStoreVersions',  id: APP_VERSION_ID } },
+        },
+      },
+    });
+    log('  version linked to reused submission');
+  }
+} else {
+  log('creating new review submission —');
+  let newSub;
+  try {
+    newSub = await api('POST', '/reviewSubmissions', {
+      data: {
+        type: 'reviewSubmissions',
+        attributes: { platform: 'IOS' },
+        relationships: { app: { data: { type: 'apps', id: APP_ID } } },
+      },
+    });
+  } catch (e) {
+    err('--- POST /reviewSubmissions failed ---');
+    err('status:', e.status);
+    err('full data:', JSON.stringify(e.data, null, 2));
+    try {
+      const ver = await api('GET', `/appStoreVersions/${APP_VERSION_ID}?include=appStoreVersionSubmission,build`);
+      err('version diag:', JSON.stringify(ver, null, 2).slice(0, 3000));
+    } catch (e2) { err('version diag fetch failed:', e2.message); }
+    throw e;
+  }
+  subId = newSub.data.id;
+  log(`  submission id: ${subId}`);
+  await api('POST', '/reviewSubmissionItems', {
     data: {
-      type: 'reviewSubmissions',
-      attributes: { platform: 'IOS' },
-      relationships: { app: { data: { type: 'apps', id: APP_ID } } },
+      type: 'reviewSubmissionItems',
+      relationships: {
+        reviewSubmission: { data: { type: 'reviewSubmissions', id: subId } },
+        appStoreVersion:  { data: { type: 'appStoreVersions',  id: APP_VERSION_ID } },
+      },
     },
   });
-} catch (e) {
-  err('--- POST /reviewSubmissions failed ---');
-  err('status:', e.status);
-  err('full data:', JSON.stringify(e.data, null, 2));
-  // Also fetch app validation diagnostics
-  try {
-    const ver = await api('GET', `/appStoreVersions/${APP_VERSION_ID}?include=appStoreVersionSubmission,build`);
-    err('version diag:', JSON.stringify(ver, null, 2).slice(0, 3000));
-  } catch (e2) { err('version diag fetch failed:', e2.message); }
-  throw e;
+  log('  version linked');
 }
-const subId = newSub.data.id;
-log(`  submission id: ${subId}`);
-
-await api('POST', '/reviewSubmissionItems', {
-  data: {
-    type: 'reviewSubmissionItems',
-    relationships: {
-      reviewSubmission: { data: { type: 'reviewSubmissions', id: subId } },
-      appStoreVersion: { data: { type: 'appStoreVersions', id: APP_VERSION_ID } },
-    },
-  },
-});
-log('  version linked');
 
 await api('PATCH', `/reviewSubmissions/${subId}`, {
   data: { type: 'reviewSubmissions', id: subId, attributes: { submitted: true } },
