@@ -66,7 +66,16 @@ const SS = {
   },
   APP_IPAD_PRO_129: {
     dir: 'store-assets/screenshots-ipad-13',
-    label: 'iPad 13"',
+    label: 'iPad 13" (legacy)',
+    files: ['01-anasayfa','02-pazar','03-uydu-analiz','04-hasatlink-pazari','05-hal-fiyatlari','06-harita','07-ai-teshis'],
+  },
+  // Apple sometimes maintains BOTH legacy (APP_IPAD_PRO_129) and modern
+  // (APP_IPAD_PRO_3GEN_129) 12.9" sets — same 2048×2732 dimensions. Stale
+  // screenshots in the modern set caused 409 STATE_ERROR on submission.
+  // Reuse the iPad 13" assets for it.
+  APP_IPAD_PRO_3GEN_129: {
+    dir: 'store-assets/screenshots-ipad-13',
+    label: 'iPad 13" (modern)',
     files: ['01-anasayfa','02-pazar','03-uydu-analiz','04-hasatlink-pazari','05-hal-fiyatlari','06-harita','07-ai-teshis'],
   },
   APP_IPAD_PRO_3GEN_11: {
