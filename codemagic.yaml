@@ -232,3 +232,47 @@ workflows:
         notify:
           success: true
           failure: true
+
+  asc-resubmit:
+    # Headless ASC resubmit workflow — no IPA rebuild. Reuses the integration's
+    # ASC API key to sign JWTs, then: cancels stale submissions, attaches the
+    # latest VALID build, wipes the 4 device-family screenshot sets, uploads
+    # 28 fresh login-free screenshots from the repo, and submits for review.
+    name: ASC Resubmit Only
+    max_build_duration: 45
+    instance_type: linux_x2
+    integrations:
+      app_store_connect: HasatLink
+    environment:
+      vars:
+        APP_STORE_APPLE_ID: "6761334964"
+      node: 22
+    scripts:
+      - name: Verify ASC credentials from integration
+        script: |
+          [ -n "$APP_STORE_CONNECT_PRIVATE_KEY" ] || { echo "MISSING APP_STORE_CONNECT_PRIVATE_KEY"; exit 1; }
+          [ -n "$APP_STORE_CONNECT_KEY_IDENTIFIER" ] || { echo "MISSING APP_STORE_CONNECT_KEY_IDENTIFIER"; exit 1; }
+          [ -n "$APP_STORE_CONNECT_ISSUER_ID" ] || { echo "MISSING APP_STORE_CONNECT_ISSUER_ID"; exit 1; }
+          echo "KEY_ID: $APP_STORE_CONNECT_KEY_IDENTIFIER"
+          echo "ISSUER: ${APP_STORE_CONNECT_ISSUER_ID:0:8}..."
+      - name: Verify 28 screenshots are present
+        script: |
+          set -e
+          count=0
+          for d in store-assets/screenshots-new store-assets/screenshots-resized store-assets/screenshots-ipad-13 store-assets/screenshots-ipad-11; do
+            c=$(ls $d/*.png 2>/dev/null | wc -l)
+            echo "$d: $c files"
+            count=$((count + c))
+          done
+          echo "total: $count"
+          [ "$count" -eq 28 ] || { echo "Expected 28 screenshots, got $count"; exit 1; }
+      - name: Resubmit to App Store
+        script: |
+          node scripts/asc-resubmit.mjs
+    publishing:
+      email:
+        recipients:
+          - yahyakk0744@gmail.com
+        notify:
+          success: true
+          failure: true
