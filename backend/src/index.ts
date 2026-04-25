@@ -9,6 +9,7 @@ import { createServer } from 'http';
 import path from 'path';
 import cors from 'cors';
 import compression from 'compression';
+import mongoose from 'mongoose';
 import connectDB from './config/db';
 import errorHandler from './middleware/errorHandler';
 import { initSocket } from './socket';
@@ -80,6 +81,24 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// Cold-start protection: until MongoDB is connected, return 503 (Retry-After)
+// instead of letting requests buffer for 10s and surface as a generic 500.
+// Apple reviewer hit this window during prior Guideline 2.1(a) reject — the
+// iOS client has built-in retry logic that absorbs 503 gracefully.
+app.use((req, res, next) => {
+  if (req.path === '/api/ping') return next();
+  if (mongoose.connection.readyState !== 1) {
+    res.setHeader('Retry-After', '5');
+    res.status(503).json({
+      success: false,
+      message: 'Sunucu hazırlanıyor, lütfen birkaç saniye sonra tekrar deneyin.',
+    });
+    return;
+  }
+  next();
+});
+
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

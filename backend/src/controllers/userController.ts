@@ -91,6 +91,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ message: 'Email veya şifre hatalı' });
       return;
     }
+    // Defensive: legacy rows may lack a password (Firebase-only signup, etc.)
+    // bcrypt.compare with non-string crashes → 500 → reviewer sees login error.
+    if (!user.password || typeof user.password !== 'string') {
+      console.warn('[auth/login] missing/invalid password field for user', user.userId);
+      res.status(400).json({ message: 'Email veya şifre hatalı' });
+      return;
+    }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       res.status(400).json({ message: 'Email veya şifre hatalı' });
