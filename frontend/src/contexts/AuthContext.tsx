@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { signInWithRedirect, getRedirectResult, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, deleteUser, GoogleAuthProvider, OAuthProvider, FacebookAuthProvider, signInWithCredential } from 'firebase/auth';
+import { signInWithRedirect, getRedirectResult, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, OAuthProvider, FacebookAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth as firebaseAuth, googleProvider, firebaseAvailable } from '../config/firebase';
 import { isNative, isIOS } from '../utils/native';
 import api from '../config/api';
@@ -115,43 +115,120 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = useCallback(async (name: string, email: string, password: string, location?: string) => {
     try {
-      // 1. Create Firebase Auth account first
-      const fbResult = await createUserWithEmailAndPassword(firebaseAuth, email, password);
-      const fbUid = fbResult.user.uid;
+      // Apple's 4th rejection (2.1.0) said registration AND login launched to
+      // an error message on iOS 26.4.1. Login was already converted to a
+      // backend-first fetch path; register was still calling
+      // createUserWithEmailAndPassword(firebaseAuth, ...) as its FIRST step,
+      // which throws synchronously inside Capacitor WKWebView when the
+      // Firebase Web SDK fails to initialize on iOS 26. That single throw
+      // prevented the backend from ever being called.
+      //
+      // Register now mirrors login: raw fetch() primary → axios fallback →
+      // retry with /ping wakeup. Firebase signup runs only as a fire-and-
+      // forget background sync on web, never on iOS native.
+      const base = (import.meta.env.VITE_API_URL as string | undefined) || 'https://hasatlink-api.onrender.com/api';
 
-      try {
-        // 2. Register on backend with firebaseUid
-        const { data } = await api.post('/auth/register', { name, email, password, location, firebaseUid: fbUid });
-        localStorage.setItem('hasatlink_token', data.token);
-        setToken(data.token);
-        setUser(data.user);
-        setFirebaseUid(fbUid);
-        return { success: true };
-      } catch (err: any) {
-        // Backend failed → delete Firebase account
-        await deleteUser(fbResult.user).catch(() => {});
-        return { success: false, message: err.response?.data?.message || 'Kayıt hatası' };
-      }
-    } catch (err: any) {
-      // Firebase account creation failed
-      if (err.code === 'auth/email-already-in-use') {
-        // Email already exists in Firebase, try backend register without Firebase
+      const tryFetchRegister = async (): Promise<{ data: any }> => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 75000);
         try {
-          const { data } = await api.post('/auth/register', { name, email, password, location });
-          localStorage.setItem('hasatlink_token', data.token);
-          setToken(data.token);
-          setUser(data.user);
-          // Try to sign in to Firebase to get uid
+          const res = await fetch(`${base}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ name, email, password, location }),
+            signal: controller.signal,
+            cache: 'no-store',
+            credentials: 'omit',
+          });
+          clearTimeout(timer);
+          const text = await res.text();
+          let parsed: any = {};
+          try { parsed = text ? JSON.parse(text) : {}; } catch { parsed = { message: text }; }
+          if (!res.ok) {
+            const httpErr: any = new Error(parsed?.message || `HTTP ${res.status}`);
+            httpErr.response = { status: res.status, data: parsed };
+            throw httpErr;
+          }
+          return { data: parsed };
+        } finally {
+          clearTimeout(timer);
+        }
+      };
+
+      const tryAxiosRegister = () => api.post('/auth/register', { name, email, password, location });
+      const isRetryable = (e: any) => {
+        const status = e?.response?.status;
+        return !e?.response || (status >= 500 && status < 600) || e?.code === 'ECONNABORTED' || e?.code === 'ERR_NETWORK' || e?.name === 'AbortError';
+      };
+
+      let data: any;
+      let lastErr: any;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
           try {
-            const fbResult = await signInWithEmailAndPassword(firebaseAuth, email, password);
-            setFirebaseUid(fbResult.user.uid);
-          } catch {}
-          return { success: true };
-        } catch (backendErr: any) {
-          return { success: false, message: backendErr.response?.data?.message || 'Kayıt hatası' };
+            ({ data } = await tryFetchRegister());
+          } catch (fetchErr: any) {
+            if (fetchErr?.response?.status && fetchErr.response.status < 500) throw fetchErr;
+            ({ data } = await tryAxiosRegister());
+          }
+          lastErr = null;
+          break;
+        } catch (err: any) {
+          lastErr = err;
+          if (!isRetryable(err)) throw err;
+          fetch(`${base}/ping`, { method: 'GET', cache: 'no-store' }).catch(() => {});
+          await new Promise((r) => setTimeout(r, 2000 + attempt * 3000));
         }
       }
-      return { success: false, message: err.message || 'Kayıt hatası' };
+      if (lastErr) throw lastErr;
+
+      localStorage.setItem('hasatlink_token', data.token);
+      setToken(data.token);
+      setUser(data.user);
+      setFirebaseUid(data.user.firebaseUid || null);
+
+      // Background Firebase signup — best-effort, never blocks the UX.
+      // Skipped on iOS native because the Firebase Web SDK has repeatedly
+      // misbehaved inside WKWebView on iOS 26.4.1.
+      const shouldSyncFirebase = firebaseAvailable && !(isNative && isIOS);
+      if (shouldSyncFirebase) {
+        (async () => {
+          let fbUid: string | undefined;
+          try {
+            const fbResult = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+            fbUid = fbResult.user.uid;
+          } catch (createErr: any) {
+            if (createErr?.code === 'auth/email-already-in-use') {
+              try {
+                const fbResult = await signInWithEmailAndPassword(firebaseAuth, email, password);
+                fbUid = fbResult.user.uid;
+              } catch {
+                // Firebase unavailable for this account — backend account is still valid.
+              }
+            }
+          }
+          if (fbUid && fbUid !== data.user.firebaseUid) {
+            try {
+              await api.put(`/users/${data.user.userId}`, { firebaseUid: fbUid });
+              setFirebaseUid(fbUid);
+            } catch {
+              // Non-critical
+            }
+          }
+        })().catch(() => {});
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      const backendMsg = err?.response?.data?.message;
+      if (backendMsg) return { success: false, message: backendMsg };
+      if (err?.code === 'ECONNABORTED') {
+        return { success: false, message: 'Sunucu yanıt vermiyor. Lütfen birkaç saniye sonra tekrar deneyin.' };
+      }
+      if (!err?.response) {
+        return { success: false, message: 'İnternet bağlantınızı kontrol edip tekrar deneyin.' };
+      }
+      return { success: false, message: 'Kayıt sırasında bir sorun oluştu. Lütfen tekrar deneyin.' };
     }
   }, []);
 
