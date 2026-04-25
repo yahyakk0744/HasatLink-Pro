@@ -15,6 +15,17 @@ workflows:
       - name: Set up keychain
         script: |
           keychain initialize
+      - name: Clean SPM and DerivedData caches
+        script: |
+          # Codemagic shared mac_mini_m2 builders reuse caches across runs.
+          # Prior build left Cordova.xcframework.zip in the SPM artifacts cache,
+          # which made the next xcodebuild fail at Step 10 with
+          #   "failed downloading … already exists in file system"
+          # (exit 74). Wiping these caches before the build is cheap and keeps
+          # the workflow idempotent across repeated runs on the same builder.
+          rm -rf ~/Library/Caches/org.swift.swiftpm/artifacts/ || true
+          rm -rf ~/Library/Developer/Xcode/DerivedData/ || true
+          echo "[cache] cleared SPM artifacts + DerivedData"
       - name: Fetch signing files (self-healing)
         script: |
           set -e
