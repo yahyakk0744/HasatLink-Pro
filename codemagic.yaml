@@ -276,3 +276,29 @@ workflows:
         notify:
           success: true
           failure: true
+
+  asc-update-notes:
+    # Tiny helper workflow — patches the App Review Detail (reviewer notes,
+    # demo creds, contact info) on the inflight version. Useful after an
+    # automated resubmit so the reviewer sees the bug-fix context up front.
+    # Tolerates IN_REVIEW lock state gracefully (logs warning, exits 0).
+    name: ASC Update Review Notes
+    max_build_duration: 15
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: HasatLink
+    environment:
+      vars:
+        APP_STORE_APPLE_ID: "6761334964"
+      node: 22
+    scripts:
+      - name: Update review notes
+        script: |
+          node scripts/asc-update-review-notes.mjs
+    publishing:
+      email:
+        recipients:
+          - yahyakk0744@gmail.com
+        notify:
+          success: true
+          failure: true
