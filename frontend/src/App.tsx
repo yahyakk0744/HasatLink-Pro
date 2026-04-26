@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/layout/Header';
 import CategoryNav from './components/layout/CategoryNav';
 import MobileBottomNav from './components/layout/MobileBottomNav';
@@ -71,12 +71,38 @@ function PageLoader() {
 
 export default function App() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const isAdmin = pathname.startsWith('/admin');
 
   useEffect(() => {
     window.scrollTo(0, 0);
     trackPageView(pathname);
   }, [pathname]);
+
+  // Native iOS Quick Actions + App Intents bridge.
+  // AppDelegate.swift dispatches `hasatlink:quickAction` with a string detail
+  // when the user triggers a Home Screen long-press shortcut or a Siri Shortcut.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<string>).detail;
+      switch (detail) {
+        case 'addListing':
+          navigate('/profil?tab=add-listing');
+          break;
+        case 'browseMarket':
+          navigate('/hasatlink-pazari');
+          break;
+        case 'diagnose':
+          navigate('/ai-teshis');
+          break;
+        case 'priceAlerts':
+          navigate('/fiyat-alarmlari');
+          break;
+      }
+    };
+    window.addEventListener('hasatlink:quickAction', handler as EventListener);
+    return () => window.removeEventListener('hasatlink:quickAction', handler as EventListener);
+  }, [navigate]);
 
   // Wake up Render backend immediately on app load (prevents cold start delay)
   useEffect(() => {

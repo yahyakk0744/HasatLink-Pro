@@ -54,6 +54,56 @@
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.hasatlink.shortcut.addListing</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Yeni İlan</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>Hızlıca satış ilanı oluştur</string>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypeAdd</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.hasatlink.shortcut.browseMarket</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Pazar Fiyatları</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>Güncel hal ve pazar fiyatları</string>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypeMarkLocation</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.hasatlink.shortcut.diagnose</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>AI Hastalık Teşhisi</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>Bitki yaprağı tara, teşhis al</string>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypeCapturePhoto</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.hasatlink.shortcut.priceAlerts</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Fiyat Alarmları</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>Tetiklenen alarmları görüntüle</string>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypeAlarm</string>
+		</dict>
+	</array>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>AddListingIntent</string>
+		<string>BrowseMarketIntent</string>
+		<string>DiagnoseDiseaseIntent</string>
+		<string>PriceAlertsIntent</string>
+	</array>
 	<!--
 	  Facebook Login is disabled in this build. When a real Facebook App ID is
 	  available, add FacebookAppID / FacebookClientToken / FacebookDisplayName

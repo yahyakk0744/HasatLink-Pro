@@ -2,10 +2,17 @@ import UIKit
 import Capacitor
 import FacebookCore
 
+#if canImport(AppIntents)
+import AppIntents
+#endif
+
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+
+    /// Cold-start shortcut, replayed once the webview is ready in didBecomeActive.
+    private var pendingShortcut: String?
 
     /// Returns true only when a real Facebook App ID has been plugged into Info.plist.
     /// Keeps the SDK dormant while the placeholder is in place so Apple reviewers
@@ -19,6 +26,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if facebookConfigured {
             ApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
         }
+
+        // Capture cold-start Quick Action shortcut. We can't dispatch yet because the
+        // webview is still loading — defer to applicationDidBecomeActive.
+        if let shortcut = launchOptions?[.shortcutItem] as? UIApplicationShortcutItem {
+            pendingShortcut = mapShortcutType(shortcut.type)
+        }
+
         return true
     }
 
@@ -32,9 +46,65 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
+        // Replay any cold-start Quick Action once the webview is up.
+        if let pending = pendingShortcut {
+            pendingShortcut = nil
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                self?.deliverAction(pending)
+            }
+        }
+
+        // Pick up any pending action stashed by an App Intent (Siri / Spotlight).
+        if let intentAction = UserDefaults.standard.string(forKey: "HasatLinkPendingAction") {
+            UserDefaults.standard.removeObject(forKey: "HasatLinkPendingAction")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                self?.deliverAction(intentAction)
+            }
+        }
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
+    }
+
+    // MARK: - Home Screen Quick Actions (long-press app icon)
+
+    func application(_ application: UIApplication,
+                     performActionFor shortcutItem: UIApplicationShortcutItem,
+                     completionHandler: @escaping (Bool) -> Void) {
+        let action = mapShortcutType(shortcutItem.type)
+        deliverAction(action)
+        completionHandler(true)
+    }
+
+    /// Translates the Info.plist shortcut type identifier to a stable JS event payload.
+    private func mapShortcutType(_ rawType: String) -> String {
+        // Strip our bundle prefix if present (Apple recommends reverse-DNS for shortcut types).
+        if let dot = rawType.lastIndex(of: ".") {
+            return String(rawType[rawType.index(after: dot)...])
+        }
+        return rawType
+    }
+
+    /// Bridge a native action into the Capacitor webview as a CustomEvent.
+    private func deliverAction(_ action: String) {
+        let js = "window.dispatchEvent(new CustomEvent('hasatlink:quickAction', { detail: '\(action)' }));"
+
+        // Try the keyed window first.
+        if let bridge = (window?.rootViewController as? CAPBridgeViewController)?.bridge {
+            bridge.eval(js: js) { _ in }
+            return
+        }
+
+        // Fallback: walk the connected scenes for a Capacitor bridge.
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for w in windowScene.windows {
+                if let bridge = (w.rootViewController as? CAPBridgeViewController)?.bridge {
+                    bridge.eval(js: js) { _ in }
+                    return
+                }
+            }
+        }
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
@@ -55,3 +125,100 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
 }
+
+// MARK: - App Intents (iOS 16+) — Siri Shortcuts, Spotlight, Action Button
+
+#if canImport(AppIntents)
+@available(iOS 16.0, *)
+struct AddListingIntent: AppIntent {
+    static var title: LocalizedStringResource = "Yeni İlan Ekle"
+    static var description = IntentDescription("HasatLink'te yeni satış ilanı oluşturmak için uygulamayı aç.")
+    static var openAppWhenRun: Bool = true
+
+    func perform() async throws -> some IntentResult {
+        UserDefaults.standard.set("addListing", forKey: "HasatLinkPendingAction")
+        return .result()
+    }
+}
+
+@available(iOS 16.0, *)
+struct BrowseMarketIntent: AppIntent {
+    static var title: LocalizedStringResource = "Pazar Fiyatlarını Aç"
+    static var description = IntentDescription("HasatLink Pazar'da güncel fiyatları görüntüle.")
+    static var openAppWhenRun: Bool = true
+
+    func perform() async throws -> some IntentResult {
+        UserDefaults.standard.set("browseMarket", forKey: "HasatLinkPendingAction")
+        return .result()
+    }
+}
+
+@available(iOS 16.0, *)
+struct DiagnoseDiseaseIntent: AppIntent {
+    static var title: LocalizedStringResource = "AI Hastalık Teşhisi"
+    static var description = IntentDescription("Bitki yaprağı fotoğrafıyla hastalık teşhis ettir.")
+    static var openAppWhenRun: Bool = true
+
+    func perform() async throws -> some IntentResult {
+        UserDefaults.standard.set("diagnose", forKey: "HasatLinkPendingAction")
+        return .result()
+    }
+}
+
+@available(iOS 16.0, *)
+struct PriceAlertsIntent: AppIntent {
+    static var title: LocalizedStringResource = "Fiyat Alarmlarım"
+    static var description = IntentDescription("Aktif fiyat alarmlarını ve son tetiklenenleri görüntüle.")
+    static var openAppWhenRun: Bool = true
+
+    func perform() async throws -> some IntentResult {
+        UserDefaults.standard.set("priceAlerts", forKey: "HasatLinkPendingAction")
+        return .result()
+    }
+}
+
+@available(iOS 16.0, *)
+struct HasatLinkAppShortcuts: AppShortcutsProvider {
+    static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: AddListingIntent(),
+            phrases: [
+                "\(.applicationName) ile ilan ekle",
+                "\(.applicationName) yeni ilan",
+                "\(.applicationName) sat"
+            ],
+            shortTitle: "İlan Ekle",
+            systemImageName: "plus.circle.fill"
+        )
+        AppShortcut(
+            intent: BrowseMarketIntent(),
+            phrases: [
+                "\(.applicationName) pazar fiyatları",
+                "\(.applicationName) market",
+                "\(.applicationName) fiyatları göster"
+            ],
+            shortTitle: "Pazar Fiyatları",
+            systemImageName: "chart.line.uptrend.xyaxis"
+        )
+        AppShortcut(
+            intent: DiagnoseDiseaseIntent(),
+            phrases: [
+                "\(.applicationName) hastalık teşhis",
+                "\(.applicationName) bitki tara",
+                "\(.applicationName) yaprak teşhis"
+            ],
+            shortTitle: "Hastalık Teşhisi",
+            systemImageName: "leaf.fill"
+        )
+        AppShortcut(
+            intent: PriceAlertsIntent(),
+            phrases: [
+                "\(.applicationName) fiyat alarmları",
+                "\(.applicationName) alarm"
+            ],
+            shortTitle: "Fiyat Alarmları",
+            systemImageName: "bell.badge.fill"
+        )
+    }
+}
+#endif
