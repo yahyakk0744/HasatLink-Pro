@@ -313,3 +313,39 @@ workflows:
         notify:
           success: true
           failure: true
+
+  asc-replace-build:
+    # Hot-replace the build attached to the inflight appStoreVersion
+    # WITHOUT touching the existing reviewSubmission. Use this when a
+    # WAITING_FOR_REVIEW submission already exists and we just shipped a
+    # newer binary — Apple lets us swap the underlying build, the queue
+    # position is preserved, and the reviewer opens the newer IPA when
+    # the slot comes up. Polls up to 30min for the new build to reach
+    # processingState=VALID.
+    name: ASC Hot-Replace Build (preserve submission)
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: HasatLink
+    environment:
+      vars:
+        APP_STORE_APPLE_ID: "6761334964"
+      node: 22
+    scripts:
+      - name: Verify ASC credentials
+        script: |
+          [ -n "$APP_STORE_CONNECT_PRIVATE_KEY" ] || { echo "MISSING APP_STORE_CONNECT_PRIVATE_KEY"; exit 1; }
+          [ -n "$APP_STORE_CONNECT_KEY_IDENTIFIER" ] || { echo "MISSING APP_STORE_CONNECT_KEY_IDENTIFIER"; exit 1; }
+          [ -n "$APP_STORE_CONNECT_ISSUER_ID" ] || { echo "MISSING APP_STORE_CONNECT_ISSUER_ID"; exit 1; }
+          echo "KEY_ID: $APP_STORE_CONNECT_KEY_IDENTIFIER"
+          echo "ISSUER: ${APP_STORE_CONNECT_ISSUER_ID:0:8}..."
+      - name: Hot-replace attached build
+        script: |
+          node scripts/asc-replace-build.mjs
+    publishing:
+      email:
+        recipients:
+          - yahyakk0744@gmail.com
+        notify:
+          success: true
+          failure: true
