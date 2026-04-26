@@ -1,4 +1,5 @@
 import UIKit
+import WebKit
 import Capacitor
 import FacebookCore
 
@@ -86,25 +87,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     /// Bridge a native action into the Capacitor webview as a CustomEvent.
+    /// Goes through the underlying WKWebView so we don't depend on the exact
+    /// `bridge.eval(js:)` signature, which has shifted between Capacitor majors.
     private func deliverAction(_ action: String) {
         let js = "window.dispatchEvent(new CustomEvent('hasatlink:quickAction', { detail: '\(action)' }));"
 
-        // Try the keyed window first.
-        if let bridge = (window?.rootViewController as? CAPBridgeViewController)?.bridge {
-            bridge.eval(js: js) { _ in }
-            return
+        if let webView = capacitorWebView() {
+            webView.evaluateJavaScript(js, completionHandler: nil)
         }
+    }
 
-        // Fallback: walk the connected scenes for a Capacitor bridge.
+    private func capacitorWebView() -> WKWebView? {
+        if let vc = window?.rootViewController as? CAPBridgeViewController,
+           let webView = vc.bridge?.webView {
+            return webView
+        }
         for scene in UIApplication.shared.connectedScenes {
             guard let windowScene = scene as? UIWindowScene else { continue }
             for w in windowScene.windows {
-                if let bridge = (w.rootViewController as? CAPBridgeViewController)?.bridge {
-                    bridge.eval(js: js) { _ in }
-                    return
+                if let vc = w.rootViewController as? CAPBridgeViewController,
+                   let webView = vc.bridge?.webView {
+                    return webView
                 }
             }
         }
+        return nil
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
