@@ -30,13 +30,15 @@ export default function AuthPage() {
   // before the button can work. Env flag lets us hide it until credentials are wired up.
   const facebookEnabled = import.meta.env.VITE_ENABLE_FACEBOOK_LOGIN === 'true';
 
-  // Build 10 strategy: pure email/password on iOS to eliminate all third-party
-  // login failure modes. Previous Build 9 was rejected for Guideline 2.1(a)
-  // because Apple reviewers saw an error on both Apple Sign In and credentials
-  // login (Render cold-start timing). With no social buttons on iOS, Guideline
-  // 4.8 does not apply (it only requires Apple Sign In when other third-party
-  // logins are offered).
-  const showAppleButton = !(isNative && isIOS);
+  // Build 15 strategy (4.2 Minimum Functionality response): re-enable Sign in
+  // with Apple on iOS native. The Capacitor SignInWithApple plugin issues an
+  // identityToken locally which the backend verifies against Apple's JWKS —
+  // Firebase Web SDK is bypassed entirely so the "popup blocked in WKWebView"
+  // failure mode that triggered prior 2.1(a) cannot recur. Sign in with Apple
+  // is the strongest possible iOS-native signal for guideline 4.2 compliance.
+  // Google and Facebook stay web-only because their native SDKs require
+  // additional credentials we don't yet provision on iOS.
+  const showAppleButton = true;
   const showGoogleButton = !(isNative && isIOS);
   const showFacebookButton = facebookEnabled && !(isNative && isIOS);
   const showSocialLogin = showAppleButton || showGoogleButton || showFacebookButton;
