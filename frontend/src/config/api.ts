@@ -7,10 +7,18 @@ const api = axios.create({
   timeout: 75000,
 });
 
-// Fire a fire-and-forget ping once on module load to warm up Render before the user hits login.
+// Fire-and-forget pings on module load to warm Render BEFORE the user hits login.
+// We hammer the wakeup hard for the first 60s after app launch so the cold-start
+// window closes before reviewers tap "Sign in with Apple". Each ping is independent
+// so a single network blip can't leave the backend unwarmed.
 if (typeof window !== 'undefined' && import.meta.env.PROD) {
   const base = import.meta.env.VITE_API_URL || 'https://hasatlink-api.onrender.com/api';
-  fetch(`${base}/ping`, { method: 'GET', cache: 'no-store' }).catch(() => {});
+  const ping = () => fetch(`${base}/ping`, { method: 'GET', cache: 'no-store' }).catch(() => {});
+  ping();
+  setTimeout(ping, 2000);
+  setTimeout(ping, 5000);
+  setTimeout(ping, 15000);
+  setTimeout(ping, 30000);
 }
 
 api.interceptors.request.use((config) => {
