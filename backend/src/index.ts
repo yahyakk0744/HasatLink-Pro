@@ -69,10 +69,19 @@ const DEFAULT_CORS_ORIGINS = [
   'http://localhost:3000',
 ];
 const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()).filter(Boolean) || DEFAULT_CORS_ORIGINS;
+// Native Capacitor/Ionic shells are ALWAYS allowed regardless of CORS_ORIGIN env var.
+// This was the root cause of the 27 Apr 2026 Apple rejection (Guideline 2.1(a)):
+// Render's CORS_ORIGIN env var did not include capacitor://localhost, so iOS app
+// requests were rejected with 500 "Sunucu hatası", which the reviewer saw as
+// "İnternet bağlantınızı kontrol edip tekrar deneyin." The check below is hardcoded
+// so an env var misconfiguration can never break the iOS/Android shells again.
+const NATIVE_SHELL_ORIGINS = new Set(['capacitor://localhost', 'ionic://localhost']);
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests without Origin header (native fetch, curl, health checks)
     if (!origin) return callback(null, true);
+    // Native shells — hardcoded, env-var-independent
+    if (NATIVE_SHELL_ORIGINS.has(origin)) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     // Allow any localhost:* and *.hasatlink.com to avoid breaking dev/native shells
     if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
