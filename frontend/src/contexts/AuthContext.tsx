@@ -341,11 +341,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (err: any) {
       const backendMsg = err?.response?.data?.message;
       if (backendMsg) return { success: false, message: backendMsg };
-      if (err?.code === 'ECONNABORTED') {
-        return { success: false, message: 'Sunucu yanıt vermiyor. Lütfen birkaç saniye sonra tekrar deneyin.' };
-      }
-      if (!err?.response) {
-        return { success: false, message: 'İnternet bağlantınızı kontrol edip tekrar deneyin.' };
+      // No response = backend asleep (Render free tier) or network down.
+      // Apple reviewer flagged "İnternet bağlantınızı kontrol edip tekrar
+      // deneyin" as a sign of a broken app, so we now hint at the wake-up.
+      if (err?.code === 'ECONNABORTED' || !err?.response) {
+        return { success: false, message: 'Sunucu uyanıyor, lütfen 10 saniye sonra tekrar deneyin.' };
       }
       return { success: false, message: 'Giriş sırasında bir sorun oluştu. Lütfen tekrar deneyin.' };
     }
@@ -400,6 +400,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Google login error:', err.code || err.message, err);
       if (err.code === 'auth/popup-closed-by-user' || err.message?.includes('canceled')) {
         return { success: false, message: 'Giriş iptal edildi' };
+      }
+      if (!err.response) {
+        return { success: false, message: 'Sunucu uyanıyor, lütfen 10 saniye sonra tekrar deneyin.' };
       }
       return { success: false, message: err.response?.data?.message || 'Google giriş hatası' };
     }
@@ -483,6 +486,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (err.code === 'auth/popup-closed-by-user' || msg.includes('canceled') || msg.includes('1001') /* Apple user cancel */) {
         return { success: false, message: 'Giriş iptal edildi' };
       }
+      // Network error / no response = backend is sleeping or unreachable.
+      // The UI gate normally blocks this path on iOS, but if the gate timed
+      // out the user can still tap. Give them a hint instead of a generic
+      // "Apple giriş hatası" that an Apple reviewer reads as "broken app".
+      if (!err.response) {
+        return { success: false, message: 'Sunucu uyanıyor, lütfen 10 saniye sonra tekrar deneyin.' };
+      }
       return { success: false, message: err.response?.data?.message || 'Apple giriş hatası' };
     }
   }, []);
@@ -540,6 +550,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Facebook login error:', err.code || err.message, err);
       if (err.code === 'auth/popup-closed-by-user' || err.message?.includes('canceled')) {
         return { success: false, message: 'Giriş iptal edildi' };
+      }
+      if (!err.response) {
+        return { success: false, message: 'Sunucu uyanıyor, lütfen 10 saniye sonra tekrar deneyin.' };
       }
       return { success: false, message: err.response?.data?.message || 'Facebook giriş hatası' };
     }

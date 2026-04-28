@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import SEO from '../components/ui/SEO';
-import { API_ORIGIN } from '../config/api';
+import { API_ORIGIN, getBackendReady } from '../config/api';
 import { isIOS, isNative } from '../utils/native';
 
 export default function AuthPage() {
@@ -25,6 +25,17 @@ export default function AuthPage() {
   const [location, setLocation] = useState('');
   const [progressMsg, setProgressMsg] = useState<string | null>(null);
   const progressTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // iOS native reviewers consistently tapped login during Render's cold-boot
+  // window and got network-error toasts. We now BLOCK the login buttons until
+  // /api/ping returns 200 so the very first tap always lands on a warm dyno.
+  // Web users skip the gate — a slow first request is fine in a regular browser
+  // tab, only the App Review path is risk-of-rejection territory.
+  const gateRequired = isNative && isIOS;
+  const [backendReady, setBackendReady] = useState<boolean>(!gateRequired);
+  const [warmupMsg, setWarmupMsg] = useState<string>(
+    isTr ? 'Sunucu hazırlanıyor…' : 'Preparing server…'
+  );
 
   // Facebook App ID must be configured in Meta Developer Console + capacitor.config
   // before the button can work. Env flag lets us hide it until credentials are wired up.
@@ -49,7 +60,38 @@ export default function AuthPage() {
   useEffect(() => {
     const base = API_ORIGIN.endsWith('/api') ? API_ORIGIN : `${API_ORIGIN}/api`;
     fetch(`${base}/ping`, { method: 'GET', cache: 'no-store' }).catch(() => {});
-  }, []);
+
+    if (!gateRequired) return;
+
+    let cancelled = false;
+    const t1 = setTimeout(() => {
+      if (!cancelled) setWarmupMsg(isTr ? 'Sunucu uyandırılıyor (~30 sn)…' : 'Waking up server (~30s)…');
+    }, 5_000);
+    const t2 = setTimeout(() => {
+      if (!cancelled) setWarmupMsg(isTr ? 'Neredeyse hazır, biraz daha…' : 'Almost ready, hold on…');
+    }, 25_000);
+    const t3 = setTimeout(() => {
+      if (!cancelled) setWarmupMsg(isTr ? 'Bağlantı yavaş, deneme sürüyor…' : 'Connection slow, still trying…');
+    }, 60_000);
+
+    getBackendReady().then((ok) => {
+      if (cancelled) return;
+      if (ok) {
+        setBackendReady(true);
+      } else {
+        // 90s passed without a 200 — open the gate anyway so the user can at
+        // least try; the login flow surfaces its own retry/error UI.
+        setBackendReady(true);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [gateRequired, isTr]);
 
   const clearProgressTimers = () => {
     progressTimers.current.forEach(clearTimeout);
@@ -139,6 +181,18 @@ export default function AuthPage() {
         </div>
 
         <div className="surface-card-lg p-8">
+          {/* Backend warm-up banner — iOS-native only.
+              Apple reviewers were rejected twice because they tapped login
+              while Render's free-tier dyno was still cold-booting. We now
+              show this banner until /api/ping returns 200, and the buttons
+              below are disabled, so the first tap always lands on a warm dyno. */}
+          {gateRequired && !backendReady && (
+            <div className="mb-5 p-3 rounded-2xl bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/30 flex items-center gap-3" role="status" aria-live="polite">
+              <span className="inline-block w-4 h-4 border-2 border-[var(--accent-green)] border-t-transparent rounded-full animate-spin" aria-hidden />
+              <span className="text-xs text-[var(--text-primary)] font-medium">{warmupMsg}</span>
+            </div>
+          )}
+
           {/* Tab Switch */}
           <div className="flex bg-[var(--bg-input)] rounded-full p-1 mb-6">
             <button
@@ -167,8 +221,8 @@ export default function AuthPage() {
                 {showAppleButton && (
                   <button
                     onClick={handleAppleLogin}
-                    disabled={appleLoading}
-                    className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-black text-white rounded-2xl text-sm font-semibold hover:bg-gray-900 transition-all disabled:opacity-50"
+                    disabled={appleLoading || !backendReady}
+                    className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-black text-white rounded-2xl text-sm font-semibold hover:bg-gray-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
@@ -181,8 +235,8 @@ export default function AuthPage() {
                 {showGoogleButton && (
                   <button
                     onClick={handleGoogleLogin}
-                    disabled={googleLoading}
-                    className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] transition-all disabled:opacity-50"
+                    disabled={googleLoading || !backendReady}
+                    className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg width="18" height="18" viewBox="0 0 18 18">
                       <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -198,8 +252,8 @@ export default function AuthPage() {
                 {showFacebookButton && (
                   <button
                     onClick={handleFacebookLogin}
-                    disabled={facebookLoading}
-                    className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[#1877F2] text-white rounded-2xl text-sm font-semibold hover:bg-[#166fe5] transition-all disabled:opacity-50"
+                    disabled={facebookLoading || !backendReady}
+                    className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[#1877F2] text-white rounded-2xl text-sm font-semibold hover:bg-[#166fe5] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -227,7 +281,7 @@ export default function AuthPage() {
             {!isLogin && (
               <Input label={t('location')} value={location} onChange={e => setLocation(e.target.value)} />
             )}
-            <Button type="submit" loading={loading} className="w-full" size="lg">
+            <Button type="submit" loading={loading} disabled={!backendReady} className="w-full" size="lg">
               {isLogin ? t('loginTitle') : t('registerTitle')}
             </Button>
             {loading && progressMsg && (

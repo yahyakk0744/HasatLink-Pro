@@ -21,6 +21,42 @@ if (typeof window !== 'undefined' && import.meta.env.PROD) {
   setTimeout(ping, 30000);
 }
 
+// Backend-readiness probe used by login UI to gate auth buttons until the
+// backend is awake. Eliminates the race window where Apple reviewers tapped
+// "Sign in with Apple" while Render was still cold-booting and got
+// "Apple giriş hatası" / "İnternet bağlantınızı kontrol edin" toasts.
+//
+// Returns a singleton Promise that resolves true once /api/ping returns 200,
+// or false after 90s of failures. Subsequent callers reuse the same promise.
+let _readyPromise: Promise<boolean> | null = null;
+export function getBackendReady(): Promise<boolean> {
+  if (_readyPromise) return _readyPromise;
+  if (typeof window === 'undefined') return Promise.resolve(true);
+
+  const base = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://hasatlink-api.onrender.com/api' : 'http://localhost:5000/api');
+  const maxWaitMs = 90_000;
+  const stepMs = 2_000;
+
+  _readyPromise = (async () => {
+    const start = Date.now();
+    while (Date.now() - start < maxWaitMs) {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 15_000);
+        const r = await fetch(`${base}/ping`, { method: 'GET', cache: 'no-store', signal: ctrl.signal });
+        clearTimeout(t);
+        if (r.ok) return true;
+      } catch {
+        // network/abort/timeout — keep polling
+      }
+      await new Promise((res) => setTimeout(res, stepMs));
+    }
+    return false;
+  })();
+
+  return _readyPromise;
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('hasatlink_token');
   if (token) {
