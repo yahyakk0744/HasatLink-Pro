@@ -55,10 +55,38 @@ function statusBarSvg({ w, h, kind }) {
   const textY = Math.round(sbHeight * 0.65);
   const fill = '#000';
 
-  // Dynamic Island for iPhone (centered black pill), only for newer ratios
-  const island = isPhone
+  // Only iPhone 14 Pro Max / 15 Pro Max / 16 Pro Max (1290x2796, "iphone-67")
+  // actually ship with a Dynamic Island. The 1284x2778 bucket ("iphone-65")
+  // is the 12/13 Pro Max & 14 Plus panel, which has a plain notch instead —
+  // no device on earth has that resolution WITH a Dynamic Island, so drawing
+  // a floating pill there was a dead giveaway that the chrome was fabricated
+  // (Apple's 2.3.10 "non-iOS device images" rejection). Draw the correct
+  // shape per device instead.
+  const hasDynamicIsland = kind === 'iphone-67';
+  const hasNotch = isPhone && !hasDynamicIsland;
+
+  const island = hasDynamicIsland
     ? `<rect x="${(w - 360) / 2}" y="${Math.round(sbHeight * 0.30)}" rx="${Math.round(sbHeight * 0.30)}" ry="${Math.round(sbHeight * 0.30)}" width="360" height="${Math.round(sbHeight * 0.50)}" fill="#000"/>`
-    : '';
+    : hasNotch
+      // Notch sits flush against the top edge (no gap, square top corners)
+      // and is narrower/flatter than the Dynamic Island, with only its
+      // bottom corners rounded — matches the X/11/12/13-style sensor housing.
+      ? (() => {
+          const notchW = Math.round(w * 0.34);
+          const notchH = Math.round(sbHeight * 0.78);
+          const r = Math.round(notchH * 0.55);
+          const x0 = Math.round((w - notchW) / 2);
+          const x1 = x0 + notchW;
+          return `<path d="
+            M ${x0} 0
+            H ${x1}
+            V ${notchH - r}
+            Q ${x1} ${notchH} ${x1 - r} ${notchH}
+            H ${x0 + r}
+            Q ${x0} ${notchH} ${x0} ${notchH - r}
+            Z" fill="#000"/>`;
+        })()
+      : '';
 
   // Right-side icon cluster: signal bars, wifi, battery
   const rightX = w - padX;
