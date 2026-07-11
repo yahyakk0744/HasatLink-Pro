@@ -21,7 +21,7 @@
  * Output: store-assets-screenshots-out/{iphone-67,iphone-65,ipad-13,ipad-11}/NN-name.png
  */
 import { execFileSync, execSync } from 'node:child_process';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 
 const REPO = resolve(import.meta.dirname, '..');
@@ -42,38 +42,85 @@ const ROUTES = [
   ['07-ai-teshis', '/ai-teshis'],
 ];
 
-// Candidate simulator device names per required App Store screenshot bucket.
-// Exact generation availability drifts between Xcode versions, so we match
-// by name pattern and pick the newest available iOS runtime rather than
-// hardcoding one generation.
+// Required App Store screenshot buckets, by exact target pixel resolution.
+// Simulator device *names* drift across Xcode versions (this is what broke
+// the first version of this script — "iPhone 16 Pro Max" didn't exist on the
+// build image), so instead of hardcoding names we boot whatever's available
+// and measure a real screenshot's pixel size. That's Apple's own ground
+// truth for "does this count as a 6.7-inch screenshot" and never goes stale.
 const DEVICES = [
-  { bucket: 'iphone-67', candidates: [/^iPhone 16 Pro Max$/, /^iPhone 15 Pro Max$/] },
-  { bucket: 'iphone-65', candidates: [/^iPhone 14 Plus$/, /^iPhone 13 Pro Max$/, /^iPhone 12 Pro Max$/] },
-  { bucket: 'ipad-13', candidates: [/^iPad Pro \(12\.9-inch\)/] },
-  { bucket: 'ipad-11', candidates: [/^iPad Pro \(11-inch\)/] },
+  { bucket: 'iphone-67', width: 1290, height: 2796, isPad: false },
+  { bucket: 'iphone-65', width: 1284, height: 2778, isPad: false },
+  { bucket: 'ipad-13', width: 2048, height: 2732, isPad: true },
+  { bucket: 'ipad-11', width: 1668, height: 2388, isPad: true },
 ];
+
+// Devices likely to have a large-enough panel get probed first, to keep the
+// number of throwaway boots small — this is just an ordering hint, not a
+// hard requirement (any available device gets tried if bigger ones miss).
+const NAME_PRIORITY = [/Pro Max/, /Plus/, /Pro/];
 
 function sh(cmd, args) {
   return execFileSync(cmd, args, { encoding: 'utf8' });
 }
 
-function resolveDevice(candidates) {
+function pngSize(filePath) {
+  const buf = readFileSync(filePath);
+  // PNG signature (8 bytes) + IHDR chunk: length(4) type(4) width(4) height(4)
+  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+}
+
+function listAvailableDevices(isPad) {
   const data = JSON.parse(sh('xcrun', ['simctl', 'list', 'devices', 'available', '-j']));
-  let best = null;
+  const prefix = isPad ? /^iPad/ : /^iPhone/;
+  const out = [];
   for (const [runtime, list] of Object.entries(data.devices)) {
     const m = runtime.match(/iOS-(\d+)-(\d+)/);
     const version = m ? parseFloat(`${m[1]}.${m[2]}`) : 0;
     for (const dev of list) {
-      if (!dev.isAvailable) continue;
-      if (candidates.some((re) => re.test(dev.name))) {
-        if (!best || version > best.version) best = { udid: dev.udid, name: dev.name, version };
-      }
+      if (!dev.isAvailable || !prefix.test(dev.name)) continue;
+      out.push({ udid: dev.udid, name: dev.name, version });
     }
   }
-  if (!best) {
-    throw new Error(`No matching simulator found for candidates: ${candidates.map(String).join(', ')}`);
+  out.sort((a, b) => {
+    const pa = NAME_PRIORITY.findIndex((re) => re.test(a.name));
+    const pb = NAME_PRIORITY.findIndex((re) => re.test(b.name));
+    const ra = pa === -1 ? NAME_PRIORITY.length : pa;
+    const rb = pb === -1 ? NAME_PRIORITY.length : pb;
+    if (ra !== rb) return ra - rb;
+    return b.version - a.version;
+  });
+  return out;
+}
+
+function resolveDeviceByResolution(width, height, isPad) {
+  const candidates = listAvailableDevices(isPad);
+  const tried = [];
+  for (const dev of candidates) {
+    tried.push(`${dev.name} (iOS ${dev.version})`);
+    try {
+      bootDevice(dev.udid);
+    } catch (err) {
+      console.log(`[probe] boot failed for ${dev.name}: ${err.message}`);
+      continue;
+    }
+    const probe = join(OUT_ROOT, `.probe-${dev.udid}.png`);
+    try {
+      sh('xcrun', ['simctl', 'io', dev.udid, 'screenshot', probe]);
+      const size = pngSize(probe);
+      unlinkSync(probe);
+      if (size.width === width && size.height === height) {
+        console.log(`[probe] ${dev.name} (iOS ${dev.version}) → ${size.width}x${size.height} ✓ match`);
+        return dev;
+      }
+      console.log(`[probe] ${dev.name} → ${size.width}x${size.height}, want ${width}x${height} — skipping`);
+      sh('xcrun', ['simctl', 'shutdown', dev.udid]);
+    } catch (err) {
+      console.log(`[probe] screenshot probe failed for ${dev.name}: ${err.message}`);
+    }
   }
-  return best;
+  console.error('All available devices tried:', tried.join(', ') || '(none)');
+  throw new Error(`No simulator with resolution ${width}x${height} found among available devices.`);
 }
 
 function bootDevice(udid) {
@@ -116,12 +163,13 @@ function launchAndCapture(udid, route, outFile, extraWaitMs) {
   sh('xcrun', ['simctl', 'io', udid, 'screenshot', outFile]);
 }
 
-async function processDevice({ bucket, candidates }) {
-  console.log(`\n=== ${bucket} ===`);
-  const device = resolveDevice(candidates);
+async function processDevice({ bucket, width, height, isPad }) {
+  console.log(`\n=== ${bucket} (${width}x${height}) ===`);
+  const device = resolveDeviceByResolution(width, height, isPad);
   console.log(`[device] ${bucket} → ${device.name} (iOS ${device.version})`);
 
-  bootDevice(device.udid);
+  // resolveDeviceByResolution already booted + status-bar-overrode this device
+  // while probing its resolution — just install onto it.
   sh('xcrun', ['simctl', 'install', device.udid, APP_PATH]);
 
   const outDir = join(OUT_ROOT, bucket);
