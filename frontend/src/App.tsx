@@ -125,7 +125,9 @@ export default function App() {
 
   // Native: register push notifications & app lifecycle
   useEffect(() => {
-    if (!isNative) return;
+    // Skip in CI screenshot builds — the OS permission dialog it triggers
+    // would otherwise block every captured route.
+    if (!isNative || import.meta.env.VITE_SCREENSHOT_MODE === 'true') return;
 
     registerPushNotifications().then((token) => {
       if (token) {

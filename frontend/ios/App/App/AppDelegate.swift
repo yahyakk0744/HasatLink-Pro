@@ -73,10 +73,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
 
         // Replay any cold-start CI screenshot route once the webview is up.
+        // Fired repeatedly over several seconds rather than once — a cold
+        // launch's splash screen + JS bundle boot can easily outlast a single
+        // fixed delay, and a route we fire before App.tsx's listener has
+        // attached is silently lost. navigate() to the same route twice is a
+        // harmless no-op, so repeating is safe.
         if let route = pendingScreenshotRoute {
             pendingScreenshotRoute = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-                self?.deliverScreenshotRoute(route)
+            for delay in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                    self?.deliverScreenshotRoute(route)
+                }
             }
         }
     }

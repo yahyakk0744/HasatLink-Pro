@@ -127,6 +127,9 @@ function bootDevice(udid) {
     '--batteryState', 'charged',
     '--batteryLevel', '100',
   ]);
+  // Let first-boot system banners (e.g. "Ready for Apple Intelligence")
+  // clear before anything gets installed or screenshotted.
+  execSync('sleep 5');
 }
 
 // Picks the highest-priority device that actually boots and can be
@@ -180,7 +183,11 @@ function launchAndCapture(udid, route, outFile, extraWaitMs) {
   execFileSync('xcrun', ['simctl', 'launch', '--terminate-running-process', udid, BUNDLE_ID], {
     env: { ...process.env, SIMCTL_CHILD_SCREENSHOT_ROUTE: route },
   });
-  execSync(`sleep ${(3500 + extraWaitMs) / 1000}`);
+  // Splash screen alone holds for 2s (capacitor.config.ts), plus cold JS
+  // bundle boot + route render + data fetch. AppDelegate replays the
+  // screenshotRoute event every second out to 7s, so waiting less than that
+  // risks capturing before navigation ever lands.
+  execSync(`sleep ${(8000 + extraWaitMs) / 1000}`);
   sh('xcrun', ['simctl', 'io', udid, 'screenshot', outFile]);
 }
 
