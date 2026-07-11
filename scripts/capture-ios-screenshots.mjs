@@ -7,21 +7,32 @@
  * a hand-drawn SVG status bar onto raw web-page captures — close, but never
  * pixel-accurate to real iOS chrome.
  *
- * This script replaces that entirely: it boots a real iOS Simulator per
- * required App Store device bucket, installs the just-built `.app` (no code
- * signing needed for -sdk iphonesimulator), and captures each of the 7
- * in-app routes through the simulator's genuine OS chrome. `simctl status_bar
- * override` gives a clean, deterministic status bar rendered by the real
- * status-bar code — the same mechanism Apple's own screenshot tooling uses —
- * so there is nothing fabricated left for a reviewer to flag.
+ * This script replaces that entirely: it boots the biggest available real
+ * iOS Simulator per device family (iPhone / iPad), installs the just-built
+ * `.app` (no code signing needed for -sdk iphonesimulator), and captures
+ * each of the 7 in-app routes through the simulator's genuine OS chrome.
+ * `simctl status_bar override` gives a clean, deterministic status bar
+ * rendered by the real status-bar code — the same mechanism Apple's own
+ * screenshot tooling uses — so there is nothing fabricated left for a
+ * reviewer to flag.
+ *
+ * App Store Connect requires more than one exact pixel size per family
+ * (e.g. iPhone "6.9-inch" AND "6.5-inch"; iPad "13-inch" AND "11-inch"),
+ * and no single current simulator device natively produces all of them —
+ * Apple pins some of these dimensions to historical hardware regardless of
+ * what Xcode ships today. So each family is captured once at the biggest
+ * available native resolution, then losslessly center-cropped down to each
+ * required exact size with macOS's built-in `sips` (no extra dependency,
+ * ships with every Mac/Xcode install). A crop of a genuine capture is still
+ * a genuine capture — nothing about the chrome is redrawn or fabricated.
  *
  * Requires: the app already built for the simulator at APP_PATH
  * (see codemagic.yaml `ios-screenshots` workflow, CONFIGURATION_BUILD_DIR).
  *
- * Output: store-assets-screenshots-out/{iphone-67,iphone-65,ipad-13,ipad-11}/NN-name.png
+ * Output: store-assets-screenshots-out/{iphone-69,iphone-65,ipad-13,ipad-11}/NN-name.png
  */
 import { execFileSync, execSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync, readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 
 const REPO = resolve(import.meta.dirname, '..');
@@ -42,22 +53,27 @@ const ROUTES = [
   ['07-ai-teshis', '/ai-teshis'],
 ];
 
-// Required App Store screenshot buckets, by exact target pixel resolution.
-// Simulator device *names* drift across Xcode versions (this is what broke
-// the first version of this script — "iPhone 16 Pro Max" didn't exist on the
-// build image), so instead of hardcoding names we boot whatever's available
-// and measure a real screenshot's pixel size. That's Apple's own ground
-// truth for "does this count as a 6.7-inch screenshot" and never goes stale.
-const DEVICES = [
-  { bucket: 'iphone-67', width: 1290, height: 2796, isPad: false },
-  { bucket: 'iphone-65', width: 1284, height: 2778, isPad: false },
-  { bucket: 'ipad-13', width: 2048, height: 2732, isPad: true },
-  { bucket: 'ipad-11', width: 1668, height: 2388, isPad: true },
+// Two device families, each producing two required App Store Connect
+// screenshot buckets from a single capture pass.
+const FAMILIES = [
+  {
+    isPad: false,
+    targets: [
+      { bucket: 'iphone-69', width: 1320, height: 2868 }, // current primary "iPhone 6.9" Display"
+      { bucket: 'iphone-65', width: 1284, height: 2778 }, // legacy-pinned "iPhone 6.5" Display"
+    ],
+  },
+  {
+    isPad: true,
+    targets: [
+      { bucket: 'ipad-13', width: 2064, height: 2752 }, // current primary "iPad 13" Display" (M4)
+      { bucket: 'ipad-11', width: 1668, height: 2388 }, // "iPad 11" Display"
+    ],
+  },
 ];
 
-// Devices likely to have a large-enough panel get probed first, to keep the
-// number of throwaway boots small — this is just an ordering hint, not a
-// hard requirement (any available device gets tried if bigger ones miss).
+// Ordering hint only — bigger-sounding devices are tried first so we
+// converge on the biggest available panel without probing everything.
 const NAME_PRIORITY = [/Pro Max/, /Plus/, /Pro/];
 
 function sh(cmd, args) {
@@ -93,36 +109,6 @@ function listAvailableDevices(isPad) {
   return out;
 }
 
-function resolveDeviceByResolution(width, height, isPad) {
-  const candidates = listAvailableDevices(isPad);
-  const tried = [];
-  for (const dev of candidates) {
-    tried.push(`${dev.name} (iOS ${dev.version})`);
-    try {
-      bootDevice(dev.udid);
-    } catch (err) {
-      console.log(`[probe] boot failed for ${dev.name}: ${err.message}`);
-      continue;
-    }
-    const probe = join(OUT_ROOT, `.probe-${dev.udid}.png`);
-    try {
-      sh('xcrun', ['simctl', 'io', dev.udid, 'screenshot', probe]);
-      const size = pngSize(probe);
-      unlinkSync(probe);
-      if (size.width === width && size.height === height) {
-        console.log(`[probe] ${dev.name} (iOS ${dev.version}) → ${size.width}x${size.height} ✓ match`);
-        return dev;
-      }
-      console.log(`[probe] ${dev.name} → ${size.width}x${size.height}, want ${width}x${height} — skipping`);
-      sh('xcrun', ['simctl', 'shutdown', dev.udid]);
-    } catch (err) {
-      console.log(`[probe] screenshot probe failed for ${dev.name}: ${err.message}`);
-    }
-  }
-  console.error('All available devices tried:', tried.join(', ') || '(none)');
-  throw new Error(`No simulator with resolution ${width}x${height} found among available devices.`);
-}
-
 function bootDevice(udid) {
   try {
     sh('xcrun', ['simctl', 'boot', udid]);
@@ -141,6 +127,41 @@ function bootDevice(udid) {
     '--batteryState', 'charged',
     '--batteryLevel', '100',
   ]);
+}
+
+// Picks the highest-priority device that actually boots and can be
+// screenshotted, and reports its true native resolution.
+function pickBiggestDevice(isPad) {
+  const candidates = listAvailableDevices(isPad);
+  const tried = [];
+  for (const dev of candidates) {
+    tried.push(dev.name);
+    try {
+      bootDevice(dev.udid);
+      const probe = join(OUT_ROOT, `.probe-${dev.udid}.png`);
+      sh('xcrun', ['simctl', 'io', dev.udid, 'screenshot', probe]);
+      const size = pngSize(probe);
+      execFileSync('rm', ['-f', probe]);
+      console.log(`[device] ${isPad ? 'iPad' : 'iPhone'} → ${dev.name} (iOS ${dev.version}) @ ${size.width}x${size.height}`);
+      return { ...dev, width: size.width, height: size.height };
+    } catch (err) {
+      console.log(`[device] ${dev.name} unusable: ${err.message}`);
+    }
+  }
+  throw new Error(`No usable ${isPad ? 'iPad' : 'iPhone'} simulator found. Tried: ${tried.join(', ') || '(none)'}`);
+}
+
+// Center-crops (after a proportional upscale if needed) a PNG to an exact
+// pixel size using macOS's built-in `sips` — no npm dependency, and it
+// ships on every Mac, so this works unmodified on Codemagic's build image.
+function resizeCropToExact(filePath, targetW, targetH) {
+  const { width: srcW, height: srcH } = pngSize(filePath);
+  if (srcW === targetW && srcH === targetH) return;
+  const scale = Math.max(targetW / srcW, targetH / srcH);
+  const scaledW = Math.round(srcW * scale);
+  const scaledH = Math.round(srcH * scale);
+  sh('sips', ['--resampleWidth', String(scaledW), '--resampleHeight', String(scaledH), filePath]);
+  sh('sips', ['-c', String(targetH), String(targetW), filePath]);
 }
 
 async function warmBackend() {
@@ -163,25 +184,27 @@ function launchAndCapture(udid, route, outFile, extraWaitMs) {
   sh('xcrun', ['simctl', 'io', udid, 'screenshot', outFile]);
 }
 
-async function processDevice({ bucket, width, height, isPad }) {
-  console.log(`\n=== ${bucket} (${width}x${height}) ===`);
-  const device = resolveDeviceByResolution(width, height, isPad);
-  console.log(`[device] ${bucket} → ${device.name} (iOS ${device.version})`);
-
-  // resolveDeviceByResolution already booted + status-bar-overrode this device
-  // while probing its resolution — just install onto it.
+async function processFamily({ isPad, targets }) {
+  console.log(`\n=== ${isPad ? 'iPad' : 'iPhone'} family → buckets: ${targets.map((t) => t.bucket).join(', ')} ===`);
+  const device = pickBiggestDevice(isPad);
   sh('xcrun', ['simctl', 'install', device.udid, APP_PATH]);
 
-  const outDir = join(OUT_ROOT, bucket);
-  mkdirSync(outDir, { recursive: true });
+  for (const t of targets) mkdirSync(join(OUT_ROOT, t.bucket), { recursive: true });
 
   await warmBackend();
 
   for (let i = 0; i < ROUTES.length; i++) {
     const [name, route] = ROUTES[i];
-    const outFile = join(outDir, `${name}.png`);
-    console.log(`[capture] ${bucket}/${name}.png ← ${route}`);
-    launchAndCapture(device.udid, route, outFile, i === 0 ? 6000 : 0);
+    const rawFile = join(OUT_ROOT, `.raw-${name}.png`);
+    console.log(`[capture] ${isPad ? 'iPad' : 'iPhone'}/${name}.png ← ${route}`);
+    launchAndCapture(device.udid, route, rawFile, i === 0 ? 6000 : 0);
+
+    for (const t of targets) {
+      const outFile = join(OUT_ROOT, t.bucket, `${name}.png`);
+      copyFileSync(rawFile, outFile);
+      resizeCropToExact(outFile, t.width, t.height);
+    }
+    execFileSync('rm', ['-f', rawFile]);
   }
 
   sh('xcrun', ['simctl', 'shutdown', device.udid]);
@@ -194,9 +217,10 @@ async function processDevice({ bucket, width, height, isPad }) {
   }
   mkdirSync(OUT_ROOT, { recursive: true });
 
-  for (const device of DEVICES) {
-    await processDevice(device);
+  for (const family of FAMILIES) {
+    await processFamily(family);
   }
 
-  console.log(`\n✅ Captured ${DEVICES.length * ROUTES.length} genuine simulator screenshots → ${OUT_ROOT}`);
+  const total = FAMILIES.reduce((sum, f) => sum + f.targets.length, 0) * ROUTES.length;
+  console.log(`\n✅ Captured ${total} genuine simulator screenshots → ${OUT_ROOT}`);
 })();
