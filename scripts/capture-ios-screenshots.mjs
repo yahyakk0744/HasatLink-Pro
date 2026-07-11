@@ -196,6 +196,18 @@ async function processFamily({ isPad, targets }) {
   const device = pickBiggestDevice(isPad);
   sh('xcrun', ['simctl', 'install', device.udid, APP_PATH]);
 
+  // Pre-grant every common permission (location, photos, camera, ...) so no
+  // system dialog can appear mid-capture. Build #4 showed this matters for
+  // more than just the screenshot itself: while a system alert is
+  // frontmost, WKWebView suspends JS execution, so our repeated
+  // screenshotRoute dispatch silently never lands and every route came out
+  // as the homepage. Removing the dialog entirely fixes both at once.
+  try {
+    sh('xcrun', ['simctl', 'privacy', device.udid, 'grant', 'all', BUNDLE_ID]);
+  } catch (err) {
+    console.log(`[privacy] grant all failed (non-fatal): ${err.message}`);
+  }
+
   for (const t of targets) mkdirSync(join(OUT_ROOT, t.bucket), { recursive: true });
 
   await warmBackend();
