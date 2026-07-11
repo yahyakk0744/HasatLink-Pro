@@ -104,6 +104,18 @@ export default function App() {
     return () => window.removeEventListener('hasatlink:quickAction', handler as EventListener);
   }, [navigate]);
 
+  // CI-only bridge for automated App Store screenshot capture.
+  // AppDelegate.swift dispatches this when SCREENSHOT_ROUTE is set via `simctl
+  // launch` (see scripts/capture-ios-screenshots.mjs) — never in a real launch.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const route = (e as CustomEvent<string>).detail;
+      if (route) navigate(route);
+    };
+    window.addEventListener('hasatlink:screenshotRoute', handler as EventListener);
+    return () => window.removeEventListener('hasatlink:screenshotRoute', handler as EventListener);
+  }, [navigate]);
+
   // Wake up Render backend immediately on app load (prevents cold start delay)
   useEffect(() => {
     import('./config/api').then(({ default: api }) => {

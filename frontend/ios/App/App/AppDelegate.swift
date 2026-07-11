@@ -15,6 +15,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     /// Cold-start shortcut, replayed once the webview is ready in didBecomeActive.
     private var pendingShortcut: String?
 
+    /// CI-only screenshot route, replayed once the webview is ready in didBecomeActive.
+    /// Only ever populated by `simctl launch`'s SCREENSHOT_ROUTE env var from
+    /// scripts/capture-ios-screenshots.mjs — never set in a real launch.
+    private var pendingScreenshotRoute: String?
+
     /// Returns true only when a real Facebook App ID has been plugged into Info.plist.
     /// Keeps the SDK dormant while the placeholder is in place so Apple reviewers
     /// never hit a misconfigured FB init path.
@@ -32,6 +37,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // webview is still loading — defer to applicationDidBecomeActive.
         if let shortcut = launchOptions?[.shortcutItem] as? UIApplicationShortcutItem {
             pendingShortcut = mapShortcutType(shortcut.type)
+        }
+
+        if let route = ProcessInfo.processInfo.environment["SCREENSHOT_ROUTE"], !route.isEmpty {
+            pendingScreenshotRoute = route
         }
 
         return true
@@ -60,6 +69,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             UserDefaults.standard.removeObject(forKey: "HasatLinkPendingAction")
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
                 self?.deliverAction(intentAction)
+            }
+        }
+
+        // Replay any cold-start CI screenshot route once the webview is up.
+        if let route = pendingScreenshotRoute {
+            pendingScreenshotRoute = nil
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                self?.deliverScreenshotRoute(route)
             }
         }
     }
@@ -95,6 +112,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if let webView = capacitorWebView() {
             webView.evaluateJavaScript(js, completionHandler: nil)
         }
+    }
+
+    /// CI-only bridge for automated App Store screenshot capture
+    /// (see scripts/capture-ios-screenshots.mjs). Navigates the webview straight
+    /// to a route path rather than mapping through a named action.
+    private func deliverScreenshotRoute(_ route: String) {
+        let js = "window.dispatchEvent(new CustomEvent('hasatlink:screenshotRoute', { detail: '\(route)' }));"
+        capacitorWebView()?.evaluateJavaScript(js, completionHandler: nil)
     }
 
     private func capacitorWebView() -> WKWebView? {

@@ -244,6 +244,64 @@ workflows:
           success: true
           failure: true
 
+  ios-screenshots:
+    # Generates genuine App Store screenshots by running the real app in the
+    # iOS Simulator and capturing it through actual OS chrome (see
+    # scripts/capture-ios-screenshots.mjs for why: Apple rejected the old
+    # hand-drawn SVG status bar overlay twice under Guideline 2.3.10). No code
+    # signing needed — simulator builds don't require a provisioning profile,
+    # so this workflow is independent of the ios-release cert/profile dance.
+    # Output is an artifact only; nothing here touches App Store Connect or
+    # git. Download the 28 PNGs, drop them into store-assets/screenshots-*
+    # (and -raw), review, commit, then run asc-resubmit as usual.
+    name: iOS Screenshots (genuine Simulator capture)
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    environment:
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd frontend
+          npm install --legacy-peer-deps
+      - name: Build web
+        script: |
+          cd frontend
+          echo "VITE_API_URL=https://hasatlink-api.onrender.com/api" > .env.production
+          echo "VITE_SOCKET_URL=https://hasatlink-api.onrender.com" >> .env.production
+          npm run build
+      - name: Capacitor sync
+        script: |
+          cd frontend
+          npx cap sync ios
+      - name: Build for iOS Simulator (no signing)
+        script: |
+          set -e
+          cd frontend
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CONFIGURATION_BUILD_DIR="$(pwd)/build/simulator" \
+            build
+      - name: Capture genuine simulator screenshots
+        script: |
+          node scripts/capture-ios-screenshots.mjs
+    artifacts:
+      - store-assets-screenshots-out/**/*.png
+    publishing:
+      email:
+        recipients:
+          - yahyakk0744@gmail.com
+        notify:
+          success: true
+          failure: true
+
   asc-resubmit:
     # Headless ASC resubmit workflow — no IPA rebuild. Reuses the integration's
     # ASC API key to sign JWTs, then: cancels stale submissions, attaches the
