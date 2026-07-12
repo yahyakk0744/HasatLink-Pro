@@ -154,17 +154,21 @@ function pickBiggestDevice(isPad) {
   throw new Error(`No usable ${isPad ? 'iPad' : 'iPhone'} simulator found. Tried: ${tried.join(', ') || '(none)'}`);
 }
 
-// Center-crops (after a proportional upscale if needed) a PNG to an exact
-// pixel size using macOS's built-in `sips` — no npm dependency, and it
-// ships on every Mac, so this works unmodified on Codemagic's build image.
+// Resizes a PNG to an exact pixel size using macOS's built-in `sips` — no
+// npm dependency, ships on every Mac, works unmodified on Codemagic's build
+// image. Build #6 showed the two-step resample+crop combo (`sips
+// --resampleWidth/--resampleHeight` then `-c`) doesn't behave as its docs
+// suggest — it left thick black letterbox bars, i.e. `-c` was padding
+// instead of cropping. `-z height width` (resampleHeightWidth) is a single,
+// unambiguous direct resize to the exact target box — no crop/pad step, so
+// no way for it to introduce bars. The tradeoff is a small non-uniform
+// stretch (a few percent for these buckets) since source and target aspect
+// ratios aren't identical, which is standard practice for App Store
+// screenshot buckets and far less noticeable than a black bar.
 function resizeCropToExact(filePath, targetW, targetH) {
   const { width: srcW, height: srcH } = pngSize(filePath);
   if (srcW === targetW && srcH === targetH) return;
-  const scale = Math.max(targetW / srcW, targetH / srcH);
-  const scaledW = Math.round(srcW * scale);
-  const scaledH = Math.round(srcH * scale);
-  sh('sips', ['--resampleWidth', String(scaledW), '--resampleHeight', String(scaledH), filePath]);
-  sh('sips', ['-c', String(targetH), String(targetW), filePath]);
+  sh('sips', ['-z', String(targetH), String(targetW), filePath]);
 }
 
 async function warmBackend() {
