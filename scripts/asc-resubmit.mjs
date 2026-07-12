@@ -64,10 +64,19 @@ const SS = {
     label: 'iPhone 6.5"',
     files: ['01-anasayfa','02-pazar','03-uydu-analiz','04-hasatlink-pazari','05-hal-fiyatlari','06-harita','07-ai-teshis'],
   },
+  // This "legacy" slot expects the OLD 12.9" panel (2048×2732), not the
+  // current 13" (M4/M5) 2064×2752 assets we generate — Apple rejects them
+  // with IMAGE_INCORRECT_DIMENSIONS, which is a *terminal* per-screenshot
+  // failure that then blocks the entire appStoreVersion from being
+  // reviewable (confirmed via [asc:err] diagnostics after upload). Media
+  // Manager shows this as a secondary/optional "2nd Gen" set nowadays, so we
+  // still clear any stale screenshots from it (STEP 6) but skip uploading —
+  // see skipUpload below.
   APP_IPAD_PRO_129: {
     dir: 'store-assets/screenshots-ipad-13',
     label: 'iPad 13" (legacy)',
     files: ['01-anasayfa','02-pazar','03-uydu-analiz','04-hasatlink-pazari','05-hal-fiyatlari','06-harita','07-ai-teshis'],
+    skipUpload: true,
   },
   // Apple sometimes maintains BOTH legacy (APP_IPAD_PRO_129) and modern
   // (APP_IPAD_PRO_3GEN_129) 12.9" sets — same 2048×2732 dimensions. Stale
@@ -347,6 +356,7 @@ async function uploadScreenshot(setId, fileName, absPath) {
 let uploaded = 0;
 let failed = 0;
 for (const [type, meta] of Object.entries(SS)) {
+  if (meta.skipUpload) { log(`  ${meta.label}: skipping upload (wrong native size for this slot, left cleared)`); continue; }
   const setId = setByType[type];
   log(`  ${meta.label} → set ${setId}`);
   for (const base of meta.files) {
