@@ -378,6 +378,7 @@ async function pollScreenshotProcessing() {
     let pending = 0;
     let total = 0;
     let firstPendingState = null;
+    const failedDetails = [];
     for (const [type, meta] of Object.entries(SS)) {
       const setId = setByType[type];
       const cur = await api('GET', `/appScreenshotSets/${setId}/appScreenshots?limit=50`);
@@ -386,6 +387,9 @@ async function pollScreenshotProcessing() {
         const a = s.attributes || {};
         const state = a.assetDeliveryState?.state;
         // States: AWAITING_UPLOAD, UPLOAD_COMPLETE, COMPLETE, FAILED
+        if (state === 'FAILED') {
+          failedDetails.push({ set: meta.label, id: s.id, fileName: a.fileName, errors: a.assetDeliveryState?.errors });
+        }
         if (state !== 'COMPLETE') {
           pending++;
           if (!firstPendingState) firstPendingState = `${s.id}=${state || 'unknown'}`;
@@ -393,6 +397,14 @@ async function pollScreenshotProcessing() {
       }
     }
     log(`  processing: ${total - pending}/${total} ready${firstPendingState ? ' (sample pending: ' + firstPendingState + ')' : ''}`);
+    // FAILED is terminal — it will never become COMPLETE no matter how long we
+    // wait, so surface the real reason immediately instead of burning the
+    // full 5-minute timeout and failing later with a much less useful 409.
+    if (failedDetails.length) {
+      err(`  ${failedDetails.length} screenshot(s) permanently FAILED Apple's validation (will never reach COMPLETE):`);
+      for (const f of failedDetails) err(`    [${f.set}] ${f.fileName} (${f.id}): ${JSON.stringify(f.errors)}`);
+      throw new Error(`${failedDetails.length} screenshot(s) failed Apple's asset validation — see [asc:err] lines above for the reason per file.`);
+    }
     if (pending === 0 && total > 0) { log('  ✓ all screenshots processed'); return; }
     await new Promise(r => setTimeout(r, 10_000));
   }
