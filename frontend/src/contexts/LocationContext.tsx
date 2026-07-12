@@ -85,9 +85,11 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
     } catch {}
   }, []);
 
-  // Request location on first load if not cached
+  // Request location on first load if not cached. Skipped in CI screenshot
+  // builds — the WKWebView-level JS geolocation prompt it triggers is
+  // separate from the native app permission and blocks every capture.
   useEffect(() => {
-    if (!location) {
+    if (!location && import.meta.env.VITE_SCREENSHOT_MODE !== 'true') {
       requestLocation();
     }
   }, []);
