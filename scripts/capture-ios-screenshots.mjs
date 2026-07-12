@@ -32,7 +32,7 @@
  * Output: store-assets-screenshots-out/{iphone-69,iphone-65,ipad-13,ipad-11}/NN-name.png
  */
 import { execFileSync, execSync } from 'node:child_process';
-import { existsSync, mkdirSync, copyFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync, readFileSync, statSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 
 const REPO = resolve(import.meta.dirname, '..');
@@ -171,17 +171,38 @@ function resizeCropToExact(filePath, targetW, targetH) {
   sh('sips', ['-z', String(targetH), String(targetW), filePath]);
 }
 
+// Polls until the Render.com free-tier API actually answers, rather than
+// firing one fetch and hoping. Build #7 showed a single best-effort ping
+// isn't enough: the backend was still cold through routes 1-2 and part of
+// route 4, and those three came back essentially blank (React never got
+// data to render, no fallback UI). Blocking here until the API is
+// demonstrably awake removes that race entirely.
 async function warmBackend() {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    await fetch(API_PING_URL, { signal: controller.signal }).catch(() => {});
-    clearTimeout(timeout);
-  } catch {
-    // best-effort only — cold Render.com free tier can take 30-50s to wake,
-    // the per-route wait below (with extra time on the first route) covers it
+  const deadline = Date.now() + 55000;
+  while (Date.now() < deadline) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(API_PING_URL, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        console.log('[warm] backend is awake');
+        return;
+      }
+    } catch {
+      // keep polling until the deadline
+    }
+    execSync('sleep 2');
   }
+  console.log('[warm] backend still not responding after 55s — proceeding anyway');
 }
+
+// A rendered route with real content (listings, tables, images, nav
+// chrome) always compresses to well over this; a route that came up
+// blank/white (nothing but a status bar over an empty background) does
+// not. Calibrated from build #7: blank captures were ~90KB, every
+// genuinely rendered capture was 175KB+.
+const MIN_CONTENT_BYTES = 130 * 1024;
 
 function launchAndCapture(udid, route, outFile, extraWaitMs) {
   execFileSync('xcrun', ['simctl', 'launch', '--terminate-running-process', udid, BUNDLE_ID], {
@@ -193,6 +214,22 @@ function launchAndCapture(udid, route, outFile, extraWaitMs) {
   // risks capturing before navigation ever lands.
   execSync(`sleep ${(8000 + extraWaitMs) / 1000}`);
   sh('xcrun', ['simctl', 'io', udid, 'screenshot', outFile]);
+}
+
+// Re-captures a route (without relaunching — the app is already on the
+// right screen) if the first attempt looks suspiciously blank, up to twice
+// more with a longer wait each time. Guards against exactly what build #7
+// hit: a slow API response leaving the page empty with no fallback UI.
+function captureWithRetry(udid, route, outFile) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) {
+      console.log(`[retry] ${outFile} looked blank (${statSync(outFile).size}b) — waiting and recapturing (attempt ${attempt + 1})`);
+      execSync('sleep 6');
+      sh('xcrun', ['simctl', 'io', udid, 'screenshot', outFile]);
+    }
+    if (statSync(outFile).size >= MIN_CONTENT_BYTES) return;
+  }
+  console.log(`[retry] ${outFile} still looks blank after retries (${statSync(outFile).size}b) — keeping it, route was ${route}`);
 }
 
 async function processFamily({ isPad, targets }) {
@@ -221,6 +258,7 @@ async function processFamily({ isPad, targets }) {
     const rawFile = join(OUT_ROOT, `.raw-${name}.png`);
     console.log(`[capture] ${isPad ? 'iPad' : 'iPhone'}/${name}.png ← ${route}`);
     launchAndCapture(device.udid, route, rawFile, i === 0 ? 6000 : 0);
+    captureWithRetry(device.udid, route, rawFile);
 
     for (const t of targets) {
       const outFile = join(OUT_ROOT, t.bucket, `${name}.png`);
