@@ -478,7 +478,7 @@ function GridView({
             <div className="flex items-start justify-between gap-3 mb-4">
               <div className="flex items-start gap-3 min-w-0">
                 {item.iconUrl ? (
-                  <img src={item.iconUrl} alt={item.product} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                  <img src={item.iconUrl} alt={item.product} loading="lazy" decoding="async" className="w-12 h-12 rounded-xl object-cover shrink-0" />
                 ) : (
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2D6A4F]/15 to-[#2D6A4F]/5 flex items-center justify-center text-2xl shrink-0">
                     🌱
@@ -587,7 +587,7 @@ function TimelineView({
             >
               <div className="px-4 py-3 flex items-center gap-2 min-w-0">
                 {item.iconUrl ? (
-                  <img src={item.iconUrl} alt="" className="w-7 h-7 rounded-lg object-cover shrink-0" />
+                  <img src={item.iconUrl} alt="" loading="lazy" decoding="async" className="w-7 h-7 rounded-lg object-cover shrink-0" />
                 ) : (
                   <div className="w-7 h-7 rounded-lg bg-[#2D6A4F]/10 flex items-center justify-center text-sm shrink-0">
                     🌱

@@ -4,6 +4,7 @@
     { "source": "/api/:path*", "destination": "https://hasatlink-api.onrender.com/api/:path*" },
     { "source": "/uploads/:path*", "destination": "https://hasatlink-api.onrender.com/uploads/:path*" },
     { "source": "/socket.io/:path*", "destination": "https://hasatlink-api.onrender.com/socket.io/:path*" },
+    { "source": "/sitemap.xml", "destination": "https://hasatlink-api.onrender.com/api/sitemap.xml" },
     { "source": "/__/auth/(.*)", "destination": "https://hasatlink-33.firebaseapp.com/__/auth/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

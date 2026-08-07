@@ -7,7 +7,9 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../config/api';
 
-const SAMPLE_REPORTS = [
+// Report catalog is intentionally static — this page is a request/lead-capture flow
+// (handleRequest below), not a live report viewer. No numbers here are presented as data.
+const REPORT_CATALOG = [
   {
     title: 'Aylık Sebze Fiyat Analizi',
     description: 'Türkiye geneli sebze hal fiyatları, trend analizi ve talep tahminleri',
@@ -89,7 +91,7 @@ export default function ReportsPage() {
 
       {/* Reports Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
-        {SAMPLE_REPORTS.map((report, i) => {
+        {REPORT_CATALOG.map((report, i) => {
           const Icon = report.icon;
           return (
             <div key={i} className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl p-6 hover:border-[#2D6A4F]/30 hover:shadow-sm transition-all">

@@ -1,20 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import SEO from '../components/ui/SEO';
-import { API_ORIGIN, getBackendReady } from '../config/api';
+import api, { API_ORIGIN, getBackendReady } from '../config/api';
 import { isIOS, isNative } from '../utils/native';
+import { trackEvent } from '../utils/analytics';
 
 export default function AuthPage() {
   const { t, i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
   const { login, register, loginWithGoogle, loginWithApple, loginWithFacebook } = useAuth();
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
+  const routerLocation = useLocation();
+  // Pages that gate an action behind login pass state: { from, intent } so we can
+  // send the user back to what they were doing instead of dropping them on the homepage.
+  const returnTo = (routerLocation.state as { from?: string; intent?: string } | null)?.from || '/';
+  const returnIntent = (routerLocation.state as { from?: string; intent?: string } | null)?.intent;
+  const navigateAfterAuth = () => navigate(returnTo, { state: returnIntent ? { intent: returnIntent } : undefined, replace: true });
+  // Referral links point here as /giris?ref=CODE (see backend referralController.getMyCode) —
+  // arriving with a code means the visitor wants to sign up, not log in.
+  const referralCode = new URLSearchParams(routerLocation.search).get('ref');
+  const [isLogin, setIsLogin] = useState(!referralCode);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
@@ -122,8 +132,15 @@ export default function AuthPage() {
     setLoading(false);
 
     if (result.success) {
+      if (!isLogin) {
+        trackEvent('sign_up', 'engagement', 'email');
+        if (referralCode) {
+          // Best-effort — a failed/duplicate referral must never block the new account.
+          api.post('/referrals/track', { referralCode }).catch(() => {});
+        }
+      }
       toast.success(t('success'));
-      navigate('/');
+      navigateAfterAuth();
     } else {
       toast.error(result.message || t('error'));
     }
@@ -135,7 +152,7 @@ export default function AuthPage() {
     setGoogleLoading(false);
     if (result.success) {
       toast.success(t('success'));
-      navigate('/');
+      navigateAfterAuth();
     } else if (result.message) {
       toast.error(result.message);
     }
@@ -147,7 +164,7 @@ export default function AuthPage() {
     setAppleLoading(false);
     if (result.success) {
       toast.success(t('success'));
-      navigate('/');
+      navigateAfterAuth();
     } else if (result.message) {
       toast.error(result.message);
     }
@@ -159,7 +176,7 @@ export default function AuthPage() {
     setFacebookLoading(false);
     if (result.success) {
       toast.success(t('success'));
-      navigate('/');
+      navigateAfterAuth();
     } else if (result.message) {
       toast.error(result.message);
     }

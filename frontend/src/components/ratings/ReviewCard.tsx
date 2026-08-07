@@ -53,7 +53,7 @@ export default function ReviewCard({ rating, currentUserId, sellerId, onRefresh 
         <Link to={`/profil/${rating.fromUserId}`} className="shrink-0">
           <div className="w-8 h-8 rounded-full bg-[var(--bg-input)] overflow-hidden">
             {rating.fromUserImage ? (
-              <img src={rating.fromUserImage} alt={rating.fromUserName} className="w-full h-full object-cover" />
+              <img src={rating.fromUserImage} alt={rating.fromUserName} loading="lazy" decoding="async" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-[#6B6560]">
                 {rating.fromUserName?.charAt(0) || '?'}

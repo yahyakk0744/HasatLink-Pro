@@ -25,7 +25,9 @@ export default function ImageGallery({ images, title }: ImageGalleryProps) {
       <img
         src={images[current]}
         alt={title}
-        loading="lazy"
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
         onLoad={() => markLoaded(current)}
         className={`w-full h-full object-cover transition-[filter] duration-400 ${loaded.has(current) ? '' : 'img-lazy'}`}
       />

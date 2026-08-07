@@ -41,6 +41,7 @@ import weatherAlertRoutes from './routes/weatherAlertRoutes';
 import harvestCalendarRoutes from './routes/harvestCalendarRoutes';
 import logisticsRoutes from './routes/logisticsRoutes';
 import sponsoredContentRoutes from './routes/sponsoredContentRoutes';
+import sitemapRoutes from './routes/sitemapRoutes';
 import { expireOutdatedDealers } from './controllers/dealerController';
 import { processExpiredDeletions } from './controllers/userController';
 
@@ -170,6 +171,7 @@ app.use('/api', weatherAlertRoutes);
 app.use('/api', harvestCalendarRoutes);
 app.use('/api', logisticsRoutes);
 app.use('/api', sponsoredContentRoutes);
+app.use('/api', sitemapRoutes);
 
 // Health / keep-alive endpoint — minimal response, no DB hit
 app.get('/api/ping', (_req, res) => {

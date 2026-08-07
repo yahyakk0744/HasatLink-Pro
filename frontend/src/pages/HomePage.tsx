@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation as useRouterLocation } from 'react-router-dom';
 import {
   ArrowRight, MapPin, TrendingUp, TrendingDown, Droplets, Wind, Cloud,
   BarChart3, ShoppingBag, PackageOpen, Search, Wheat, Truck, HardHat,
@@ -106,6 +106,7 @@ export default function HomePage() {
   const { weather, fetchWeather } = useWeather();
   const { location: geoLocation } = useLocation();
   const navigate = useNavigate();
+  const routerLocation = useRouterLocation();
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const [platformStats, setPlatformStats] = useState({ activeListings: 0, registeredUsers: 0, cities: 0, aiDiagnoses: 0, categoryCounts: {} as Record<string, number> });
   const [heroSearch, setHeroSearch] = useState('');
@@ -184,9 +185,19 @@ export default function HomePage() {
   };
 
   const openEntrySheet = () => {
-    if (!user) { navigate('/giris'); return; }
+    if (!user) { navigate('/giris', { state: { from: '/', intent: 'create-listing' } }); return; }
     setShowEntrySheet(true);
   };
+
+  // Resume "post a listing" after the login/register redirect sent the user
+  // here to authenticate — see AuthPage's navigateAfterAuth().
+  useEffect(() => {
+    if (user && (routerLocation.state as { intent?: string } | null)?.intent === 'create-listing') {
+      setShowEntrySheet(true);
+      navigate(routerLocation.pathname, { replace: true, state: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const selectEntryType = (entryType: 'product' | 'service') => {
     setFormInitialType(entryType === 'product' ? 'pazar' : 'lojistik');
@@ -294,8 +305,10 @@ export default function HomePage() {
                     <h3 className="text-[10px] md:text-[11px] font-semibold tracking-tight text-[var(--text-primary)] truncate w-full leading-tight">
                       {cat[lang]}
                     </h3>
-                    <p className="text-[9px] text-[var(--text-secondary)] mt-0.5">
-                      {count} {lang === 'tr' ? 'ilan' : ''}
+                    <p className="text-[9px] mt-0.5" style={count > 0 ? { color: 'var(--text-secondary)' } : { color, fontWeight: 600 }}>
+                      {count > 0
+                        ? `${count} ${lang === 'tr' ? 'ilan' : ''}`
+                        : (lang === 'tr' ? 'İlk sen ekle' : 'Be first')}
                     </p>
                   </div>
 
@@ -306,7 +319,7 @@ export default function HomePage() {
                       e.preventDefault();
                       e.stopPropagation();
                       if (!user) {
-                        navigate('/giris');
+                        navigate('/giris', { state: { from: '/', intent: 'create-listing' } });
                         return;
                       }
                       setFormInitialType(key as Listing['type']);
@@ -378,11 +391,20 @@ export default function HomePage() {
                   ? (lang === 'tr' ? `${geoRadius} km içinde ilan bulunamadı` : `No listings within ${geoRadius} km`)
                   : (lang === 'tr' ? 'Henüz ilan eklenmedi' : 'No listings yet')}
               </h3>
-              <p className="text-sm text-[var(--text-secondary)]">
+              <p className="text-sm text-[var(--text-secondary)] mb-5">
                 {geoFilterEnabled
                   ? (lang === 'tr' ? 'Mesafeyi artırmayı deneyin' : 'Try increasing the distance')
                   : (lang === 'tr' ? 'İlk ilanı sen oluştur!' : 'Be the first to create a listing!')}
               </p>
+              {!geoFilterEnabled && (
+                <button
+                  onClick={() => { if (!user) { navigate('/giris', { state: { from: '/', intent: 'create-listing' } }); return; } setShowForm(true); }}
+                  className="btn-primary inline-flex"
+                >
+                  <Plus size={16} strokeWidth={2.5} />
+                  {lang === 'tr' ? 'İlan Ver' : 'Post a Listing'}
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -410,7 +432,7 @@ export default function HomePage() {
               {blogPosts.map(blog => (
                 <Link key={blog._id} to={`/blog/${blog.slug}`} className="group surface-card-hover rounded-2xl overflow-hidden">
                   {blog.coverImage ? (
-                    <img src={blog.coverImage} alt={blog.title} className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                    <img src={blog.coverImage} alt={blog.title} className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
                   ) : (
                     <div className="w-full aspect-video bg-gradient-to-br from-[#2D6A4F] to-[#40916C] flex items-center justify-center">
                       <span className="text-white/60 text-4xl">📝</span>
@@ -455,7 +477,7 @@ export default function HomePage() {
                         <p className="text-4xl font-bold tracking-tight mt-1">{weather.temp}°<span className="text-lg font-normal text-[var(--text-secondary)]">C</span></p>
                         <p className="text-[11px] text-[var(--text-secondary)] capitalize mt-0.5">{weather.description}</p>
                       </div>
-                      {weather.icon && <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} alt={weather.description} className="w-20 h-20 -mr-2" />}
+                      {weather.icon && <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} alt={weather.description} loading="lazy" decoding="async" className="w-20 h-20 -mr-2" />}
                     </div>
                     <div className="flex items-center gap-4 py-2 border-t border-[var(--border-default)]">
                       <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-secondary)]"><Droplets size={12} className="text-[#0077B6]" />{weather.humidity}%</span>

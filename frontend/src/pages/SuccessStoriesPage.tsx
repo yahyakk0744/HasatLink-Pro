@@ -61,7 +61,7 @@ export default function SuccessStoriesPage() {
               className="group bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
             >
               {story.coverImage ? (
-                <img src={story.coverImage} alt={story.title} className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                <img src={story.coverImage} alt={story.title} className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
               ) : (
                 <div className="w-full aspect-video bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
                   <Trophy size={40} className="text-white/60" />

@@ -82,7 +82,7 @@ function SponsoredList() {
               className="group bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
             >
               {item.coverImage ? (
-                <img src={item.coverImage} alt={item.title} className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                <img src={item.coverImage} alt={item.title} className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
               ) : (
                 <div className="w-full aspect-video bg-gradient-to-br from-[#2D6A4F] to-[#40916C] flex items-center justify-center">
                   <Newspaper size={32} className="text-white/60" />
@@ -90,7 +90,7 @@ function SponsoredList() {
               )}
               <div className="p-5">
                 <div className="flex items-center gap-2 mb-2">
-                  {item.sponsorLogo && <img src={item.sponsorLogo} alt={item.sponsorName} className="w-5 h-5 rounded-full object-cover" />}
+                  {item.sponsorLogo && <img src={item.sponsorLogo} alt={item.sponsorName} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover" />}
                   <span className="text-[10px] font-medium text-[var(--text-secondary)] uppercase tracking-wider">Sponsorlu · {item.sponsorName}</span>
                 </div>
                 <h3 className="text-base font-semibold line-clamp-2 mb-2 group-hover:text-[#2D6A4F] transition-colors">{item.title}</h3>

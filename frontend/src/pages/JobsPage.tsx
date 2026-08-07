@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Briefcase, MapPin, Users, Clock, Plus, Search, ChevronRight,
 } from 'lucide-react';
@@ -66,6 +66,7 @@ function formatRelative(dateStr: string): string {
 
 export default function JobsPage() {
   const navigate = useNavigate();
+  const routerLocation = useLocation();
   const { user } = useAuth();
   const { isEnabled, loading: featuresLoading } = useFeatures();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -122,7 +123,7 @@ export default function JobsPage() {
         </div>
         <button
           onClick={() => {
-            if (!user) { toast.error('Giriş yapın'); navigate('/giris'); return; }
+            if (!user) { toast.error('Giriş yapın'); navigate('/giris', { state: { from: routerLocation.pathname } }); return; }
             setShowCreate(true);
           }}
           className="flex items-center gap-2 px-5 py-2.5 bg-[#2D6A4F] text-white rounded-2xl font-semibold text-sm hover:bg-[#1B4332] transition-colors shadow-sm"

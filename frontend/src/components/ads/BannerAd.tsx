@@ -63,7 +63,7 @@ export default function BannerAd({ slot, className = '' }: BannerAdProps) {
       `}
       onClick={handleClick}
     >
-      <img src={imageSrc} alt="" className="w-full h-auto object-cover" />
+      <img src={imageSrc} alt="" loading="lazy" decoding="async" className="w-full h-auto object-cover" />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { readFileSync } from 'fs'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 // Read version from package.json for Sentry release tagging
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
@@ -10,6 +11,13 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // Opt-in bundle size report: `ANALYZE=1 npm run build` writes dist/bundle-report.html
+    process.env.ANALYZE ? visualizer({
+      filename: 'dist/bundle-report.html',
+      gzipSize: true,
+      brotliSize: true,
+      template: 'treemap',
+    }) : null,
   ],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),

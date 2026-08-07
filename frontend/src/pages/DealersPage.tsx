@@ -122,7 +122,7 @@ export default function DealersPage() {
               )}
               <div className="p-4">
                 <div className="flex items-start gap-3 mb-2">
-                  {d.logoUrl && <img src={d.logoUrl} alt={d.name} className="w-10 h-10 rounded-xl object-cover shrink-0" />}
+                  {d.logoUrl && <img src={d.logoUrl} alt={d.name} loading="lazy" decoding="async" className="w-10 h-10 rounded-xl object-cover shrink-0" />}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-bold truncate">{d.name}</h3>
@@ -154,7 +154,7 @@ export default function DealersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelected(null)}>
           <div className="w-full max-w-md bg-[var(--bg-surface)] rounded-2xl p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-start gap-3 mb-4">
-              {selected.logoUrl && <img src={selected.logoUrl} alt={selected.name} className="w-14 h-14 rounded-xl object-cover" />}
+              {selected.logoUrl && <img src={selected.logoUrl} alt={selected.name} loading="lazy" decoding="async" className="w-14 h-14 rounded-xl object-cover" />}
               <div>
                 <h2 className="text-lg font-bold">{selected.name}</h2>
                 <p className="text-xs text-[var(--text-secondary)]">{selected.category} · {selected.city}</p>

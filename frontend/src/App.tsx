@@ -10,6 +10,7 @@ import CookieConsent from './components/ui/CookieConsent';
 import PWAInstallPrompt from './components/ui/PWAInstallPrompt';
 import NetworkBanner from './components/ui/NetworkBanner';
 import LoadingSpinner from './components/ui/LoadingSpinner';
+import JsonLd from './components/ui/JsonLd';
 import { trackPageView } from './utils/analytics';
 import { isNative, registerPushNotifications, onAppStateChange, onPushNotificationReceived } from './utils/native';
 
@@ -154,6 +155,29 @@ export default function App() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-page)' }}>
+      {!isAdmin && (
+        <JsonLd data={{
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'Organization',
+              name: 'HasatLink',
+              url: 'https://hasatlink.com',
+              logo: 'https://hasatlink.com/icons/icon-512x512.png',
+            },
+            {
+              '@type': 'WebSite',
+              name: 'HasatLink',
+              url: 'https://hasatlink.com',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: 'https://hasatlink.com/pazar?search={search_term_string}',
+                'query-input': 'required name=search_term_string',
+              },
+            },
+          ],
+        }} />
+      )}
       {!isAdmin && <Header />}
       {!isAdmin && <CategoryNav />}
 

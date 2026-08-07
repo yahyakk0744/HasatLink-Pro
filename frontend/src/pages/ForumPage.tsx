@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   MessageCircle, ThumbsUp, Eye, CheckCircle2, Search, Plus, Tag, Clock,
@@ -53,6 +53,7 @@ function formatRelative(dateStr: string): string {
 export default function ForumPage() {
   const { i18n: _i18n } = useTranslation();
   const navigate = useNavigate();
+  const routerLocation = useLocation();
   const { user } = useAuth();
   const { isEnabled, loading: featuresLoading } = useFeatures();
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -105,7 +106,7 @@ export default function ForumPage() {
           onClick={() => {
             if (!user) {
               toast.error('Soru sormak için giriş yapın');
-              navigate('/giris');
+              navigate('/giris', { state: { from: routerLocation.pathname } });
               return;
             }
             setShowAskModal(true);

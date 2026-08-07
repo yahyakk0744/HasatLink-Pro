@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, SlidersHorizontal, X, ArrowUpDown, CalendarClock, TrendingDown, LayoutGrid, Map, Bell } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
@@ -38,6 +38,7 @@ export default function ListingsPage() {
   const lang = i18n.language?.startsWith('tr') ? 'tr' : 'en';
   const { user } = useAuth();
   const navigate = useNavigate();
+  const routerLocation = useLocation();
   const { listings, loading, fetchListings, createListing } = useListings();
   const pathType = window.location.pathname.replace('/', '') || 'pazar';
   const type = ['pazar', 'lojistik', 'isgucu', 'ekipman', 'arazi', 'depolama', 'hayvancilik'].includes(pathType) ? pathType : 'pazar';
@@ -66,6 +67,16 @@ export default function ListingsPage() {
   const subCategories = CATEGORIES[type as keyof typeof CATEGORIES] || CATEGORIES.pazar;
   const catLabel = CATEGORY_LABELS[type];
   const productOptions = subCategory !== 'HEPSİ' ? (ALL_SUBCATEGORIES[type]?.[subCategory] || []) : [];
+
+  // Resume "post a listing" after the login/register redirect sent the user
+  // here to authenticate — see AuthPage's navigateAfterAuth().
+  useEffect(() => {
+    if (user && (routerLocation.state as { intent?: string } | null)?.intent === 'create-listing') {
+      setShowForm(true);
+      navigate(routerLocation.pathname, { replace: true, state: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   useEffect(() => {
     const params: Record<string, string> = { type };
@@ -454,7 +465,7 @@ export default function ListingsPage() {
         </div>
       )}
 
-      <FAB onClick={() => user ? setShowForm(true) : navigate('/giris')} icon={<Plus size={24} />} />
+      <FAB onClick={() => user ? setShowForm(true) : navigate('/giris', { state: { from: routerLocation.pathname, intent: 'create-listing' } })} icon={<Plus size={24} />} />
       {user && (
         <ListingForm
           isOpen={showForm}

@@ -21,8 +21,10 @@ export const getMyCode = async (req: Request, res: Response): Promise<void> => {
       await User.findByIdAndUpdate(user.userId, { referralCode: code });
     }
 
+    // NOTE: there is no /kayit route in the frontend — the registration form lives at
+    // /giris (AuthPage), which switches to sign-up mode when a ?ref= code is present.
     const baseUrl = process.env.FRONTEND_URL || 'https://hasatlink.com';
-    const link = `${baseUrl}/kayit?ref=${code}`;
+    const link = `${baseUrl}/giris?ref=${code}`;
     res.json({ code, link });
   } catch (err) {
     res.status(500).json({ message: 'Kod alınamadı' });

@@ -12,6 +12,30 @@ type SortDir = 'asc' | 'desc';
 
 const PER_PAGE = 25;
 
+function HalTableSkeleton() {
+  return (
+    <div className="surface-card rounded-2xl overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <tbody>
+            {Array.from({ length: 10 }).map((_, i) => (
+              <tr key={i} className="border-b border-[#F5F3F0]">
+                <td className="px-4 py-3"><div className="h-4 w-24 skeleton rounded-lg" /></td>
+                <td className="px-4 py-3"><div className="h-4 w-10 skeleton rounded-lg" /></td>
+                <td className="px-4 py-3"><div className="h-4 w-10 skeleton rounded-lg" /></td>
+                <td className="px-4 py-3"><div className="h-4 w-10 skeleton rounded-lg" /></td>
+                <td className="px-4 py-3"><div className="h-4 w-12 skeleton rounded-lg" /></td>
+                <td className="px-4 py-3"><div className="h-4 w-14 skeleton rounded-lg" /></td>
+                <td className="px-4 py-3"><div className="h-5 w-16 skeleton rounded-full" /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function HalFiyatlariPage() {
   const { i18n } = useTranslation();
   const isTr = i18n.language?.startsWith('tr');
@@ -174,7 +198,7 @@ export default function HalFiyatlariPage() {
           </div>
 
           {loading ? (
-            <LoadingSpinner size="lg" className="py-12" />
+            <HalTableSkeleton />
           ) : (
             <>
               {/* Table */}

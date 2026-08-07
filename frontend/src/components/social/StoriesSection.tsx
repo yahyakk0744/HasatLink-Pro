@@ -6,6 +6,7 @@ import api from '../../config/api';
 import type { Listing } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatPrice } from '../../utils/formatters';
+import { listingUrl } from '../../utils/slug';
 
 interface StoryItem {
   _id: string;
@@ -112,7 +113,7 @@ export default function StoriesSection() {
               className="flex flex-col items-center shrink-0 snap-start group"
             >
               <Link
-                to={`/ilan/${story._id}`}
+                to={listingUrl(story._id, story.title)}
                 className="relative"
               >
                 <div className="relative w-16 h-16 md:w-[72px] md:h-[72px] rounded-full p-[2.5px] bg-gradient-to-br from-[#2D6A4F] via-[#40916C] to-[#E76F00] hover:scale-105 transition-transform">
@@ -122,6 +123,7 @@ export default function StoriesSection() {
                       alt={story.title}
                       className="w-full h-full object-cover"
                       loading="lazy"
+                      decoding="async"
                     />
                   </div>
                   {/* Seller mini avatar */}
@@ -129,6 +131,8 @@ export default function StoriesSection() {
                     <img
                       src={story.sellerImage}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-[var(--bg-surface)] object-cover"
                     />
                   )}
@@ -203,7 +207,7 @@ export default function StoriesSection() {
                     className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-[var(--bg-surface-hover)] transition-colors"
                   >
                     {v.profileImage ? (
-                      <img src={v.profileImage} alt={v.name} className="w-9 h-9 rounded-full object-cover" />
+                      <img src={v.profileImage} alt={v.name} loading="lazy" decoding="async" className="w-9 h-9 rounded-full object-cover" />
                     ) : (
                       <div className="w-9 h-9 rounded-full bg-[var(--accent-green)]/10 flex items-center justify-center text-sm font-semibold text-[var(--accent-green)]">
                         {v.name?.[0] || '?'}

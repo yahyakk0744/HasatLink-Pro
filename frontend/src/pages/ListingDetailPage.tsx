@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Bell, HandCoins, ShieldCheck, Star, Package, Calendar, MessageCircle, Store, Layers, Zap, Award, CheckCircle2, Truck, BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useListings } from '../hooks/useListings';
@@ -24,6 +24,8 @@ import DemandForm from '../components/listings/DemandForm';
 import ListingStats from '../components/listings/ListingStats';
 import ReportModal from '../components/moderation/ReportModal';
 import JsonLd from '../components/ui/JsonLd';
+import { extractListingId } from '../utils/slug';
+import { trackEvent } from '../utils/analytics';
 import toast from 'react-hot-toast';
 
 function SellerCard({ listing, onMessage }: { listing: Listing; onMessage?: () => void }) {
@@ -40,6 +42,8 @@ function SellerCard({ listing, onMessage }: { listing: Listing; onMessage?: () =
           <img
             src={listing.sellerImage}
             alt={listing.sellerName}
+            loading="lazy"
+            decoding="async"
             className="w-12 h-12 rounded-2xl object-cover"
           />
         ) : (
@@ -194,10 +198,12 @@ function PriceAlertBox({ category, subCategory, currentPrice }: { category: stri
 }
 
 export default function ListingDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id: idParam } = useParams<{ id: string }>();
+  const id = idParam ? extractListingId(idParam) : idParam;
   const { t } = useTranslation();
   const { user, firebaseUid } = useAuth();
   const navigate = useNavigate();
+  const routerLocation = useLocation();
   const { fetchListing, updateListing, deleteListing, trackWaClick, trackShare } = useListings();
   const { ratings, fetchRatings } = useRatings();
   const { getOrCreateConversation } = useMessages();
@@ -305,7 +311,7 @@ export default function ListingDetailPage() {
 
   const handleOffer = async () => {
     if (!listing || !offerPrice || Number(offerPrice) <= 0) return;
-    if (!user) { navigate('/giris'); return; }
+    if (!user) { navigate('/giris', { state: { from: routerLocation.pathname } }); return; }
     setOfferSending(true);
     try {
       await api.post('/offers', {
@@ -313,6 +319,7 @@ export default function ListingDetailPage() {
         offerPrice: Number(offerPrice),
         message: offerMessage,
       });
+      trackEvent('offer_sent', 'engagement', listing.type);
       toast.success('Teklifiniz gönderildi!');
       setShowOfferModal(false);
       setOfferPrice('');
@@ -327,7 +334,7 @@ export default function ListingDetailPage() {
   const handleMessage = async () => {
     if (!listing) return;
     if (!user) {
-      navigate('/giris');
+      navigate('/giris', { state: { from: routerLocation.pathname } });
       return;
     }
 
@@ -411,7 +418,7 @@ export default function ListingDetailPage() {
             onEdit={() => setShowEditForm(true)}
             onDelete={() => setShowDeleteConfirm(true)}
             onMessage={!isOwner ? handleMessage : undefined}
-            onOffer={!isOwner ? () => setShowOfferModal(true) : undefined}
+            onOffer={!isOwner ? () => { trackEvent('offer_intent', 'engagement', listing.type); setShowOfferModal(true); } : undefined}
             onReport={!isOwner && user ? () => setShowReport(true) : undefined}
           />
 

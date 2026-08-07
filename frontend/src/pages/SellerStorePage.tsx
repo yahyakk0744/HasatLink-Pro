@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { BadgeCheck, Star, MessageCircle, User as UserIcon, Eye, Package, Calendar, Store, QrCode, Share2, ShoppingCart } from 'lucide-react';
 import api from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,6 +9,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import EmptyState from '../components/ui/EmptyState';
 import SEO from '../components/ui/SEO';
 import { formatPrice, formatDate } from '../utils/formatters';
+import { listingUrl } from '../utils/slug';
 import type { User, Listing } from '../types';
 import toast from 'react-hot-toast';
 
@@ -28,6 +29,7 @@ const CATEGORY_TABS: { key: CategoryFilter; label: string }[] = [
 export default function SellerStorePage() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const routerLocation = useLocation();
   const { user: authUser, firebaseUid } = useAuth();
   const { getOrCreateConversation } = useMessages();
 
@@ -64,7 +66,7 @@ export default function SellerStorePage() {
 
   const handleMessage = async () => {
     if (!authUser) {
-      navigate('/giris');
+      navigate('/giris', { state: { from: routerLocation.pathname } });
       return;
     }
     if (!seller) return;
@@ -130,6 +132,7 @@ export default function SellerStorePage() {
               <img
                 src={seller.profileImage}
                 alt={seller.name}
+                decoding="async"
                 className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-2"
                 style={{ borderColor: 'var(--border-default)' }}
               />
@@ -342,7 +345,7 @@ export default function SellerStorePage() {
           {filteredListings.map(listing => (
             <Link
               key={listing._id}
-              to={`/ilan/${listing._id}`}
+              to={listingUrl(listing._id, listing.title)}
               className="rounded-2xl overflow-hidden border transition-transform hover:-translate-y-0.5"
               style={{
                 backgroundColor: 'var(--bg-surface)',
@@ -359,6 +362,7 @@ export default function SellerStorePage() {
                     alt={listing.title}
                     className="w-full h-full object-cover"
                     loading="lazy"
+                    decoding="async"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">

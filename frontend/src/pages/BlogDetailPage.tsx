@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Calendar, User, ArrowLeft } from 'lucide-react';
 import api from '../config/api';
 import SEO from '../components/ui/SEO';
+import JsonLd from '../components/ui/JsonLd';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import type { Blog } from '../types';
 import { formatDate } from '../utils/formatters';
@@ -31,6 +32,22 @@ export default function BlogDetailPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 animate-fade-in">
       <SEO title={blog.title} description={blog.content.slice(0, 160)} ogImage={blog.coverImage} />
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: blog.title,
+        description: blog.content.replace(/<[^>]+>/g, '').slice(0, 300),
+        image: blog.coverImage ? [blog.coverImage] : undefined,
+        datePublished: blog.createdAt,
+        dateModified: blog.createdAt,
+        author: { '@type': 'Person', name: blog.author || 'HasatLink' },
+        publisher: {
+          '@type': 'Organization',
+          name: 'HasatLink',
+          logo: { '@type': 'ImageObject', url: 'https://hasatlink.com/icons/icon-512x512.png' },
+        },
+        mainEntityOfPage: { '@type': 'WebPage', '@id': `https://hasatlink.com/blog/${blog.slug}` },
+      }} />
 
       <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm text-[var(--accent-green)] font-medium mb-6 hover:gap-2.5 transition-all">
         <ArrowLeft size={14} /> {lang === 'tr' ? 'Tarım Rehberi' : 'Agriculture Guide'}

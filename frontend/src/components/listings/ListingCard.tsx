@@ -8,6 +8,7 @@ import Badge from '../ui/Badge';
 import { STATUS_LABELS, CATEGORY_LABELS, LISTING_MODE_LABELS, LISTING_MODE_COLORS } from '../../utils/constants';
 import { useFavorites } from '../../hooks/useFavorites';
 import { getLoyaltyBadge } from '../../utils/loyalty';
+import { listingUrl } from '../../utils/slug';
 
 interface ListingCardProps {
   listing: Listing;
@@ -43,7 +44,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
   const catColor = CATEGORY_BADGE_COLORS[listing.type] || '#2D6A4F';
 
   return (
-    <Link to={`/ilan/${listing._id}`} className="group">
+    <Link to={listingUrl(listing._id, listing.title)} className="group">
       <div className={`surface-card-hover rounded-3xl overflow-hidden spring-tap ${listing.isFeatured ? 'ring-2 ring-amber-400/60 shadow-[0_0_12px_rgba(251,191,36,0.15)]' : ''}`}>
         {/* Image */}
         <div className="relative aspect-[4/3] bg-[var(--bg-input)] overflow-hidden">
@@ -52,6 +53,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
               src={listing.images[0]}
               alt={listing.title}
               loading="lazy"
+              decoding="async"
               onLoad={() => setImgLoaded(true)}
               className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${imgLoaded ? '' : 'img-lazy'}`}
             />
@@ -247,7 +249,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
           {listing.sellerName && (
             <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-default)]">
               {listing.sellerImage ? (
-                <img src={listing.sellerImage} alt={listing.sellerName} className="w-6 h-6 rounded-full object-cover" />
+                <img src={listing.sellerImage} alt={listing.sellerName} loading="lazy" decoding="async" className="w-6 h-6 rounded-full object-cover" />
               ) : (
                 <div className="w-6 h-6 rounded-full bg-[var(--accent-green)]/10 flex items-center justify-center text-[10px] font-semibold text-[var(--accent-green)]">
                   {listing.sellerName[0]}

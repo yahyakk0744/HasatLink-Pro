@@ -20,6 +20,7 @@ import {
 import type { Listing } from '../../types';
 import { containsProfanity } from '../../utils/profanityFilter';
 import { formatPrice } from '../../utils/formatters';
+import { trackEvent } from '../../utils/analytics';
 import toast from 'react-hot-toast';
 
 interface ListingFormProps {
@@ -421,6 +422,7 @@ export default function ListingForm({ isOpen, onClose, onSubmit, initialData }: 
       }
 
       await onSubmit(data);
+      if (!initialData) trackEvent('listing_published', 'engagement', type);
       onClose();
     } finally {
       setLoading(false);
