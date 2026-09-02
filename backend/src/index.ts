@@ -46,6 +46,8 @@ import { expireOutdatedDealers } from './controllers/dealerController';
 import { processExpiredDeletions } from './controllers/userController';
 
 const app = express();
+// Hide framework fingerprint (avoid X-Powered-By: Express disclosure)
+app.disable('x-powered-by');
 const httpServer = createServer(app);
 
 // Initialize Socket.IO

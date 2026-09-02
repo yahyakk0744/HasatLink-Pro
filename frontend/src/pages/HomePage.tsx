@@ -652,7 +652,7 @@ export default function HomePage() {
             <StatCounter end={platformStats.activeListings} suffix="" label={lang === 'tr' ? 'Toplam İlan' : 'Total Listings'} icon={<Layers size={22} className="text-[var(--accent-green)]" />} />
             <StatCounter end={platformStats.registeredUsers} suffix="" label={lang === 'tr' ? 'Kayıtlı Kullanıcı' : 'Registered Users'} icon={<Users size={22} className="text-[#0077B6]" />} />
             <StatCounter end={platformStats.cities} suffix="" label={lang === 'tr' ? 'Aktif Şehir' : 'Active Cities'} icon={<Building2 size={22} className="text-[var(--accent-orange)]" />} />
-            <StatCounter end={Object.keys(platformStats.categoryCounts).length || 6} suffix="" label={lang === 'tr' ? 'Kategori' : 'Categories'} icon={<BarChart3 size={22} className="text-[#52796F]" />} />
+            <StatCounter end={Object.keys(CATEGORY_LABELS).length} suffix="" label={lang === 'tr' ? 'Kategori' : 'Categories'} icon={<BarChart3 size={22} className="text-[#52796F]" />} />
           </div>
         </section>
       </AnimatedSection>

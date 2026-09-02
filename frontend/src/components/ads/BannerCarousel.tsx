@@ -70,7 +70,7 @@ export default function BannerCarousel() {
       <div className="aspect-[21/6] md:aspect-[21/5] bg-[var(--bg-input)] relative overflow-hidden">
         <img
           src={imageSrc}
-          alt=""
+          alt="Sponsorlu reklam"
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
         />
         {/* Gradient overlay */}

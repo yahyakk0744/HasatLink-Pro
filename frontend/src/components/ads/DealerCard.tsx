@@ -64,7 +64,7 @@ export default function DealerCard({ item, className = '' }: DealerCardProps) {
         <div className="h-32 overflow-hidden">
           <img
             src={dealer.coverImage}
-            alt=""
+            alt={`${dealer.name} kapak görseli`}
             loading="lazy"
             decoding="async"
             className="w-full h-full object-cover"
@@ -78,7 +78,7 @@ export default function DealerCard({ item, className = '' }: DealerCardProps) {
         <div className="flex items-start gap-3.5 mb-3.5">
           <div className="w-12 h-12 rounded-xl overflow-hidden bg-[var(--bg-input)] shrink-0 shadow-sm">
             {dealer.profileImage ? (
-              <img src={dealer.profileImage} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+              <img src={dealer.profileImage} alt={dealer.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-lg font-bold">
                 {dealer.companyName.charAt(0)}

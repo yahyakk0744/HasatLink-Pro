@@ -130,7 +130,7 @@ export default function StoriesSection() {
                   {story.sellerImage && (
                     <img
                       src={story.sellerImage}
-                      alt=""
+                      alt={story.sellerName}
                       loading="lazy"
                       decoding="async"
                       className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-[var(--bg-surface)] object-cover"
