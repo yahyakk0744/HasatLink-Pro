@@ -438,9 +438,11 @@ function FieldSatelliteView({ polygon, area, lang }: {
 /* ─── Loading Animation ─── */
 const ANALYSIS_STEPS = [
   { icon: Satellite,  label: 'Uydu geçişleri sorgulanıyor...',    delay: 0 },
-  { icon: Cloud,      label: 'Sentinel-2 görüntüleri indiriliyor...', delay: 1200 },
-  { icon: Database,   label: 'NDVI değerleri hesaplanıyor...',     delay: 2400 },
-  { icon: CheckCircle,label: 'Sağlık analizi tamamlanıyor...',     delay: 3600 },
+  // Canlı ölçüm: /satellite/analyze 38-40 sn sürüyor. Adımlar eskiden 3,6 sn'de
+  // bitiyor, çubuk %100'de ~35 sn donmuş gibi bekliyordu.
+  { icon: Cloud,      label: 'Sentinel-2 görüntüleri indiriliyor...', delay: 6000 },
+  { icon: Database,   label: 'NDVI değerleri hesaplanıyor...',     delay: 16000 },
+  { icon: CheckCircle,label: 'Sağlık analizi tamamlanıyor...',     delay: 28000 },
 ];
 
 function AnalysisLoader() {
@@ -496,9 +498,12 @@ function AnalysisLoader() {
       <div className="mt-4 h-1.5 rounded-full bg-indigo-100 overflow-hidden">
         <div
           className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-600 transition-all duration-1000"
-          style={{ width: `${((activeStep + 1) / ANALYSIS_STEPS.length) * 100}%` }}
+          style={{ width: `${((activeStep + 1) / (ANALYSIS_STEPS.length + 1)) * 100}%` }}
         />
       </div>
+      <p className="mt-2 text-[11px] text-indigo-600/80 dark:text-indigo-300/80 text-center">
+        Bu işlem 30-40 saniye sürebilir
+      </p>
     </div>
   );
 }
