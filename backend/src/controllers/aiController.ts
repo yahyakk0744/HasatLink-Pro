@@ -12,6 +12,11 @@ function getGemini() {
   return new GoogleGenerativeAI(key);
 }
 
+// Google gemini-1.5-* modellerini kapattı; eski ad artık 'model bulunamadı'
+// döndürüyor ve AI teşhis her istekte 503 AI_UNAVAILABLE veriyordu.
+// Model adı yeniden kod değişikliği gerekmesin diye ortamdan okunur.
+const geminiModel = () => process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+
 const MASTER_PROMPT = `Sen dunyanin oncu Bitki Patolojisi uzmani ve Ziraat Muhendisisin. 20+ yillik deneyiminle tarım fotograflarini hassas sekilde analiz ediyorsun.
 
 Bu fotograftaki bitkiyi / urunu analiz et ve SADECE asagidaki JSON formatinda cevap ver. Baska HICBIR sey yazma, sadece JSON:
@@ -73,7 +78,7 @@ Cevap kurallarin:
 async function analyzeWithGemini(imagePath: string): Promise<any | null> {
   try {
     const genAI = getGemini();
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: geminiModel() });
 
     const imageBuffer = fs.readFileSync(imagePath);
     const base64 = imageBuffer.toString('base64');
@@ -114,7 +119,9 @@ async function analyzeWithHuggingFace(imagePath: string): Promise<{ label: strin
   for (const model of HF_MODELS) {
     try {
       const { data } = await axios.post(
-        `https://api-inference.huggingface.co/models/${model}`,
+        // Eski serverless adresi (api-inference.huggingface.co) kapatıldı; aynı
+        // hf-inference sağlayıcısına artık router üzerinden erişiliyor.
+        `https://router.huggingface.co/hf-inference/models/${model}`,
         imageBuffer,
         {
           headers: {
@@ -492,7 +499,7 @@ export const followUp = async (req: Request, res: Response): Promise<void> => {
     if (!question) { res.status(400).json({ message: 'Soru gerekli' }); return; }
 
     const genAI = getGemini();
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: geminiModel() });
 
     const contextInfo = context
       ? `Onceki analiz sonucu: Bitki: ${context.crop_type}, Hastalik: ${context.disease}, Tedavi: ${context.treatment}`
