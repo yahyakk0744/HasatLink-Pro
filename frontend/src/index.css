@@ -545,8 +545,10 @@ html.dark select option {
   100% { width: 92%; }
 }
 
+/* Canlı ölçüm: /ai/diagnose ~24 sn. 2 sn'lik animasyonda çubuk %92'ye
+   varıp ~22 sn orada donmuş gibi bekliyordu. */
 .animate-progress {
-  animation: progress 2s ease-out forwards;
+  animation: progress 25s ease-out forwards;
 }
 
 /* Heart haptic pop — Apple Watch spring physics */

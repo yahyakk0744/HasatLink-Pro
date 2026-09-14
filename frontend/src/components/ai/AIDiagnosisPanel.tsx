@@ -220,6 +220,9 @@ export default function AIDiagnosisPanel() {
               <div className="h-1.5 rounded-full bg-[var(--bg-input)] overflow-hidden">
                 <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 animate-progress" />
               </div>
+              <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
+                {isTr ? 'Bu işlem 20-30 saniye sürebilir' : 'This may take 20-30 seconds'}
+              </p>
             </div>
           </div>
         )}
