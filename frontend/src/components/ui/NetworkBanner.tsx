@@ -25,7 +25,7 @@ export default function NetworkBanner() {
   if (!offline) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[10000] bg-red-600 text-white text-center py-2 text-sm font-medium flex items-center justify-center gap-2 animate-slide-down">
+    <div className="fixed top-0 left-0 right-0 z-[10000] bg-red-600 text-white text-center pb-2 pt-[calc(0.5rem_+_var(--safe-top))] text-sm font-medium flex items-center justify-center gap-2 animate-slide-down">
       <WifiOff size={16} />
       İnternet bağlantısı yok
     </div>

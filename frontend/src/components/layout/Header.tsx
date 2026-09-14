@@ -48,7 +48,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 glass border-b border-[var(--border-subtle)]">
+    <header className="sticky top-0 z-30 safe-area-top safe-area-x glass border-b border-[var(--border-subtle)]">
       <div className="max-w-7xl mx-auto px-3 md:px-4 py-2.5 md:py-3 flex items-center gap-2 md:gap-4">
         {/* Logo */}
         <Link to="/" className="shrink-0">

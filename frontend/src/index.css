@@ -136,6 +136,33 @@ body {
   overflow-x: hidden;
 }
 
+/* === iOS güvenli alanlar ===
+   index.html'de viewport-fit=cover var: içerik status bar, çentik / Dynamic
+   Island ve home indicator'ın ALTINA uzanıyor. Bu değişkenler o alanları geri
+   iter. Eskiden kullanılan safe-area-bottom sınıfı hiçbir yerde tanımlı
+   değildi (Tailwind v4 tailwind.config.js'i okumuyor), yani hiç çalışmıyordu:
+   başlık saatin, giriş düğmesi pil simgesinin altında kalıyordu.
+   Çentiksiz cihazlarda ve masaüstü tarayıcıda env() 0 döner, görünüm değişmez. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+@utility safe-area-top {
+  padding-top: var(--safe-top);
+}
+
+@utility safe-area-bottom {
+  padding-bottom: var(--safe-bottom);
+}
+
+@utility safe-area-x {
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
 /* Mobile spacing */
 @media (max-width: 768px) {
   .max-w-7xl { padding-left: 1rem; padding-right: 1rem; }

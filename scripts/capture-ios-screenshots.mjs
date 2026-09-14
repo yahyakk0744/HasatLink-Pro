@@ -205,7 +205,11 @@ async function warmBackend() {
 const MIN_CONTENT_BYTES = 130 * 1024;
 
 function launchAndCapture(udid, route, outFile, extraWaitMs) {
-  execFileSync('xcrun', ['simctl', 'launch', '--terminate-running-process', udid, BUNDLE_ID], {
+  // Mağaza sayfası Türkçe (tr); simülatör varsayılan olarak İngilizce açılıyor ve
+  // uygulama dili navigator.language'dan algılıyor. Uygulamayı Türkçe başlat.
+  const lang = process.env.SCREENSHOT_LANG || 'tr';
+  const langArgs = lang === 'en' ? [] : ['-AppleLanguages', '(' + lang + ')', '-AppleLocale', lang + '_TR'];
+  execFileSync('xcrun', ['simctl', 'launch', '--terminate-running-process', udid, BUNDLE_ID, ...langArgs], {
     env: { ...process.env, SIMCTL_CHILD_SCREENSHOT_ROUTE: route },
   });
   // Splash screen alone holds for 2s (capacitor.config.ts), plus cold JS

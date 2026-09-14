@@ -713,7 +713,7 @@ export default function HomePage() {
       {/* ─── HasatAI FAB ─── */}
       <Link
         to="/ai-teshis"
-        className="fixed bottom-20 left-4 md:bottom-8 md:left-8 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-lg shadow-emerald-500/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform group"
+        className="fixed bottom-[calc(5rem_+_var(--safe-bottom))] left-4 md:bottom-8 md:left-8 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-lg shadow-emerald-500/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform group"
       >
         <Sparkles size={22} className="text-white" />
         <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-gray-900/90 text-white text-[10px] font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -724,7 +724,7 @@ export default function HomePage() {
       {/* ─── Satellite Analysis FAB ─── */}
       <Link
         to="/uydu-analiz"
-        className="fixed bottom-36 left-4 md:bottom-24 md:left-8 z-40 w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 shadow-lg shadow-indigo-500/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform group"
+        className="fixed bottom-[calc(9rem_+_var(--safe-bottom))] left-4 md:bottom-24 md:left-8 z-40 w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 shadow-lg shadow-indigo-500/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform group"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
           <path d="M13 7 8 2 2 8l5 5" /><path d="m16 8 5 5-5 5" /><path d="M8 16l5 5 5-5" /><circle cx="12" cy="12" r="3" />

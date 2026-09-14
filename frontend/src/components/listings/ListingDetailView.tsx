@@ -304,7 +304,7 @@ export default function ListingDetailView({ listing, onWaClick, onShare: _onShar
       )}
 
       {/* Sticky Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-surface)]/80 backdrop-blur-xl border-t border-[var(--border-default)] px-4 py-3 safe-area-bottom">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-surface)]/80 backdrop-blur-xl border-t border-[var(--border-default)] px-4 pt-3 pb-[calc(0.75rem_+_var(--safe-bottom))]">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
           {isOwner ? (
             <>

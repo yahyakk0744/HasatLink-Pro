@@ -411,7 +411,7 @@ function FieldSatelliteView({ polygon, area, lang }: {
       {/* Fullscreen modal */}
       {fullscreen && (
         <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 bg-black/80 border-b border-white/10">
+          <div className="flex items-center justify-between px-4 pb-3 pt-[calc(0.75rem_+_var(--safe-top))] bg-black/80 border-b border-white/10">
             <div className="flex items-center gap-2 text-white">
               <Satellite size={16} className="text-emerald-400" />
               <span className="text-[13px] font-semibold">

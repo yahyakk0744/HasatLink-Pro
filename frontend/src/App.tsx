@@ -181,7 +181,7 @@ export default function App() {
       {!isAdmin && <Header />}
       {!isAdmin && <CategoryNav />}
 
-      <main className={isAdmin ? '' : 'pb-20 md:pb-0'}>
+      <main className={isAdmin ? '' : 'pb-[calc(5rem_+_var(--safe-bottom))] md:pb-0'}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<HomePage />} />
